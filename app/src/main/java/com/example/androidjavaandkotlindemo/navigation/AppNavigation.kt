@@ -5,8 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.androidjavaandkotlindemo.ui.screens.HomeScreen
-import com.example.androidjavaandkotlindemo.ui.screens.UserListScreen
+import com.example.androidjavaandkotlindemo.ui.screens.*
 
 /**
  * AppNavigation - 使用Kotlin编写
@@ -24,12 +23,56 @@ fun AppNavigation(
             HomeScreen(
                 onNavigateToUsers = {
                     navController.navigate("users")
+                },
+                onNavigateToKotlin = {
+                    navController.navigate("kotlin")
+                },
+                onNavigateToJava = {
+                    navController.navigate("java")
+                },
+                onNavigateToAndroid = {
+                    navController.navigate("android")
+                },
+                onNavigateToFramework = {
+                    navController.navigate("framework")
                 }
             )
         }
         
         composable("users") {
             UserListScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable("kotlin") {
+            KotlinModuleScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable("java") {
+            JavaModuleScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable("android") {
+            AndroidModuleScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable("framework") {
+            FrameworkModuleScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }
