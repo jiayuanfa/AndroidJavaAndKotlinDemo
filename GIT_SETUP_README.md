@@ -52,3 +52,6 @@ git status
 - PowerShell 配置文件会在每次打开新的 PowerShell 会话时自动执行
 - 如果修改了系统环境变量，需要重启 Android Studio 才能生效
 
+
+
+
