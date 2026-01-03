@@ -23,7 +23,8 @@ import com.example.androidjavaandkotlindemo.data.JavaFeaturesData
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JavaModuleScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToDetail: (String, String?) -> Unit = { _, _ -> }
 ) {
     val javaFeatures = remember { JavaFeaturesData.getJavaFeatures() }
     
@@ -63,7 +64,12 @@ fun JavaModuleScreen(
             }
             
             items(javaFeatures) { feature ->
-                ExpandableFeatureCard(feature = feature)
+                ExpandableFeatureCard(
+                    feature = feature,
+                    onItemClick = { item ->
+                        onNavigateToDetail(item.name, item.description)
+                    }
+                )
             }
         }
     }
@@ -74,7 +80,8 @@ fun JavaModuleScreen(
  */
 @Composable
 fun ExpandableFeatureCard(
-    feature: JavaFeature
+    feature: JavaFeature,
+    onItemClick: (com.example.androidjavaandkotlindemo.data.JavaFeatureItem) -> Unit = {}
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     
@@ -125,7 +132,10 @@ fun ExpandableFeatureCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     feature.items.forEach { item ->
-                        FeatureItemRow(item = item)
+                        FeatureItemRow(
+                            item = item,
+                            onClick = { onItemClick(item) }
+                        )
                     }
                 }
             }
@@ -148,34 +158,46 @@ fun ExpandableFeatureCard(
  */
 @Composable
 fun FeatureItemRow(
-    item: com.example.androidjavaandkotlindemo.data.JavaFeatureItem
+    item: com.example.androidjavaandkotlindemo.data.JavaFeatureItem,
+    onClick: () -> Unit = {}
 ) {
-    Row(
+    Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        // 复选框或圆点
-        Checkbox(
-            checked = item.isCompleted,
-            onCheckedChange = null,  // 只读，不响应点击
-            modifier = Modifier.size(20.dp)
-        )
-        
-        Spacer(modifier = Modifier.width(12.dp))
-        
-        // 功能项名称
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.bodyMedium
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 复选框或圆点
+            Checkbox(
+                checked = item.isCompleted,
+                onCheckedChange = null,  // 只读，不响应点击
+                modifier = Modifier.size(20.dp)
             )
-            if (item.description != null) {
-                Spacer(modifier = Modifier.height(2.dp))
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            // 功能项名称
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = item.name,
+                    style = MaterialTheme.typography.bodyMedium
                 )
+                if (item.description != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = item.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }

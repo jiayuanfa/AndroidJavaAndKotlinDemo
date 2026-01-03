@@ -23,7 +23,8 @@ import com.example.androidjavaandkotlindemo.data.AndroidFeaturesData
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AndroidModuleScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToDetail: (String, String?) -> Unit = { _, _ -> }
 ) {
     val androidFeatures = remember { AndroidFeaturesData.getAndroidFeatures() }
     
@@ -63,7 +64,12 @@ fun AndroidModuleScreen(
             }
             
             items(androidFeatures) { feature ->
-                ExpandableAndroidFeatureCard(feature = feature)
+                ExpandableAndroidFeatureCard(
+                    feature = feature,
+                    onItemClick = { item ->
+                        onNavigateToDetail(item.name, item.description)
+                    }
+                )
             }
         }
     }
@@ -74,7 +80,8 @@ fun AndroidModuleScreen(
  */
 @Composable
 fun ExpandableAndroidFeatureCard(
-    feature: AndroidFeature
+    feature: AndroidFeature,
+    onItemClick: (com.example.androidjavaandkotlindemo.data.AndroidFeatureItem) -> Unit = {}
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     
@@ -121,7 +128,10 @@ fun ExpandableAndroidFeatureCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     feature.items.forEach { item ->
-                        AndroidFeatureItemRow(item = item)
+                        AndroidFeatureItemRow(
+                            item = item,
+                            onClick = { onItemClick(item) }
+                        )
                     }
                 }
             }
@@ -143,32 +153,44 @@ fun ExpandableAndroidFeatureCard(
  */
 @Composable
 fun AndroidFeatureItemRow(
-    item: com.example.androidjavaandkotlindemo.data.AndroidFeatureItem
+    item: com.example.androidjavaandkotlindemo.data.AndroidFeatureItem,
+    onClick: () -> Unit = {}
 ) {
-    Row(
+    Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Checkbox(
-            checked = item.isCompleted,
-            onCheckedChange = null,
-            modifier = Modifier.size(20.dp)
-        )
-        
-        Spacer(modifier = Modifier.width(12.dp))
-        
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.bodyMedium
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = item.isCompleted,
+                onCheckedChange = null,
+                modifier = Modifier.size(20.dp)
             )
-            if (item.description != null) {
-                Spacer(modifier = Modifier.height(2.dp))
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = item.name,
+                    style = MaterialTheme.typography.bodyMedium
                 )
+                if (item.description != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = item.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }

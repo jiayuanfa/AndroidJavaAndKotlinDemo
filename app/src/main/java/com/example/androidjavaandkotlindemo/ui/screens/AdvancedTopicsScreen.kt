@@ -23,7 +23,8 @@ import com.example.androidjavaandkotlindemo.data.AdvancedFeaturesData
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdvancedTopicsScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToDetail: (String, String?) -> Unit = { _, _ -> }
 ) {
     val advancedFeatures = remember { AdvancedFeaturesData.getAdvancedFeatures() }
     
@@ -63,7 +64,12 @@ fun AdvancedTopicsScreen(
             }
             
             items(advancedFeatures) { feature ->
-                ExpandableAdvancedFeatureCard(feature = feature)
+                ExpandableAdvancedFeatureCard(
+                    feature = feature,
+                    onItemClick = { item ->
+                        onNavigateToDetail(item.name, item.description)
+                    }
+                )
             }
         }
     }
@@ -74,7 +80,8 @@ fun AdvancedTopicsScreen(
  */
 @Composable
 fun ExpandableAdvancedFeatureCard(
-    feature: AdvancedFeature
+    feature: AdvancedFeature,
+    onItemClick: (com.example.androidjavaandkotlindemo.data.AdvancedFeatureItem) -> Unit = {}
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     
@@ -124,7 +131,10 @@ fun ExpandableAdvancedFeatureCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     feature.items.forEach { item ->
-                        AdvancedFeatureItemRow(item = item)
+                        AdvancedFeatureItemRow(
+                            item = item,
+                            onClick = { onItemClick(item) }
+                        )
                     }
                 }
             }
@@ -146,32 +156,44 @@ fun ExpandableAdvancedFeatureCard(
  */
 @Composable
 fun AdvancedFeatureItemRow(
-    item: com.example.androidjavaandkotlindemo.data.AdvancedFeatureItem
+    item: com.example.androidjavaandkotlindemo.data.AdvancedFeatureItem,
+    onClick: () -> Unit = {}
 ) {
-    Row(
+    Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Checkbox(
-            checked = item.isCompleted,
-            onCheckedChange = null,
-            modifier = Modifier.size(20.dp)
-        )
-        
-        Spacer(modifier = Modifier.width(12.dp))
-        
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.bodyMedium
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = item.isCompleted,
+                onCheckedChange = null,
+                modifier = Modifier.size(20.dp)
             )
-            if (item.description != null) {
-                Spacer(modifier = Modifier.height(2.dp))
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = item.name,
+                    style = MaterialTheme.typography.bodyMedium
                 )
+                if (item.description != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = item.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
