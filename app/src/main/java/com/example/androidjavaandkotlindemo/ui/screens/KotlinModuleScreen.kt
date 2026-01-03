@@ -1,22 +1,32 @@
 package com.example.androidjavaandkotlindemo.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.androidjavaandkotlindemo.data.KotlinFeature
+import com.example.androidjavaandkotlindemo.data.KotlinFeaturesData
 
 /**
  * KotlinModuleScreen - Kotlin模块页面
+ * 展示Kotlin功能学习列表
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KotlinModuleScreen(
     onNavigateBack: () -> Unit
 ) {
+    val kotlinFeatures = remember { KotlinFeaturesData.getKotlinFeatures() }
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -29,27 +39,137 @@ fun KotlinModuleScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 16.dp)
         ) {
-            Text(
-                text = "Kotlin 模块",
-                style = MaterialTheme.typography.headlineLarge
-            )
+            item {
+                Text(
+                    text = "Kotlin 功能学习列表",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "涵盖Kotlin语言的核心知识点和最佳实践",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = "这里将展示Kotlin语言特性与最佳实践",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            items(kotlinFeatures) { feature ->
+                ExpandableKotlinFeatureCard(feature = feature)
+            }
         }
     }
 }
 
+/**
+ * 可展开的Kotlin功能卡片
+ */
+@Composable
+fun ExpandableKotlinFeatureCard(
+    feature: KotlinFeature
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = feature.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (feature.description != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = feature.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                
+                IconButton(
+                    onClick = { isExpanded = !isExpanded }
+                ) {
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (isExpanded) "折叠" else "展开"
+                    )
+                }
+            }
+            
+            if (isExpanded && feature.items.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    feature.items.forEach { item ->
+                        KotlinFeatureItemRow(item = item)
+                    }
+                }
+            }
+            
+            if (feature.items.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "${feature.items.size} 个知识点",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Kotlin功能项行
+ */
+@Composable
+fun KotlinFeatureItemRow(
+    item: com.example.androidjavaandkotlindemo.data.KotlinFeatureItem
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(
+            checked = item.isCompleted,
+            onCheckedChange = null,
+            modifier = Modifier.size(20.dp)
+        )
+        
+        Spacer(modifier = Modifier.width(12.dp))
+        
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.name,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            if (item.description != null) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = item.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
