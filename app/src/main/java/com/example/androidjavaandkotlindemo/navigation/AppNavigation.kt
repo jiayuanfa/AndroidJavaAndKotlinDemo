@@ -35,6 +35,9 @@ fun AppNavigation(
                 },
                 onNavigateToFramework = {
                     navController.navigate("framework")
+                },
+                onNavigateToAdvanced = {
+                    navController.navigate("advanced")
                 }
             )
         }
@@ -73,6 +76,14 @@ fun AppNavigation(
         
         composable("framework") {
             FrameworkModuleScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable("advanced") {
+            AdvancedTopicsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

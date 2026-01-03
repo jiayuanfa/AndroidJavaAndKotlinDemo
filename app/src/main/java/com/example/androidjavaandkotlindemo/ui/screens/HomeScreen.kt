@@ -1,7 +1,9 @@
 package com.example.androidjavaandkotlindemo.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -10,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.androidjavaandkotlindemo.util.DateUtils
 import com.example.androidjavaandkotlindemo.util.capitalizeFirst
@@ -25,11 +28,13 @@ fun HomeScreen(
     onNavigateToKotlin: () -> Unit = {},
     onNavigateToJava: () -> Unit = {},
     onNavigateToAndroid: () -> Unit = {},
-    onNavigateToFramework: () -> Unit = {}
+    onNavigateToFramework: () -> Unit = {},
+    onNavigateToAdvanced: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())  // 记住滚动状态，增加垂直滚动修饰符
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -109,6 +114,18 @@ fun HomeScreen(
         
         Spacer(modifier = Modifier.height(32.dp))
         
+        // 进阶模块按钮
+        ModuleCard(
+            title = "进阶模块",
+            description = "高级开发工程师进阶主题",
+            icon = Icons.Default.TrendingUp,
+            onClick = onNavigateToAdvanced,
+            modifier = Modifier.fillMaxWidth(),
+            height = 160.dp  // 增加高度以完整显示描述文字
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
         // 其他功能按钮
         Button(
             onClick = onNavigateToUsers,
@@ -154,11 +171,12 @@ fun ModuleCard(
     description: String,
     icon: ImageVector,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    height: androidx.compose.ui.unit.Dp = 140.dp
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier.height(140.dp),
+        modifier = modifier.height(height),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -189,7 +207,9 @@ fun ModuleCard(
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,  // 允许最多2行显示
+                overflow = TextOverflow.Ellipsis  // 如果超过2行，显示省略号
             )
         }
     }
