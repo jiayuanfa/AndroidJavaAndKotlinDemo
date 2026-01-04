@@ -1459,6 +1459,674 @@ object KnowledgeDetailsRepository {
                 "遵循最小可见性原则，默认使用private"
             ),
             practiceTips = "建议：遵循最小可见性原则，默认使用private，只在需要时提升可见性。在库开发中，使用internal隐藏内部实现，只暴露必要的公共API。在Android开发中，合理使用可见性修饰符可以提高代码的安全性和可维护性。"
+        ),
+        
+        // ========== Kotlin 函数式编程 ==========
+        
+        // 1. 高阶函数、Lambda表达式、it参数、尾随Lambda
+        KnowledgeDetail(
+            id = "higher_order",
+            title = "高阶函数、Lambda表达式、it参数、尾随Lambda",
+            overview = "Kotlin的函数式编程能力非常强大。高阶函数、Lambda表达式是Kotlin函数式编程的核心。理解这些概念可以让代码更简洁、更优雅。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：高阶函数基础",
+                    code = """
+                        // 高阶函数：接受函数作为参数或返回函数的函数
+                        
+                        // 接受函数作为参数
+                        fun calculate(x: Int, y: Int, operation: (Int, Int) -> Int): Int {
+                            return operation(x, y)
+                        }
+                        
+                        // 使用Lambda表达式调用
+                        val sum = calculate(5, 3) { a, b -> a + b }
+                        val product = calculate(5, 3) { a, b -> a * b }
+                        println(sum)     // 8
+                        println(product)  // 15
+                        
+                        // 返回函数的函数
+                        fun getOperation(type: String): (Int, Int) -> Int {
+                            return when (type) {
+                                "add" -> { a, b -> a + b }
+                                "multiply" -> { a, b -> a * b }
+                                else -> { _, _ -> 0 }
+                            }
+                        }
+                        
+                        val addOp = getOperation("add")
+                        val result = addOp(10, 20)  // 30
+                    """.trimIndent(),
+                    explanation = "高阶函数是接受函数作为参数或返回函数的函数。Kotlin中函数是一等公民，可以像普通值一样传递和返回。"
+                ),
+                CodeExample(
+                    title = "示例2：Lambda表达式语法",
+                    code = """
+                        // Lambda表达式的基本语法：{ 参数 -> 函数体 }
+                        
+                        // 完整语法
+                        val add: (Int, Int) -> Int = { a: Int, b: Int -> a + b }
+                        
+                        // 类型推断
+                        val add2 = { a: Int, b: Int -> a + b }
+                        
+                        // 单参数Lambda可以省略参数类型
+                        val square = { x: Int -> x * x }
+                        
+                        // 无参数Lambda
+                        val greet = { println("Hello!") }
+                        
+                        // 多行Lambda
+                        val process = { x: Int ->
+                            val doubled = x * 2
+                            val squared = doubled * doubled
+                            squared
+                        }
+                        
+                        // 使用
+                        println(add(3, 4))      // 7
+                        println(square(5))      // 25
+                        greet()                // "Hello!"
+                        println(process(3))    // 36
+                    """.trimIndent(),
+                    explanation = "Lambda表达式是匿名函数的简洁写法。语法为 { 参数 -> 函数体 }。Kotlin可以推断Lambda的类型，使代码更简洁。"
+                ),
+                CodeExample(
+                    title = "示例3：it参数（单参数Lambda的简化）",
+                    code = """
+                        // 当Lambda只有一个参数时，可以使用it代替参数名
+                        
+                        val numbers = listOf(1, 2, 3, 4, 5)
+                        
+                        // 完整写法
+                        val doubled1 = numbers.map { number -> number * 2 }
+                        
+                        // 使用it简化
+                        val doubled2 = numbers.map { it * 2 }
+                        
+                        // it在多个Lambda中的使用
+                        val result = numbers
+                            .filter { it > 2 }        // it代表列表中的元素
+                            .map { it * it }          // it代表过滤后的元素
+                            .find { it > 10 }          // it代表映射后的元素
+                        
+                        // 嵌套Lambda中的it
+                        val nested = listOf(listOf(1, 2), listOf(3, 4))
+                        val flattened = nested.flatMap { it.map { it * 2 } }
+                        // 外层it是子列表，内层it是子列表中的元素
+                        
+                        // 注意：如果Lambda有多个参数，必须显式声明参数名
+                        val map = mapOf("a" to 1, "b" to 2)
+                        map.forEach { key, value ->  // 不能使用it，因为有两个参数
+                            println("${'$'}key -> ${'$'}value")
+                        }
+                    """.trimIndent(),
+                    explanation = "当Lambda只有一个参数时，可以使用it关键字代替参数名，使代码更简洁。嵌套Lambda中，it指向最近的Lambda参数。"
+                ),
+                CodeExample(
+                    title = "示例4：尾随Lambda（Trailing Lambda）",
+                    code = """
+                        // 如果函数的最后一个参数是函数类型，可以将Lambda写在括号外
+                        
+                        // 定义函数
+                        fun performOperation(x: Int, y: Int, operation: (Int, Int) -> Int): Int {
+                            return operation(x, y)
+                        }
+                        
+                        // 传统调用方式
+                        val result1 = performOperation(5, 3, { a, b -> a + b })
+                        
+                        // 尾随Lambda：将Lambda移到括号外
+                        val result2 = performOperation(5, 3) { a, b -> a + b }
+                        
+                        // 如果Lambda是唯一参数，可以省略括号
+                        fun execute(operation: () -> Unit) {
+                            operation()
+                        }
+                        
+                        execute { println("Hello!") }  // 省略括号
+                        
+                        // DSL风格的代码（大量使用尾随Lambda）
+                        fun buildString(builder: StringBuilder.() -> Unit): String {
+                            val sb = StringBuilder()
+                            sb.builder()  // 调用带接收者的Lambda
+                            return sb.toString()
+                        }
+                        
+                        val text = buildString {
+                            append("Hello")
+                            append(" ")
+                            append("World")
+                        }
+                        // 这就是Kotlin DSL的基础
+                    """.trimIndent(),
+                    explanation = "尾随Lambda是Kotlin的语法糖，当函数的最后一个参数是函数类型时，可以将Lambda写在括号外，使代码更易读。这是Kotlin DSL的基础。"
+                ),
+                CodeExample(
+                    title = "示例5：高阶函数实践",
+                    code = """
+                        // 1. 集合操作
+                        val numbers = listOf(1, 2, 3, 4, 5)
+                        val evens = numbers.filter { it % 2 == 0 }
+                        val doubled = numbers.map { it * 2 }
+                        val sum = numbers.reduce { acc, n -> acc + n }
+                        
+                        // 2. 自定义高阶函数
+                        fun <T> List<T>.customFilter(predicate: (T) -> Boolean): List<T> {
+                            val result = mutableListOf<T>()
+                            for (item in this) {
+                                if (predicate(item)) {
+                                    result.add(item)
+                                }
+                            }
+                            return result
+                        }
+                        
+                        val filtered = numbers.customFilter { it > 3 }
+                        
+                        // 3. 函数组合
+                        fun <T, R, U> compose(f: (T) -> R, g: (R) -> U): (T) -> U {
+                            return { x -> g(f(x)) }
+                        }
+                        
+                        val addOne = { x: Int -> x + 1 }
+                        val multiplyTwo = { x: Int -> x * 2 }
+                        val composed = compose(addOne, multiplyTwo)
+                        println(composed(5))  // (5 + 1) * 2 = 12
+                        
+                        // 4. 条件执行
+                        fun <T> T.also(block: (T) -> Unit): T {
+                            block(this)
+                            return this
+                        }
+                        
+                        val result = "Hello"
+                            .also { println("Processing: ${'$'}it") }
+                            .uppercase()
+                            .also { println("Result: ${'$'}it") }
+                    """.trimIndent(),
+                    explanation = "高阶函数在实际开发中非常有用，可以用于集合操作、函数组合、条件执行等场景。Kotlin标准库提供了丰富的高阶函数。"
+                )
+            ),
+            useCases = listOf(
+                "集合操作：使用高阶函数处理集合数据（filter、map、reduce等）",
+                "回调函数：使用Lambda作为回调函数，简化异步编程",
+                "DSL构建：使用尾随Lambda构建领域特定语言（如Gradle DSL）",
+                "函数组合：组合多个函数创建新的函数",
+                "条件执行：使用also、let等作用域函数执行副作用"
+            ),
+            keyPoints = listOf(
+                "高阶函数是接受函数作为参数或返回函数的函数",
+                "Lambda表达式是匿名函数的简洁写法：{ 参数 -> 函数体 }",
+                "单参数Lambda可以使用it关键字简化",
+                "尾随Lambda：最后一个参数是函数类型时，可以将Lambda写在括号外",
+                "Kotlin标准库提供了丰富的高阶函数（map、filter、reduce等）"
+            ),
+            notes = listOf(
+                "Lambda表达式可以访问外部作用域的变量（闭包）",
+                "嵌套Lambda中，it指向最近的Lambda参数",
+                "如果Lambda有多个参数，必须显式声明参数名",
+                "尾随Lambda是Kotlin DSL的基础",
+                "高阶函数可以提高代码的复用性和可读性"
+            ),
+            practiceTips = "建议：优先使用Kotlin标准库提供的高阶函数（map、filter、reduce等），而不是手动编写循环。使用it简化单参数Lambda。合理使用尾随Lambda提高代码可读性。在Android开发中，高阶函数特别适合处理集合数据和异步回调。"
+        ),
+        
+        // 2. map、filter、reduce、flatMap、groupBy等集合操作
+        KnowledgeDetail(
+            id = "collections_ops",
+            title = "map、filter、reduce、flatMap、groupBy等集合操作",
+            overview = "Kotlin提供了丰富的集合操作函数，这些函数式编程风格的API让集合处理变得简洁优雅。掌握这些操作符是编写现代Kotlin代码的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：map - 转换操作",
+                    code = """
+                        // map：将集合中的每个元素转换为另一个元素
+                        
+                        val numbers = listOf(1, 2, 3, 4, 5)
+                        
+                        // 转换为平方
+                        val squares = numbers.map { it * it }
+                        println(squares)  // [1, 4, 9, 16, 25]
+                        
+                        // 转换为字符串
+                        val strings = numbers.map { "Number: ${'$'}it" }
+                        println(strings)  // [Number: 1, Number: 2, ...]
+                        
+                        // 转换类型
+                        data class Person(val name: String, val age: Int)
+                        val people = listOf(
+                            Person("Alice", 25),
+                            Person("Bob", 30)
+                        )
+                        val names = people.map { it.name }
+                        println(names)  // [Alice, Bob]
+                        
+                        // mapIndexed：同时访问索引和元素
+                        val indexed = numbers.mapIndexed { index, value ->
+                            "Index ${'$'}index: ${'$'}value"
+                        }
+                    """.trimIndent(),
+                    explanation = "map函数将集合中的每个元素通过转换函数映射为另一个元素，返回新的集合。这是最常用的集合操作之一。"
+                ),
+                CodeExample(
+                    title = "示例2：filter - 过滤操作",
+                    code = """
+                        // filter：根据条件过滤集合元素
+                        
+                        val numbers = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                        
+                        // 过滤偶数
+                        val evens = numbers.filter { it % 2 == 0 }
+                        println(evens)  // [2, 4, 6, 8, 10]
+                        
+                        // 过滤大于5的数
+                        val large = numbers.filter { it > 5 }
+                        println(large)  // [6, 7, 8, 9, 10]
+                        
+                        // filterIndexed：同时使用索引和元素
+                        val filtered = numbers.filterIndexed { index, value ->
+                            index % 2 == 0 && value > 3
+                        }
+                        
+                        // filterNot：过滤不满足条件的元素
+                        val odds = numbers.filterNot { it % 2 == 0 }
+                        
+                        // filterNotNull：过滤null值
+                        val nullable = listOf(1, null, 2, null, 3)
+                        val nonNull = nullable.filterNotNull()
+                        println(nonNull)  // [1, 2, 3]
+                    """.trimIndent(),
+                    explanation = "filter函数根据条件过滤集合元素，返回满足条件的新集合。filterNot返回不满足条件的元素，filterNotNull过滤null值。"
+                ),
+                CodeExample(
+                    title = "示例3：reduce和fold - 聚合操作",
+                    code = """
+                        // reduce：将集合元素累积为单个值
+                        
+                        val numbers = listOf(1, 2, 3, 4, 5)
+                        
+                        // 求和
+                        val sum = numbers.reduce { acc, n -> acc + n }
+                        println(sum)  // 15
+                        
+                        // 求最大值
+                        val max = numbers.reduce { acc, n -> if (n > acc) n else acc }
+                        println(max)  // 5
+                        
+                        // fold：类似reduce，但可以指定初始值
+                        val sumWithInit = numbers.fold(10) { acc, n -> acc + n }
+                        println(sumWithInit)  // 25 (10 + 1 + 2 + 3 + 4 + 5)
+                        
+                        // 字符串拼接
+                        val words = listOf("Hello", "World", "Kotlin")
+                        val sentence = words.fold("") { acc, word ->
+                            if (acc.isEmpty()) word else "${'$'}acc ${'$'}word"
+                        }
+                        println(sentence)  // "Hello World Kotlin"
+                        
+                        // reduceRight和foldRight：从右到左累积
+                        val rightSum = numbers.reduceRight { n, acc -> acc + n }
+                    """.trimIndent(),
+                    explanation = "reduce将集合元素累积为单个值，从第一个元素开始。fold类似但可以指定初始值。reduceRight和foldRight从右到左累积。"
+                ),
+                CodeExample(
+                    title = "示例4：flatMap - 扁平化映射",
+                    code = """
+                        // flatMap：先map再flatten，将嵌套集合扁平化
+                        
+                        // 示例1：将嵌套列表扁平化
+                        val nested = listOf(
+                            listOf(1, 2, 3),
+                            listOf(4, 5),
+                            listOf(6, 7, 8, 9)
+                        )
+                        val flattened = nested.flatMap { it }
+                        println(flattened)  // [1, 2, 3, 4, 5, 6, 7, 8, 9]
+                        
+                        // 示例2：每个元素映射为多个元素
+                        val words = listOf("hello", "world")
+                        val chars = words.flatMap { it.toList() }
+                        println(chars)  // [h, e, l, l, o, w, o, r, l, d]
+                        
+                        // 示例3：复杂转换
+                        data class Author(val name: String, val books: List<String>)
+                        val authors = listOf(
+                            Author("Alice", listOf("Book1", "Book2")),
+                            Author("Bob", listOf("Book3"))
+                        )
+                        val allBooks = authors.flatMap { it.books }
+                        println(allBooks)  // [Book1, Book2, Book3]
+                        
+                        // flatten：只扁平化，不映射
+                        val simpleFlatten = nested.flatten()
+                    """.trimIndent(),
+                    explanation = "flatMap先对每个元素应用map操作，然后将结果集合扁平化。常用于处理嵌套集合或一对多的映射关系。"
+                ),
+                CodeExample(
+                    title = "示例5：groupBy、partition、associate - 分组和关联",
+                    code = """
+                        // groupBy：根据键对集合分组
+                        
+                        val words = listOf("apple", "banana", "apricot", "blueberry", "cherry")
+                        val grouped = words.groupBy { it.first() }
+                        // {a=[apple, apricot], b=[banana, blueberry], c=[cherry]}
+                        
+                        // 按长度分组
+                        val byLength = words.groupBy { it.length }
+                        // {5=[apple], 6=[banana, cherry], 7=[apricot], 9=[blueberry]}
+                        
+                        // partition：将集合分为两部分
+                        val numbers = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                        val (evens, odds) = numbers.partition { it % 2 == 0 }
+                        println(evens)  // [2, 4, 6, 8, 10]
+                        println(odds)   // [1, 3, 5, 7, 9]
+                        
+                        // associate：将集合转换为Map
+                        val people = listOf("Alice", "Bob", "Charlie")
+                        val nameToLength = people.associate { it to it.length }
+                        // {Alice=5, Bob=3, Charlie=7}
+                        
+                        // associateBy：使用元素作为值
+                        val byFirstChar = people.associateBy { it.first() }
+                        // {A=Alice, B=Bob, C=Charlie}
+                        
+                        // associateWith：使用元素作为键
+                        val withLength = people.associateWith { it.length }
+                        // {Alice=5, Bob=3, Charlie=7}
+                    """.trimIndent(),
+                    explanation = "groupBy根据键对集合分组，partition将集合分为两部分，associate系列函数将集合转换为Map。这些函数在处理数据时非常有用。"
+                ),
+                CodeExample(
+                    title = "示例6：其他常用集合操作",
+                    code = """
+                        val numbers = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                        
+                        // take和drop：取前N个或跳过前N个
+                        val first3 = numbers.take(3)      // [1, 2, 3]
+                        val skip3 = numbers.drop(3)       // [4, 5, 6, 7, 8, 9, 10]
+                        val takeWhile = numbers.takeWhile { it < 5 }  // [1, 2, 3, 4]
+                        
+                        // distinct：去重
+                        val duplicates = listOf(1, 2, 2, 3, 3, 3, 4)
+                        val unique = duplicates.distinct()  // [1, 2, 3, 4]
+                        
+                        // sorted：排序
+                        val unsorted = listOf(3, 1, 4, 1, 5, 9, 2, 6)
+                        val sorted = unsorted.sorted()  // [1, 1, 2, 3, 4, 5, 6, 9]
+                        val sortedDesc = unsorted.sortedDescending()
+                        
+                        // any、all、none：条件检查
+                        val hasEven = numbers.any { it % 2 == 0 }    // true
+                        val allPositive = numbers.all { it > 0 }      // true
+                        val noNegative = numbers.none { it < 0 }      // true
+                        
+                        // find和first：查找元素
+                        val firstEven = numbers.find { it % 2 == 0 }  // 2
+                        val firstLarge = numbers.first { it > 5 }      // 6
+                        
+                        // count：计数
+                        val evenCount = numbers.count { it % 2 == 0 }  // 5
+                    """.trimIndent(),
+                    explanation = "Kotlin提供了丰富的集合操作函数，包括take/drop、distinct、sorted、any/all/none、find/first、count等，可以满足各种集合处理需求。"
+                )
+            ),
+            useCases = listOf(
+                "数据转换：使用map转换集合元素",
+                "数据过滤：使用filter过滤集合元素",
+                "数据聚合：使用reduce/fold计算聚合值",
+                "嵌套处理：使用flatMap处理嵌套集合",
+                "数据分组：使用groupBy对数据进行分组",
+                "条件检查：使用any/all/none检查集合条件"
+            ),
+            keyPoints = listOf(
+                "map：将集合元素转换为另一个元素",
+                "filter：根据条件过滤集合元素",
+                "reduce/fold：将集合元素累积为单个值",
+                "flatMap：先map再flatten，处理嵌套集合",
+                "groupBy：根据键对集合分组",
+                "partition：将集合分为两部分"
+            ),
+            notes = listOf(
+                "集合操作函数返回新集合，不修改原集合（不可变集合）",
+                "可以链式调用多个操作函数",
+                "操作函数是延迟计算的（Sequence），可以提高性能",
+                "reduce从第一个元素开始，fold可以指定初始值",
+                "flatMap常用于处理一对多的映射关系"
+            ),
+            practiceTips = "建议：优先使用集合操作函数而不是手动编写循环，代码更简洁易读。对于大数据集，使用Sequence进行延迟计算可以提高性能。合理组合多个操作函数，但要注意可读性，避免过度嵌套。"
+        ),
+        
+        // 3. 函数类型、函数类型别名
+        KnowledgeDetail(
+            id = "function_types",
+            title = "函数类型、函数类型别名",
+            overview = "Kotlin中函数是一等公民，函数类型是函数式编程的基础。理解函数类型和类型别名可以让代码更清晰、更易维护。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：函数类型基础",
+                    code = """
+                        // 函数类型语法：(参数类型) -> 返回类型
+                        
+                        // 无参数无返回值
+                        val action: () -> Unit = { println("Hello") }
+                        
+                        // 单参数
+                        val square: (Int) -> Int = { x -> x * x }
+                        
+                        // 多参数
+                        val add: (Int, Int) -> Int = { a, b -> a + b }
+                        
+                        // 可空函数类型
+                        val nullable: ((String) -> String)? = null
+                        
+                        // 函数类型作为参数
+                        fun process(x: Int, operation: (Int) -> Int): Int {
+                            return operation(x)
+                        }
+                        
+                        // 函数类型作为返回值
+                        fun getOperation(type: String): (Int, Int) -> Int {
+                            return when (type) {
+                                "add" -> { a, b -> a + b }
+                                "multiply" -> { a, b -> a * b }
+                                else -> { _, _ -> 0 }
+                            }
+                        }
+                        
+                        // 使用
+                        val result = process(5) { it * it }  // 25
+                        val addOp = getOperation("add")
+                        println(addOp(3, 4))  // 7
+                    """.trimIndent(),
+                    explanation = "函数类型使用 (参数类型) -> 返回类型 的语法。函数可以像普通值一样作为参数传递和返回。"
+                ),
+                CodeExample(
+                    title = "示例2：函数类型别名（typealias）",
+                    code = """
+                        // 使用typealias为函数类型创建别名，提高可读性
+                        
+                        // 定义函数类型别名
+                        typealias IntOperation = (Int) -> Int
+                        typealias BinaryOperation = (Int, Int) -> Int
+                        typealias Predicate<T> = (T) -> Boolean
+                        typealias EventHandler = (String) -> Unit
+                        
+                        // 使用别名
+                        val square: IntOperation = { it * it }
+                        val add: BinaryOperation = { a, b -> a + b }
+                        val isEven: Predicate<Int> = { it % 2 == 0 }
+                        val onEvent: EventHandler = { event -> println("Event: ${'$'}event") }
+                        
+                        // 在函数中使用
+                        fun applyOperation(x: Int, op: IntOperation): Int {
+                            return op(x)
+                        }
+                        
+                        fun filterList(list: List<Int>, predicate: Predicate<Int>): List<Int> {
+                            return list.filter(predicate)
+                        }
+                        
+                        // 复杂函数类型别名
+                        typealias Transform<T, R> = (T) -> R
+                        typealias Callback<T> = (Result<T>) -> Unit
+                        
+                        fun <T, R> mapList(list: List<T>, transform: Transform<T, R>): List<R> {
+                            return list.map(transform)
+                        }
+                    """.trimIndent(),
+                    explanation = "typealias可以为函数类型创建别名，提高代码可读性。特别是对于复杂的函数类型，使用别名可以让代码更清晰。"
+                ),
+                CodeExample(
+                    title = "示例3：函数类型与Lambda",
+                    code = """
+                        // 函数类型变量可以存储Lambda表达式
+                        
+                        // 直接赋值
+                        val operation: (Int, Int) -> Int = { a, b -> a + b }
+                        
+                        // 从函数引用赋值
+                        fun multiply(a: Int, b: Int): Int = a * b
+                        val multiplyOp: (Int, Int) -> Int = ::multiply
+                        
+                        // 使用函数引用
+                        val numbers = listOf(1, 2, 3, 4, 5)
+                        val doubled = numbers.map(::multiplyByTwo)
+                        
+                        fun multiplyByTwo(x: Int): Int = x * 2
+                        
+                        // 方法引用
+                        class Calculator {
+                            fun add(a: Int, b: Int): Int = a + b
+                        }
+                        
+                        val calc = Calculator()
+                        val addMethod: (Int, Int) -> Int = calc::add
+                        
+                        // 属性引用转换为函数类型
+                        data class Person(val name: String, val age: Int)
+                        val people = listOf(Person("Alice", 25), Person("Bob", 30))
+                        val names = people.map(Person::name)  // 使用属性引用
+                    """.trimIndent(),
+                    explanation = "函数类型变量可以存储Lambda表达式、函数引用、方法引用等。函数引用使用::语法，可以简化代码。"
+                ),
+                CodeExample(
+                    title = "示例4：高阶函数类型",
+                    code = """
+                        // 函数类型本身也可以作为参数和返回值
+                        
+                        // 接受函数类型作为参数的函数类型
+                        typealias HigherOrder = ((Int) -> Int) -> Int
+                        
+                        fun applyTwice(f: (Int) -> Int): (Int) -> Int {
+                            return { x -> f(f(x)) }
+                        }
+                        
+                        val double = { x: Int -> x * 2 }
+                        val quadruple = applyTwice(double)
+                        println(quadruple(5))  // 20 (5 * 2 * 2)
+                        
+                        // 函数组合
+                        typealias IntFunction = (Int) -> Int
+                        
+                        fun compose(f: IntFunction, g: IntFunction): IntFunction {
+                            return { x -> g(f(x)) }
+                        }
+                        
+                        val addOne: IntFunction = { it + 1 }
+                        val multiplyTwo: IntFunction = { it * 2 }
+                        val composed = compose(addOne, multiplyTwo)
+                        println(composed(5))  // (5 + 1) * 2 = 12
+                        
+                        // 柯里化（Currying）
+                        fun <A, B, C> curry(f: (A, B) -> C): (A) -> (B) -> C {
+                            return { a -> { b -> f(a, b) } }
+                        }
+                        
+                        val curriedAdd = curry { a: Int, b: Int -> a + b }
+                        val addFive = curriedAdd(5)
+                        println(addFive(3))  // 8
+                    """.trimIndent(),
+                    explanation = "函数类型可以作为其他函数的参数和返回值，实现函数组合、柯里化等高级函数式编程技术。"
+                ),
+                CodeExample(
+                    title = "示例5：函数类型实践",
+                    code = """
+                        // 1. 回调函数
+                        typealias OnSuccess<T> = (T) -> Unit
+                        typealias OnError = (Throwable) -> Unit
+                        
+                        fun fetchData(
+                            onSuccess: OnSuccess<String>,
+                            onError: OnError
+                        ) {
+                            try {
+                                val data = "Data loaded"
+                                onSuccess(data)
+                            } catch (e: Exception) {
+                                onError(e)
+                            }
+                        }
+                        
+                        fetchData(
+                            onSuccess = { data -> println("Success: ${'$'}data") },
+                            onError = { error -> println("Error: ${'$'}error") }
+                        )
+                        
+                        // 2. 策略模式
+                        typealias SortStrategy<T> = (List<T>) -> List<T>
+                        
+                        fun <T : Comparable<T>> sortAscending(list: List<T>): List<T> {
+                            return list.sorted()
+                        }
+                        
+                        fun <T : Comparable<T>> sortDescending(list: List<T>): List<T> {
+                            return list.sortedDescending()
+                        }
+                        
+                        fun <T> sortList(list: List<T>, strategy: SortStrategy<T>): List<T> {
+                            return strategy(list)
+                        }
+                        
+                        val numbers = listOf(3, 1, 4, 1, 5)
+                        val ascending = sortList(numbers, ::sortAscending)
+                        val descending = sortList(numbers, ::sortDescending)
+                        
+                        // 3. 函数工厂
+                        typealias Validator<T> = (T) -> Boolean
+                        
+                        fun <T> createValidator(predicate: (T) -> Boolean): Validator<T> {
+                            return predicate
+                        }
+                        
+                        val isPositive = createValidator<Int> { it > 0 }
+                        val isEven = createValidator<Int> { it % 2 == 0 }
+                    """.trimIndent(),
+                    explanation = "函数类型在实际开发中非常有用，可以用于回调函数、策略模式、函数工厂等场景。使用typealias可以提高代码可读性。"
+                )
+            ),
+            useCases = listOf(
+                "回调函数：使用函数类型定义回调接口",
+                "策略模式：使用函数类型实现策略模式",
+                "函数组合：组合多个函数创建新函数",
+                "API设计：使用函数类型设计灵活的API",
+                "代码复用：通过函数类型提高代码复用性"
+            ),
+            keyPoints = listOf(
+                "函数类型语法：(参数类型) -> 返回类型",
+                "typealias可以为函数类型创建别名，提高可读性",
+                "函数类型变量可以存储Lambda、函数引用、方法引用",
+                "函数类型可以作为参数和返回值，实现高阶函数",
+                "函数类型是函数式编程的基础"
+            ),
+            notes = listOf(
+                "函数类型是一等公民，可以像普通值一样传递",
+                "使用typealias可以让复杂的函数类型更易读",
+                "函数引用使用::语法，可以引用函数、方法、属性",
+                "函数类型支持泛型，可以创建通用的函数类型",
+                "函数类型在Kotlin标准库中广泛使用"
+            ),
+            practiceTips = "建议：对于复杂的函数类型，使用typealias创建别名提高可读性。在API设计时，合理使用函数类型可以让API更灵活。在Android开发中，函数类型特别适合用于回调函数和事件处理。"
         )
     )
 }
