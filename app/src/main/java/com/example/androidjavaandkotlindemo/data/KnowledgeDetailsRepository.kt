@@ -587,6 +587,878 @@ object KnowledgeDetailsRepository {
                 "函数类型语法：(参数类型) -> 返回类型"
             ),
             practiceTips = "建议：对于参数较多的函数，使用默认参数和命名参数提高可读性。优先使用单表达式函数简化简单函数。在API设计时，合理使用默认参数可以减少函数重载的需要。"
+        ),
+        
+        // ========== Kotlin 面向对象编程 ==========
+        
+        // 1. 类声明、构造函数、初始化块、对象声明、伴生对象
+        KnowledgeDetail(
+            id = "class_object",
+            title = "类声明、构造函数、初始化块、对象声明、伴生对象",
+            overview = "Kotlin的类系统比Java更简洁强大。理解类的声明方式、主构造函数和次构造函数、初始化块、对象声明和伴生对象，是掌握Kotlin面向对象编程的基础。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：类声明和主构造函数",
+                    code = """
+                        // 最简单的类声明
+                        class Person
+                        
+                        // 带主构造函数的类（推荐方式）
+                        class Person(val name: String, var age: Int) {
+                            // 类体
+                        }
+                        
+                        // 主构造函数可以包含初始化代码
+                        class Person(val name: String, var age: Int) {
+                            init {
+                                // 初始化块，在对象创建时执行
+                                require(age >= 0) { "Age must be non-negative" }
+                                println("Person created: ${'$'}name, age: ${'$'}age")
+                            }
+                        }
+                        
+                        // 主构造函数参数可以有默认值
+                        class Person(
+                            val name: String,
+                            var age: Int = 0,
+                            val email: String = ""
+                        )
+                        
+                        // 使用
+                        val person1 = Person("Alice", 25)
+                        val person2 = Person("Bob")  // age使用默认值0
+                        val person3 = Person("Charlie", 30, "charlie@example.com")
+                    """.trimIndent(),
+                    explanation = "Kotlin的类声明非常简洁。主构造函数直接写在类名后面，参数可以声明为val或var，自动成为类的属性。init块在对象创建时执行。"
+                ),
+                CodeExample(
+                    title = "示例2：次构造函数",
+                    code = """
+                        class Person(val name: String, var age: Int) {
+                            // 次构造函数必须委托给主构造函数或其他次构造函数
+                            constructor(name: String) : this(name, 0) {
+                                println("Secondary constructor called")
+                            }
+                            
+                            // 多个次构造函数
+                            constructor() : this("Unknown", 0) {
+                                println("Default constructor called")
+                            }
+                        }
+                        
+                        // 使用
+                        val person1 = Person("Alice", 25)  // 主构造函数
+                        val person2 = Person("Bob")        // 次构造函数
+                        val person3 = Person()             // 默认次构造函数
+                    """.trimIndent(),
+                    explanation = "次构造函数使用constructor关键字声明，必须委托给主构造函数或其他次构造函数。Kotlin推荐优先使用主构造函数的默认参数，而不是次构造函数。"
+                ),
+                CodeExample(
+                    title = "示例3：初始化块（init）",
+                    code = """
+                        class Person(val name: String, var age: Int) {
+                            // 可以有多个init块，按顺序执行
+                            init {
+                                println("First init block")
+                            }
+                            
+                            val description: String
+                            
+                            init {
+                                description = "Person: ${'$'}name, Age: ${'$'}age"
+                                println("Second init block")
+                            }
+                            
+                            // init块可以访问主构造函数参数和属性
+                            init {
+                                if (age < 18) {
+                                    println("Warning: ${'$'}name is a minor")
+                                }
+                            }
+                        }
+                        
+                        // 执行顺序：
+                        // 1. 主构造函数参数初始化
+                        // 2. 属性初始化
+                        // 3. init块按顺序执行
+                        // 4. 次构造函数体执行（如果有）
+                    """.trimIndent(),
+                    explanation = "init块在对象创建时按顺序执行，可以访问主构造函数参数和属性。多个init块按声明顺序执行。"
+                ),
+                CodeExample(
+                    title = "示例4：对象声明（object）",
+                    code = """
+                        // 对象声明：单例模式
+                        object DatabaseManager {
+                            private var connectionCount = 0
+                            
+                            fun connect() {
+                                connectionCount++
+                                println("Connected. Total connections: ${'$'}connectionCount")
+                            }
+                            
+                            fun disconnect() {
+                                connectionCount--
+                                println("Disconnected. Total connections: ${'$'}connectionCount")
+                            }
+                        }
+                        
+                        // 使用（直接通过对象名访问，无需创建实例）
+                        DatabaseManager.connect()
+                        DatabaseManager.disconnect()
+                        
+                        // 对象声明可以实现接口
+                        interface Clickable {
+                            fun click()
+                        }
+                        
+                        object Button : Clickable {
+                            override fun click() {
+                                println("Button clicked")
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "object关键字用于创建单例对象。对象声明在首次访问时创建，整个程序运行期间只有一个实例。可以直接通过对象名访问，无需创建实例。"
+                ),
+                CodeExample(
+                    title = "示例5：伴生对象（companion object）",
+                    code = """
+                        class MyClass {
+                            // 伴生对象：类似Java的静态成员
+                            companion object {
+                                // 伴生对象的常量
+                                const val MAX_SIZE = 100
+                                
+                                // 伴生对象的函数
+                                fun create(): MyClass {
+                                    return MyClass()
+                                }
+                                
+                                // 伴生对象可以有自己的名称
+                                fun getInstance(): MyClass {
+                                    return MyClass()
+                                }
+                            }
+                        }
+                        
+                        // 使用（通过类名直接访问）
+                        val maxSize = MyClass.MAX_SIZE
+                        val instance = MyClass.create()
+                        
+                        // 伴生对象可以实现接口
+                        interface Factory<T> {
+                            fun create(): T
+                        }
+                        
+                        class MyClass {
+                            companion object : Factory<MyClass> {
+                                override fun create(): MyClass {
+                                    return MyClass()
+                                }
+                            }
+                        }
+                        
+                        // 伴生对象可以有名称
+                        class MyClass {
+                            companion object Named {
+                                fun create() = MyClass()
+                            }
+                        }
+                        
+                        // 使用命名伴生对象
+                        val instance = MyClass.Named.create()
+                    """.trimIndent(),
+                    explanation = "companion object用于在类中定义类似Java静态成员的内容。可以通过类名直接访问，无需创建类实例。伴生对象可以有名称，也可以实现接口。"
+                )
+            ),
+            useCases = listOf(
+                "数据模型：使用主构造函数快速定义数据类",
+                "单例模式：使用object声明实现单例",
+                "工具类：使用object或companion object创建工具类",
+                "工厂方法：在companion object中定义工厂方法",
+                "初始化逻辑：使用init块进行对象初始化验证和设置"
+            ),
+            keyPoints = listOf(
+                "主构造函数直接写在类名后面，参数可以声明为val或var",
+                "init块在对象创建时按顺序执行，可以访问主构造函数参数",
+                "次构造函数必须委托给主构造函数或其他次构造函数",
+                "object声明创建单例对象，首次访问时创建",
+                "companion object类似Java的静态成员，可以通过类名直接访问"
+            ),
+            notes = listOf(
+                "Kotlin推荐使用主构造函数的默认参数，而不是次构造函数",
+                "object声明不能有构造函数",
+                "companion object可以有名称，也可以实现接口",
+                "init块可以访问主构造函数参数，但不能访问次构造函数参数",
+                "主构造函数参数如果声明为val或var，会自动成为类的属性"
+            ),
+            practiceTips = "建议：优先使用主构造函数和默认参数，减少次构造函数的使用。对于单例模式，使用object声明比Java的静态方法更优雅。在companion object中定义工厂方法和常量，保持代码组织清晰。"
+        ),
+        
+        // 2. 属性声明、自定义getter/setter、延迟初始化
+        KnowledgeDetail(
+            id = "properties",
+            title = "属性声明、自定义getter/setter、延迟初始化",
+            overview = "Kotlin的属性系统非常强大，支持自动生成getter/setter、自定义访问器、延迟初始化等特性。理解这些特性可以让代码更简洁、更安全。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：属性声明",
+                    code = """
+                        class Person {
+                            // 只读属性（val）：只有getter，不能重新赋值
+                            val name: String = "Alice"
+                            
+                            // 可变属性（var）：有getter和setter，可以重新赋值
+                            var age: Int = 25
+                            
+                            // 类型推断
+                            val email = "alice@example.com"  // 推断为String
+                            var count = 0                     // 推断为Int
+                        }
+                        
+                        val person = Person()
+                        println(person.name)  // 访问getter
+                        // person.name = "Bob"  // ❌ 错误！val属性不能重新赋值
+                        person.age = 26       // ✅ 正确！var属性可以重新赋值
+                        println(person.age)   // 访问getter
+                    """.trimIndent(),
+                    explanation = "Kotlin的属性默认有getter和setter。val属性只有getter，var属性有getter和setter。访问属性时自动调用getter，赋值时自动调用setter。"
+                ),
+                CodeExample(
+                    title = "示例2：自定义getter",
+                    code = """
+                        class Rectangle(val width: Int, val height: Int) {
+                            // 自定义getter：计算属性
+                            val area: Int
+                                get() = width * height
+                            
+                            // 自定义getter：带逻辑
+                            val isSquare: Boolean
+                                get() {
+                                    return width == height
+                                }
+                            
+                            // 自定义getter：简化写法
+                            val perimeter: Int
+                                get() = 2 * (width + height)
+                        }
+                        
+                        val rect = Rectangle(10, 20)
+                        println(rect.area)        // 200
+                        println(rect.isSquare)   // false
+                        println(rect.perimeter)   // 60
+                    """.trimIndent(),
+                    explanation = "可以使用自定义getter创建计算属性。getter在每次访问属性时执行，可以包含逻辑计算。"
+                ),
+                CodeExample(
+                    title = "示例3：自定义setter",
+                    code = """
+                        class Person {
+                            var name: String = ""
+                                set(value) {
+                                    // 自定义setter：验证和转换
+                                    field = value.trim().capitalize()
+                                }
+                            
+                            var age: Int = 0
+                                set(value) {
+                                    // 自定义setter：验证
+                                    if (value < 0) {
+                                        throw IllegalArgumentException("Age cannot be negative")
+                                    }
+                                    field = value
+                                }
+                            
+                            // 使用field关键字访问幕后字段
+                            var email: String = ""
+                                set(value) {
+                                    if (value.contains("@")) {
+                                        field = value
+                                    } else {
+                                        throw IllegalArgumentException("Invalid email")
+                                    }
+                                }
+                        }
+                        
+                        val person = Person()
+                        person.name = "  alice  "  // 自动trim和capitalize
+                        println(person.name)       // "Alice"
+                        person.age = 25           // ✅ 正确
+                        // person.age = -1         // ❌ 抛出异常
+                    """.trimIndent(),
+                    explanation = "可以使用自定义setter在赋值时进行验证和转换。在setter中使用field关键字访问幕后字段（backing field），避免递归调用。"
+                ),
+                CodeExample(
+                    title = "示例4：延迟初始化（lateinit）",
+                    code = """
+                        class MyClass {
+                            // lateinit用于延迟初始化非空属性
+                            lateinit var name: String
+                            lateinit var service: MyService
+                            
+                            fun initialize() {
+                                name = "Alice"
+                                service = MyService()
+                            }
+                            
+                            fun useProperty() {
+                                // 使用前检查是否已初始化
+                                if (::name.isInitialized) {
+                                    println(name)
+                                }
+                            }
+                        }
+                        
+                        val obj = MyClass()
+                        // println(obj.name)  // ❌ 错误！未初始化
+                        obj.initialize()
+                        println(obj.name)     // ✅ 正确！已初始化
+                        
+                        // lateinit的限制：
+                        // 1. 只能用于var属性
+                        // 2. 不能用于基本类型（Int、Double等）
+                        // 3. 不能用于可空类型
+                        // 4. 不能有自定义getter/setter
+                    """.trimIndent(),
+                    explanation = "lateinit用于延迟初始化非空属性，适用于需要在对象创建后某个时刻初始化的属性。使用::property.isInitialized检查是否已初始化。"
+                ),
+                CodeExample(
+                    title = "示例5：lazy延迟初始化",
+                    code = """
+                        class MyClass {
+                            // lazy：首次访问时初始化，之后复用结果
+                            val expensiveProperty: String by lazy {
+                                println("Initializing expensive property")
+                                // 执行昂贵的初始化操作
+                                "Expensive Value"
+                            }
+                            
+                            // lazy是线程安全的（默认）
+                            val threadSafeProperty: String by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+                                "Thread Safe Value"
+                            }
+                            
+                            // 非线程安全的lazy（性能更好，但只适用于单线程）
+                            val nonThreadSafeProperty: String by lazy(LazyThreadSafetyMode.NONE) {
+                                "Non Thread Safe Value"
+                            }
+                        }
+                        
+                        val obj = MyClass()
+                        // 此时expensiveProperty还未初始化
+                        println(obj.expensiveProperty)  // 首次访问，执行初始化
+                        println(obj.expensiveProperty)  // 直接返回缓存值，不执行初始化
+                    """.trimIndent(),
+                    explanation = "lazy是属性委托，用于延迟初始化。首次访问时执行初始化代码，之后直接返回缓存值。默认是线程安全的，也可以指定非线程安全模式以提高性能。"
+                )
+            ),
+            useCases = listOf(
+                "计算属性：使用自定义getter创建计算属性（如面积、周长）",
+                "数据验证：使用自定义setter验证和转换数据",
+                "延迟初始化：使用lateinit延迟初始化需要在外部注入的属性",
+                "性能优化：使用lazy延迟初始化昂贵的计算或资源",
+                "依赖注入：在Android中使用lateinit初始化View和依赖"
+            ),
+            keyPoints = listOf(
+                "val属性只有getter，var属性有getter和setter",
+                "自定义getter用于创建计算属性",
+                "自定义setter用于验证和转换数据，使用field访问幕后字段",
+                "lateinit用于延迟初始化非空var属性，不能用于基本类型",
+                "lazy是属性委托，首次访问时初始化，之后复用结果"
+            ),
+            notes = listOf(
+                "在自定义setter中必须使用field关键字，不能直接使用属性名（会递归调用）",
+                "lateinit只能用于var属性，不能用于基本类型和可空类型",
+                "使用::property.isInitialized检查lateinit属性是否已初始化",
+                "lazy默认是线程安全的，也可以指定非线程安全模式",
+                "计算属性（只有getter的属性）没有幕后字段"
+            ),
+            practiceTips = "建议：优先使用val属性，只有在确实需要修改时才使用var。对于需要验证的属性，使用自定义setter。在Android开发中，使用lateinit初始化View和依赖，使用lazy延迟初始化昂贵的资源。"
+        ),
+        
+        // 3. 类的继承、方法重写、抽象类和接口
+        KnowledgeDetail(
+            id = "inheritance",
+            title = "类的继承、方法重写、抽象类和接口",
+            overview = "Kotlin的继承系统与Java有所不同：所有类默认是final的，需要显式使用open关键字才能被继承。理解继承、方法重写、抽象类和接口的使用，是掌握Kotlin面向对象编程的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：类继承",
+                    code = """
+                        // Kotlin中所有类默认是final的，不能被继承
+                        // class Person  // 默认final，不能被继承
+                        
+                        // 使用open关键字允许继承
+                        open class Person(val name: String, var age: Int) {
+                            // 默认方法也是final的，不能被重写
+                            fun introduce() {
+                                println("I am ${'$'}name, ${'$'}age years old")
+                            }
+                            
+                            // 使用open关键字允许重写
+                            open fun greet() {
+                                println("Hello, I'm ${'$'}name")
+                            }
+                        }
+                        
+                        // 继承：使用:符号
+                        class Student(name: String, age: Int, val studentId: String) : Person(name, age) {
+                            // 重写open方法
+                            override fun greet() {
+                                println("Hello, I'm ${'$'}name, student ID: ${'$'}studentId")
+                            }
+                            
+                            // 可以添加新方法
+                            fun study() {
+                                println("${'$'}name is studying")
+                            }
+                        }
+                        
+                        val student = Student("Alice", 20, "S001")
+                        student.introduce()  // 继承的方法
+                        student.greet()       // 重写的方法
+                        student.study()       // 新方法
+                    """.trimIndent(),
+                    explanation = "Kotlin中所有类默认是final的，需要使用open关键字才能被继承。方法也需要使用open关键字才能被重写。继承使用:符号，子类必须调用父类构造函数。"
+                ),
+                CodeExample(
+                    title = "示例2：方法重写",
+                    code = """
+                        open class Animal(val name: String) {
+                            // open方法可以被重写
+                            open fun makeSound() {
+                                println("Some sound")
+                            }
+                            
+                            // final方法不能被重写（默认）
+                            fun eat() {
+                                println("Eating")
+                            }
+                        }
+                        
+                        class Dog(name: String) : Animal(name) {
+                            // 重写open方法
+                            override fun makeSound() {
+                                println("${'$'}name barks: Woof!")
+                            }
+                            
+                            // 可以调用父类方法
+                            fun makeSoundAndEat() {
+                                super.makeSound()  // 调用父类方法
+                                eat()              // 调用继承的方法
+                            }
+                        }
+                        
+                        // 禁止重写：使用final关键字
+                        open class Base {
+                            open fun method1() {}
+                            
+                            final fun method2() {  // 即使父类是open，也可以标记为final
+                                // 这个方法不能被重写
+                            }
+                        }
+                        
+                        class Derived : Base() {
+                            override fun method1() {}  // ✅ 可以重写
+                            // override fun method2() {}  // ❌ 错误！不能重写final方法
+                        }
+                    """.trimIndent(),
+                    explanation = "使用override关键字重写open方法。可以使用super关键字调用父类方法。使用final关键字可以禁止重写（即使父类是open的）。"
+                ),
+                CodeExample(
+                    title = "示例3：抽象类",
+                    code = """
+                        // 抽象类：使用abstract关键字
+                        abstract class Animal(val name: String) {
+                            // 抽象方法：必须被重写
+                            abstract fun makeSound()
+                            
+                            // 抽象类可以有具体方法
+                            fun eat() {
+                                println("${'$'}name is eating")
+                            }
+                            
+                            // 抽象类可以有open方法
+                            open fun sleep() {
+                                println("${'$'}name is sleeping")
+                            }
+                        }
+                        
+                        // 实现抽象类
+                        class Dog(name: String) : Animal(name) {
+                            // 必须实现抽象方法
+                            override fun makeSound() {
+                                println("${'$'}name barks: Woof!")
+                            }
+                            
+                            // 可以选择重写open方法
+                            override fun sleep() {
+                                println("${'$'}name sleeps in a dog bed")
+                            }
+                        }
+                        
+                        class Cat(name: String) : Animal(name) {
+                            override fun makeSound() {
+                                println("${'$'}name meows: Meow!")
+                            }
+                        }
+                        
+                        // 抽象类不能实例化
+                        // val animal = Animal("Unknown")  // ❌ 错误！
+                        val dog = Dog("Buddy")
+                        dog.makeSound()  // "Buddy barks: Woof!"
+                        dog.eat()        // "Buddy is eating"
+                    """.trimIndent(),
+                    explanation = "抽象类使用abstract关键字，可以包含抽象方法（必须被重写）和具体方法。抽象类不能实例化，必须被继承。"
+                ),
+                CodeExample(
+                    title = "示例4：接口",
+                    code = """
+                        // 接口：可以包含抽象方法和默认实现
+                        interface Clickable {
+                            // 抽象方法（默认是抽象的）
+                            fun click()
+                            
+                            // 默认实现方法
+                            fun showOff() {
+                                println("I'm clickable!")
+                            }
+                        }
+                        
+                        interface Focusable {
+                            fun setFocus(b: Boolean) {
+                                println("I ${'$'}{if (b) "got" else "lost"} focus.")
+                            }
+                            
+                            fun showOff() {
+                                println("I'm focusable!")
+                            }
+                        }
+                        
+                        // 实现接口
+                        class Button : Clickable {
+                            override fun click() {
+                                println("Button was clicked")
+                            }
+                        }
+                        
+                        // 实现多个接口
+                        class Button2 : Clickable, Focusable {
+                            override fun click() {
+                                println("Button was clicked")
+                            }
+                            
+                            // 必须重写冲突的默认方法
+                            override fun showOff() {
+                                super<Clickable>.showOff()  // 调用Clickable的实现
+                                super<Focusable>.showOff()  // 调用Focusable的实现
+                            }
+                        }
+                        
+                        // 接口可以有属性
+                        interface User {
+                            val nickname: String  // 抽象属性
+                            
+                            // 可以有默认实现
+                            val email: String
+                                get() = "${'$'}nickname@example.com"
+                        }
+                        
+                        class PrivateUser(override val nickname: String) : User
+                        class SubscribingUser(val email: String) : User {
+                            override val nickname: String
+                                get() = email.substringBefore('@')
+                        }
+                    """.trimIndent(),
+                    explanation = "Kotlin接口可以包含抽象方法和默认实现。类可以实现多个接口。如果多个接口有相同的方法签名，必须显式重写并指定调用哪个父接口的实现。接口可以有抽象属性和带getter的属性。"
+                ),
+                CodeExample(
+                    title = "示例5：继承和接口的组合",
+                    code = """
+                        // 抽象类
+                        abstract class Animal(val name: String) {
+                            abstract fun makeSound()
+                        }
+                        
+                        // 接口
+                        interface Flyable {
+                            fun fly()
+                        }
+                        
+                        interface Swimmable {
+                            fun swim()
+                        }
+                        
+                        // 继承抽象类并实现接口
+                        class Bird(name: String) : Animal(name), Flyable {
+                            override fun makeSound() {
+                                println("${'$'}name chirps")
+                            }
+                            
+                            override fun fly() {
+                                println("${'$'}name is flying")
+                            }
+                        }
+                        
+                        // 实现多个接口
+                        class Duck(name: String) : Animal(name), Flyable, Swimmable {
+                            override fun makeSound() {
+                                println("${'$'}name quacks")
+                            }
+                            
+                            override fun fly() {
+                                println("${'$'}name is flying")
+                            }
+                            
+                            override fun swim() {
+                                println("${'$'}name is swimming")
+                            }
+                        }
+                        
+                        val bird = Bird("Sparrow")
+                        bird.makeSound()  // 继承的方法
+                        bird.fly()        // 接口方法
+                        
+                        val duck = Duck("Donald")
+                        duck.makeSound()  // 继承的方法
+                        duck.fly()       // 接口方法
+                        duck.swim()      // 接口方法
+                    """.trimIndent(),
+                    explanation = "Kotlin支持单继承多实现。类可以继承一个抽象类（或open类），同时实现多个接口。继承使用:，接口也使用:，用逗号分隔。"
+                )
+            ),
+            useCases = listOf(
+                "代码复用：使用继承复用父类的代码",
+                "多态：使用抽象类和接口实现多态",
+                "契约定义：使用接口定义类的契约和行为",
+                "默认实现：在接口中提供默认实现，减少重复代码",
+                "组合优于继承：使用接口组合实现灵活的设计"
+            ),
+            keyPoints = listOf(
+                "Kotlin中所有类默认是final的，需要使用open才能被继承",
+                "方法也需要使用open才能被重写，使用override关键字重写",
+                "抽象类使用abstract关键字，可以包含抽象方法和具体方法",
+                "接口可以包含抽象方法和默认实现，类可以实现多个接口",
+                "继承使用:符号，子类必须调用父类构造函数"
+            ),
+            notes = listOf(
+                "Kotlin推荐优先使用接口和组合，而不是继承",
+                "如果多个接口有相同的方法签名，必须显式重写",
+                "使用super<InterfaceName>.method()调用特定接口的默认实现",
+                "抽象类不能实例化，接口也不能实例化",
+                "接口可以有抽象属性和带getter的属性"
+            ),
+            practiceTips = "建议：优先使用接口和组合，而不是继承。使用接口定义契约，使用抽象类提供公共实现。在Android开发中，接口特别有用，可以实现多个接口来组合不同的行为。"
+        ),
+        
+        // 4. 可见性修饰符（public、private、protected、internal）
+        KnowledgeDetail(
+            id = "visibility",
+            title = "可见性修饰符（public、private、protected、internal）",
+            overview = "Kotlin的可见性修饰符与Java有所不同，增加了internal修饰符，并且默认可见性是public。理解这些修饰符的作用范围，有助于编写更好的封装代码。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：可见性修饰符概述",
+                    code = """
+                        // public：默认可见性，任何地方都可以访问
+                        public class PublicClass {
+                            public val publicProperty = "Public"
+                            public fun publicMethod() {}
+                        }
+                        
+                        // 可以省略public关键字（默认就是public）
+                        class DefaultPublicClass {
+                            val defaultProperty = "Default Public"
+                            fun defaultMethod() {}
+                        }
+                        
+                        // private：只在当前类内部可以访问
+                        class PrivateExample {
+                            private val privateProperty = "Private"
+                            private fun privateMethod() {
+                                println(privateProperty)  // ✅ 可以访问
+                            }
+                            
+                            fun publicMethod() {
+                                // privateMethod()  // ✅ 可以访问
+                                // println(privateProperty)  // ✅ 可以访问
+                            }
+                        }
+                        
+                        // 外部无法访问private成员
+                        val example = PrivateExample()
+                        // example.privateProperty  // ❌ 错误！
+                        // example.privateMethod()  // ❌ 错误！
+                    """.trimIndent(),
+                    explanation = "public是默认可见性，任何地方都可以访问。private只在当前类内部可以访问。Kotlin中默认可见性是public，与Java的包私有不同。"
+                ),
+                CodeExample(
+                    title = "示例2：protected可见性",
+                    code = """
+                        open class Base {
+                            private val privateMember = "Private"
+                            protected val protectedMember = "Protected"
+                            public val publicMember = "Public"
+                            internal val internalMember = "Internal"
+                            
+                            private fun privateMethod() {}
+                            protected fun protectedMethod() {
+                                println("Protected method in Base")
+                            }
+                        }
+                        
+                        class Derived : Base() {
+                            fun test() {
+                                // privateMember  // ❌ 错误！不能访问父类的private成员
+                                println(protectedMember)  // ✅ 可以访问父类的protected成员
+                                println(publicMember)     // ✅ 可以访问
+                                println(internalMember)   // ✅ 可以访问
+                                
+                                protectedMethod()  // ✅ 可以调用父类的protected方法
+                            }
+                        }
+                        
+                        // 外部访问
+                        val derived = Derived()
+                        // derived.protectedMember  // ❌ 错误！protected成员不能从外部访问
+                        println(derived.publicMember)   // ✅ 可以访问
+                        println(derived.internalMember) // ✅ 可以访问（如果在同一模块）
+                    """.trimIndent(),
+                    explanation = "protected成员在类内部和子类中可以访问，但不能从外部访问。与Java不同，Kotlin的protected成员在子类中可见，但不能在包级别访问。"
+                ),
+                CodeExample(
+                    title = "示例3：internal可见性",
+                    code = """
+                        // internal：在同一模块内可见（模块 = 一起编译的一组Kotlin文件）
+                        internal class InternalClass {
+                            internal val internalProperty = "Internal"
+                            internal fun internalMethod() {}
+                        }
+                        
+                        // 在同一模块的其他文件中可以访问
+                        fun testInternal() {
+                            val obj = InternalClass()  // ✅ 可以访问（同一模块）
+                            println(obj.internalProperty)  // ✅ 可以访问
+                            obj.internalMethod()  // ✅ 可以访问
+                        }
+                        
+                        // 在不同模块中无法访问
+                        // 假设这是另一个模块的代码
+                        // val obj = InternalClass()  // ❌ 错误！不同模块无法访问
+                        
+                        // internal常用于库开发
+                        // 库的公共API使用public
+                        // 库的内部实现使用internal，对库的使用者隐藏
+                        public class PublicAPI {
+                            public fun publicMethod() {}
+                            internal fun internalMethod() {}  // 库内部使用
+                        }
+                    """.trimIndent(),
+                    explanation = "internal是Kotlin特有的可见性修饰符，表示在同一模块内可见。模块是指一起编译的一组Kotlin文件（如一个Gradle模块）。internal常用于库开发，隐藏内部实现。"
+                ),
+                CodeExample(
+                    title = "示例4：可见性修饰符在类成员上的应用",
+                    code = """
+                        class Example {
+                            // 属性可见性
+                            public val publicProp = "Public"
+                            private val privateProp = "Private"
+                            protected val protectedProp = "Protected"
+                            internal val internalProp = "Internal"
+                            
+                            // 方法可见性
+                            public fun publicMethod() {}
+                            private fun privateMethod() {}
+                            protected fun protectedMethod() {}
+                            internal fun internalMethod() {}
+                            
+                            // 主构造函数可见性
+                            class PublicConstructor public constructor(val name: String)
+                            class PrivateConstructor private constructor(val name: String)
+                            class InternalConstructor internal constructor(val name: String)
+                            
+                            // 默认构造函数是public的
+                            class DefaultConstructor(val name: String)  // public
+                        }
+                        
+                        // 使用
+                        val public = Example.PublicConstructor("Public")
+                        // val private = Example.PrivateConstructor("Private")  // ❌ 错误！
+                        val internal = Example.InternalConstructor("Internal")  // ✅ 同一模块可以访问
+                    """.trimIndent(),
+                    explanation = "可见性修饰符可以应用于类、属性、方法、构造函数等。主构造函数可以指定可见性，如果指定了可见性，constructor关键字不能省略。"
+                ),
+                CodeExample(
+                    title = "示例5：可见性修饰符最佳实践",
+                    code = """
+                        // 1. 默认使用private，只在需要时提升可见性
+                        class BankAccount {
+                            private var balance: Double = 0.0  // 私有，保护数据
+                            
+                            fun deposit(amount: Double) {  // 公共方法
+                                if (amount > 0) {
+                                    balance += amount
+                                }
+                            }
+                            
+                            fun withdraw(amount: Double): Boolean {
+                                if (amount > 0 && balance >= amount) {
+                                    balance -= amount
+                                    return true
+                                }
+                                return false
+                            }
+                            
+                            fun getBalance(): Double = balance  // 只读访问
+                        }
+                        
+                        // 2. 使用internal隐藏库的内部实现
+                        // 库的公共API
+                        public class UserService {
+                            public fun getUser(id: String): User? {
+                                return internalGetUser(id)
+                            }
+                            
+                            // 内部实现，库使用者无法访问
+                            internal fun internalGetUser(id: String): User? {
+                                // 内部实现逻辑
+                                return null
+                            }
+                        }
+                        
+                        // 3. 使用protected在继承层次中共享
+                        open class BaseRepository {
+                            protected fun validateData(data: Any): Boolean {
+                                // 子类可以访问，外部不能访问
+                                return true
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "最佳实践：默认使用private，只在需要时提升可见性。使用internal隐藏库的内部实现。使用protected在继承层次中共享。遵循最小可见性原则，提高代码的封装性和安全性。"
+                )
+            ),
+            useCases = listOf(
+                "数据封装：使用private保护类的内部数据",
+                "API设计：使用public定义公共API，使用internal隐藏内部实现",
+                "继承设计：使用protected在继承层次中共享成员",
+                "库开发：使用internal隐藏库的内部实现，只暴露公共API",
+                "模块化：使用internal实现模块内部的封装"
+            ),
+            keyPoints = listOf(
+                "public是默认可见性，任何地方都可以访问",
+                "private只在当前类内部可以访问",
+                "protected在类内部和子类中可以访问，但不能从外部访问",
+                "internal在同一模块内可见，是Kotlin特有的修饰符",
+                "主构造函数可以指定可见性"
+            ),
+            notes = listOf(
+                "Kotlin中默认可见性是public，与Java的包私有不同",
+                "Kotlin的protected成员在子类中可见，但不能在包级别访问（与Java不同）",
+                "模块是指一起编译的一组Kotlin文件（如一个Gradle模块）",
+                "如果主构造函数指定了可见性，constructor关键字不能省略",
+                "遵循最小可见性原则，默认使用private"
+            ),
+            practiceTips = "建议：遵循最小可见性原则，默认使用private，只在需要时提升可见性。在库开发中，使用internal隐藏内部实现，只暴露必要的公共API。在Android开发中，合理使用可见性修饰符可以提高代码的安全性和可维护性。"
         )
     )
 }
