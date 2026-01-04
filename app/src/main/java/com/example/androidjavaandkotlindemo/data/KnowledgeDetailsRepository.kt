@@ -3708,6 +3708,857 @@ object KnowledgeDetailsRepository {
                 "使用repeatOnLifecycle避免在后台收集Flow，节省资源"
             ),
             practiceTips = "建议：在ViewModel中使用viewModelScope，在Activity/Fragment中使用lifecycleScope。使用StateFlow管理UI状态，使用SharedFlow处理事件。使用withContext在IO线程执行网络请求。使用repeatOnLifecycle确保Flow收集只在需要时执行。合理处理异常，更新UI状态而不是崩溃。"
+        ),
+        
+        // ========== Kotlin 扩展函数和属性 ==========
+        
+        // 1. 扩展函数语法、为Java类添加扩展函数
+        KnowledgeDetail(
+            id = "extension_functions",
+            title = "扩展函数语法、为Java类添加扩展函数",
+            overview = "扩展函数是Kotlin的强大特性，允许在不修改类定义的情况下为类添加新函数。扩展函数可以用于Kotlin类和Java类，让代码更简洁、更易读。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：扩展函数基础语法",
+                    code = """
+                        // 扩展函数语法：fun 接收者类型.函数名(参数): 返回类型
+                        
+                        // 为String类添加扩展函数
+                        fun String.removeSpaces(): String {
+                            return this.replace(" ", "")
+                        }
+                        
+                        // 使用
+                        val text = "Hello World"
+                        val result = text.removeSpaces()  // "HelloWorld"
+                        println(result)
+                        
+                        // this关键字指向接收者对象
+                        fun String.firstChar(): Char {
+                            return this[0]  // this指向调用扩展函数的String对象
+                        }
+                        
+                        // 可以省略this
+                        fun String.lastChar(): Char {
+                            return this[length - 1]  // 可以直接访问length属性
+                        }
+                        
+                        // 扩展函数可以有参数
+                        fun String.repeat(n: Int): String {
+                            return this.repeat(n)
+                        }
+                        
+                        val repeated = "Hi".repeat(3)  // "HiHiHi"
+                    """.trimIndent(),
+                    explanation = "扩展函数使用 fun 接收者类型.函数名 的语法定义。this关键字指向接收者对象，可以省略。扩展函数可以像普通函数一样有参数和返回值。"
+                ),
+                CodeExample(
+                    title = "示例2：为Java类添加扩展函数",
+                    code = """
+                        // Kotlin可以为Java类添加扩展函数
+                        
+                        // 1. 为Java的Date类添加扩展函数
+                        import java.util.Date
+                        
+                        fun Date.formatDate(): String {
+                            val formatter = java.text.SimpleDateFormat("yyyy-MM-dd")
+                            return formatter.format(this)
+                        }
+                        
+                        val date = Date()
+                        println(date.formatDate())  // "2024-01-01"
+                        
+                        // 2. 为Java的File类添加扩展函数
+                        import java.io.File
+                        
+                        fun File.readText(): String {
+                            return this.readText()
+                        }
+                        
+                        fun File.writeText(text: String) {
+                            this.writeText(text)
+                        }
+                        
+                        // 3. 为Java的List添加扩展函数
+                        fun <T> java.util.List<T>.secondOrNull(): T? {
+                            return if (this.size >= 2) this[1] else null
+                        }
+                        
+                        val list = java.util.ArrayList<String>()
+                        list.add("first")
+                        list.add("second")
+                        val second = list.secondOrNull()  // "second"
+                        
+                        // 4. 为Android的View添加扩展函数
+                        // import android.view.View
+                        // 
+                        // fun View.show() {
+                        //     this.visibility = View.VISIBLE
+                        // }
+                        // 
+                        // fun View.hide() {
+                        //     this.visibility = View.GONE
+                        // }
+                    """.trimIndent(),
+                    explanation = "Kotlin可以为Java类添加扩展函数，这是Kotlin与Java互操作的重要特性。可以为任何Java类添加扩展函数，包括标准库类和第三方库类。"
+                ),
+                CodeExample(
+                    title = "示例3：扩展函数的作用域和导入",
+                    code = """
+                        // 1. 扩展函数的作用域
+                        // 扩展函数定义在顶层，可以在任何地方使用
+                        
+                        // 在同一个文件中
+                        fun String.isEmail(): Boolean {
+                            return this.contains("@") && this.contains(".")
+                        }
+                        
+                        val email = "test@example.com"
+                        println(email.isEmail())  // true
+                        
+                        // 2. 在不同文件中使用扩展函数
+                        // 需要导入扩展函数
+                        // import com.example.utils.isEmail
+                        // 或者
+                        // import com.example.utils.*
+                        
+                        // 3. 扩展函数可以定义在类中
+                        class StringUtils {
+                            fun String.capitalizeFirst(): String {
+                                return if (this.isEmpty()) {
+                                    this
+                                } else {
+                                    this[0].uppercaseChar() + this.substring(1)
+                                }
+                            }
+                            
+                            fun useExtension() {
+                                val text = "hello"
+                                println(text.capitalizeFirst())  // "Hello"
+                            }
+                        }
+                        
+                        // 4. 扩展函数可以定义在object中
+                        object StringExtensions {
+                            fun String.removeWhitespace(): String {
+                                return this.replace("\\s".toRegex(), "")
+                            }
+                        }
+                        
+                        // 使用
+                        val text = "Hello World"
+                        StringExtensions.removeWhitespace(text)  // 需要显式调用
+                        // 或者导入
+                        // import StringExtensions.removeWhitespace
+                        // text.removeWhitespace()
+                    """.trimIndent(),
+                    explanation = "扩展函数定义在顶层时可以在任何地方使用，但需要导入。扩展函数可以定义在类或object中，但使用方式有所不同。"
+                ),
+                CodeExample(
+                    title = "示例4：扩展函数与成员函数",
+                    code = """
+                        // 1. 扩展函数不会覆盖成员函数
+                        class MyClass {
+                            fun print() {
+                                println("Member function")
+                            }
+                        }
+                        
+                        fun MyClass.print() {
+                            println("Extension function")
+                        }
+                        
+                        val obj = MyClass()
+                        obj.print()  // "Member function" - 成员函数优先
+                        
+                        // 2. 扩展函数可以重载
+                        fun String.remove(char: Char): String {
+                            return this.replace(char.toString(), "")
+                        }
+                        
+                        fun String.remove(chars: String): String {
+                            var result = this
+                            for (char in chars) {
+                                result = result.remove(char)
+                            }
+                            return result
+                        }
+                        
+                        val text = "Hello World"
+                        println(text.remove('l'))    // "Heo Word"
+                        println(text.remove("lo"))   // "He Wrd"
+                        
+                        // 3. 扩展函数不能访问私有成员
+                        class PrivateClass {
+                            private val privateField = "Private"
+                        }
+                        
+                        // fun PrivateClass.accessPrivate() {
+                        //     println(this.privateField)  // ❌ 错误！不能访问私有成员
+                        // }
+                        
+                        // 4. 扩展函数是静态解析的
+                        open class Animal
+                        class Dog : Animal()
+                        
+                        fun Animal.sound() = "Animal sound"
+                        fun Dog.sound() = "Dog sound"
+                        
+                        fun makeSound(animal: Animal) {
+                            println(animal.sound())  // "Animal sound" - 根据声明类型
+                        }
+                        
+                        makeSound(Dog())  // "Animal sound"，不是"Dog sound"
+                    """.trimIndent(),
+                    explanation = "扩展函数不会覆盖成员函数，成员函数优先。扩展函数可以重载。扩展函数不能访问私有成员。扩展函数是静态解析的，根据声明类型而不是运行时类型。"
+                ),
+                CodeExample(
+                    title = "示例5：扩展函数实践",
+                    code = """
+                        // 1. 字符串扩展函数
+                        fun String.isValidEmail(): Boolean {
+                            val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\$".toRegex()
+                            return emailRegex.matches(this)
+                        }
+                        
+                        fun String.truncate(maxLength: Int): String {
+                            return if (this.length <= maxLength) {
+                                this
+                            } else {
+                                this.substring(0, maxLength) + "..."
+                            }
+                        }
+                        
+                        // 2. 集合扩展函数
+                        fun <T> List<T>.second(): T {
+                            return this[1]
+                        }
+                        
+                        fun <T> List<T>.secondOrNull(): T? {
+                            return if (this.size >= 2) this[1] else null
+                        }
+                        
+                        // 3. 数字扩展函数
+                        fun Int.isEven(): Boolean = this % 2 == 0
+                        fun Int.isOdd(): Boolean = this % 2 != 0
+                        
+                        fun Double.round(decimals: Int): Double {
+                            var multiplier = 1.0
+                            repeat(decimals) { multiplier *= 10 }
+                            return kotlin.math.round(this * multiplier) / multiplier
+                        }
+                        
+                        // 4. 可空类型扩展函数
+                        fun String?.orEmpty(): String {
+                            return this ?: ""
+                        }
+                        
+                        fun String?.isNullOrBlank(): Boolean {
+                            return this == null || this.isBlank()
+                        }
+                        
+                        // 5. 链式调用
+                        fun String.removeSpaces(): String = this.replace(" ", "")
+                        fun String.toUpperCase(): String = this.uppercase()
+                        
+                        val result = "hello world"
+                            .removeSpaces()
+                            .toUpperCase()
+                        // "HELLOWORLD"
+                    """.trimIndent(),
+                    explanation = "扩展函数在实际开发中非常有用，可以为字符串、集合、数字等类型添加便捷函数。合理使用扩展函数可以让代码更简洁、更易读。"
+                )
+            ),
+            useCases = listOf(
+                "API增强：为现有类添加便捷函数",
+                "代码复用：将常用操作封装为扩展函数",
+                "Java互操作：为Java类添加Kotlin风格的函数",
+                "工具函数：创建领域特定的工具函数",
+                "代码组织：将相关函数组织在一起"
+            ),
+            keyPoints = listOf(
+                "扩展函数语法：fun 接收者类型.函数名(参数): 返回类型",
+                "this关键字指向接收者对象，可以省略",
+                "扩展函数可以为Kotlin类和Java类添加",
+                "扩展函数不会覆盖成员函数，成员函数优先",
+                "扩展函数是静态解析的，根据声明类型而不是运行时类型"
+            ),
+            notes = listOf(
+                "扩展函数不能访问私有成员",
+                "扩展函数定义在顶层时需要在其他文件中导入",
+                "扩展函数可以定义在类或object中",
+                "扩展函数可以重载",
+                "扩展函数不会修改原类，只是语法糖"
+            ),
+            practiceTips = "建议：合理使用扩展函数增强API，但不要过度使用。为常用操作创建扩展函数可以提高代码可读性。在Android开发中，可以为View、Context等类添加扩展函数简化代码。注意扩展函数的作用域和导入。"
+        ),
+        
+        // 2. 扩展属性的定义和使用
+        KnowledgeDetail(
+            id = "extension_properties",
+            title = "扩展属性的定义和使用",
+            overview = "扩展属性允许在不修改类定义的情况下为类添加属性。扩展属性实际上是通过getter和setter实现的，没有实际的存储空间。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：扩展属性基础",
+                    code = """
+                        // 扩展属性语法：val/var 接收者类型.属性名: 类型
+                        
+                        // 1. 只读扩展属性（val）
+                        val String.firstChar: Char
+                            get() = this[0]
+                        
+                        val text = "Hello"
+                        println(text.firstChar)  // 'H'
+                        
+                        // 2. 可变扩展属性（var）
+                        var StringBuilder.lastChar: Char
+                            get() = this[this.length - 1]
+                            set(value) {
+                                this.setCharAt(this.length - 1, value)
+                            }
+                        
+                        val sb = StringBuilder("Hello")
+                        sb.lastChar = '!'
+                        println(sb)  // "Hell!"
+                        
+                        // 3. 扩展属性必须有getter
+                        val String.lengthSquared: Int
+                            get() = this.length * this.length
+                        
+                        // 4. 可变扩展属性必须有getter和setter
+                        var String.firstChar: Char
+                            get() = this[0]
+                            set(value) {
+                                // 不能修改String，因为String是不可变的
+                                // 需要返回新String
+                            }
+                    """.trimIndent(),
+                    explanation = "扩展属性使用 val/var 接收者类型.属性名 的语法定义。只读扩展属性只需要getter，可变扩展属性需要getter和setter。扩展属性没有实际的存储空间。"
+                ),
+                CodeExample(
+                    title = "示例2：扩展属性的实现",
+                    code = """
+                        // 扩展属性实际上是通过getter和setter实现的
+                        
+                        // 1. 计算属性
+                        val String.wordCount: Int
+                            get() = this.split("\\s+".toRegex()).size
+                        
+                        val text = "Hello World Kotlin"
+                        println(text.wordCount)  // 3
+                        
+                        // 2. 基于其他属性的扩展属性
+                        val Int.isEven: Boolean
+                            get() = this % 2 == 0
+                        
+                        val Int.isOdd: Boolean
+                            get() = !this.isEven
+                        
+                        println(4.isEven)  // true
+                        println(5.isOdd)  // true
+                        
+                        // 3. 可空类型的扩展属性
+                        val String?.isNullOrEmpty: Boolean
+                            get() = this == null || this.isEmpty()
+                        
+                        val nullable: String? = null
+                        println(nullable.isNullOrEmpty)  // true
+                        
+                        // 4. 集合的扩展属性
+                        val <T> List<T>.second: T
+                            get() = this[1]
+                        
+                        val <T> List<T>.secondOrNull: T?
+                            get() = if (this.size >= 2) this[1] else null
+                        
+                        val list = listOf(1, 2, 3)
+                        println(list.second)  // 2
+                    """.trimIndent(),
+                    explanation = "扩展属性通过getter和setter实现，可以基于其他属性计算，也可以处理可空类型。扩展属性没有实际的存储空间，每次访问都会执行getter。"
+                ),
+                CodeExample(
+                    title = "示例3：扩展属性的setter",
+                    code = """
+                        // 可变扩展属性需要setter
+                        
+                        // 1. StringBuilder的扩展属性
+                        var StringBuilder.firstChar: Char
+                            get() = if (this.isEmpty()) ' ' else this[0]
+                            set(value) {
+                                if (this.isNotEmpty()) {
+                                    this.setCharAt(0, value)
+                                }
+                            }
+                        
+                        val sb = StringBuilder("Hello")
+                        sb.firstChar = 'h'
+                        println(sb)  // "hello"
+                        
+                        // 2. MutableList的扩展属性
+                        var <T> MutableList<T>.last: T
+                            get() = this[this.size - 1]
+                            set(value) {
+                                this[this.size - 1] = value
+                            }
+                        
+                        val list = mutableListOf(1, 2, 3)
+                        list.last = 4
+                        println(list)  // [1, 2, 4]
+                        
+                        // 3. 自定义类的扩展属性
+                        class Person(var name: String, var age: Int)
+                        
+                        var Person.fullInfo: String
+                            get() = "${'$'}{this.name} (${'$'}{this.age})"
+                            set(value) {
+                                val parts = value.split(" (")
+                                if (parts.size == 2) {
+                                    this.name = parts[0]
+                                    this.age = parts[1].removeSuffix(")").toIntOrNull() ?: 0
+                                }
+                            }
+                        
+                        val person = Person("Alice", 25)
+                        person.fullInfo = "Bob (30)"
+                        println(person.name)  // "Bob"
+                        println(person.age)   // 30
+                    """.trimIndent(),
+                    explanation = "可变扩展属性需要setter来设置值。setter可以修改接收者对象的属性。扩展属性可以用于MutableList等可变集合。"
+                ),
+                CodeExample(
+                    title = "示例4：扩展属性与扩展函数",
+                    code = """
+                        // 扩展属性和扩展函数可以结合使用
+                        
+                        // 1. 扩展属性可以调用扩展函数
+                        val String.firstChar: Char
+                            get() = this.first()
+                        
+                        fun String.first(): Char = this[0]
+                        
+                        // 2. 扩展函数可以返回扩展属性
+                        fun String.getFirstChar(): Char = this.firstChar
+                        
+                        // 3. 扩展属性可以基于扩展函数
+                        val String.wordCount: Int
+                            get() = this.splitWords().size
+                        
+                        fun String.splitWords(): List<String> {
+                            return this.split("\\s+".toRegex())
+                        }
+                        
+                        // 4. 扩展属性和扩展函数的区别
+                        // 扩展属性：访问时像属性，实现时是函数
+                        val String.lengthSquared: Int
+                            get() = this.length * this.length
+                        
+                        // 扩展函数：调用时像函数
+                        fun String.lengthSquared(): Int {
+                            return this.length * this.length
+                        }
+                        
+                        // 使用
+                        val text = "Hello"
+                        println(text.lengthSquared)  // 属性方式
+                        println(text.lengthSquared())  // 函数方式
+                    """.trimIndent(),
+                    explanation = "扩展属性和扩展函数可以结合使用。扩展属性访问时像属性，但实现时是函数。选择扩展属性还是扩展函数取决于使用场景。"
+                ),
+                CodeExample(
+                    title = "示例5：扩展属性实践",
+                    code = """
+                        // 1. 日期时间扩展属性
+                        import java.util.Date
+                        import java.text.SimpleDateFormat
+                        
+                        val Date.formattedDate: String
+                            get() = SimpleDateFormat("yyyy-MM-dd").format(this)
+                        
+                        val Date.formattedTime: String
+                            get() = SimpleDateFormat("HH:mm:ss").format(this)
+                        
+                        val date = Date()
+                        println(date.formattedDate)  // "2024-01-01"
+                        println(date.formattedTime)  // "12:00:00"
+                        
+                        // 2. 集合扩展属性
+                        val <T> List<T>.isEmpty: Boolean
+                            get() = this.isEmpty()
+                        
+                        val <T> List<T>.isNotEmpty: Boolean
+                            get() = !this.isEmpty()
+                        
+                        val <T> List<T>.firstOrNull: T?
+                            get() = this.firstOrNull()
+                        
+                        val <T> List<T>.lastOrNull: T?
+                            get() = this.lastOrNull()
+                        
+                        // 3. 数字扩展属性
+                        val Int.isPositive: Boolean
+                            get() = this > 0
+                        
+                        val Int.isNegative: Boolean
+                            get() = this < 0
+                        
+                        val Double.isInteger: Boolean
+                            get() = this % 1.0 == 0.0
+                        
+                        // 4. 字符串扩展属性
+                        val String.isEmail: Boolean
+                            get() = this.contains("@") && this.contains(".")
+                        
+                        val String.isPhoneNumber: Boolean
+                            get() = this.matches("^1[3-9]\\d{9}\$".toRegex())
+                        
+                        // 5. 在Android中使用
+                        // import android.view.View
+                        // 
+                        // val View.isVisible: Boolean
+                        //     get() = this.visibility == View.VISIBLE
+                        // 
+                        // var View.isVisible: Boolean
+                        //     get() = this.visibility == View.VISIBLE
+                        //     set(value) {
+                        //         this.visibility = if (value) View.VISIBLE else View.GONE
+                        //     }
+                    """.trimIndent(),
+                    explanation = "扩展属性在实际开发中非常有用，可以为日期、集合、数字、字符串等类型添加便捷属性。在Android开发中，可以为View等类添加扩展属性简化代码。"
+                )
+            ),
+            useCases = listOf(
+                "属性访问：为类添加计算属性",
+                "代码简化：使用扩展属性简化属性访问",
+                "API增强：为现有类添加便捷属性",
+                "状态检查：添加布尔类型的扩展属性",
+                "格式化：为日期、数字等添加格式化属性"
+            ),
+            keyPoints = listOf(
+                "扩展属性语法：val/var 接收者类型.属性名: 类型",
+                "扩展属性通过getter和setter实现，没有实际的存储空间",
+                "只读扩展属性只需要getter，可变扩展属性需要getter和setter",
+                "扩展属性可以基于其他属性计算",
+                "扩展属性可以处理可空类型"
+            ),
+            notes = listOf(
+                "扩展属性没有实际的存储空间，每次访问都会执行getter",
+                "扩展属性不能有幕后字段（backing field）",
+                "可变扩展属性需要接收者对象是可变的",
+                "扩展属性可以调用扩展函数",
+                "选择扩展属性还是扩展函数取决于使用场景"
+            ),
+            practiceTips = "建议：合理使用扩展属性简化代码，但要注意扩展属性每次访问都会执行getter。对于计算复杂的属性，考虑使用扩展函数。在Android开发中，可以为View添加扩展属性简化状态管理。"
+        ),
+        
+        // 3. 扩展函数实践（字符串、集合、View扩展）
+        KnowledgeDetail(
+            id = "extension_practice",
+            title = "扩展函数实践（字符串、集合、View扩展）",
+            overview = "扩展函数在实际开发中非常有用。通过为字符串、集合、View等常用类添加扩展函数，可以大大提高代码的可读性和开发效率。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：字符串扩展函数",
+                    code = """
+                        // 1. 验证函数
+                        fun String.isValidEmail(): Boolean {
+                            val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\$".toRegex()
+                            return emailRegex.matches(this)
+                        }
+                        
+                        fun String.isValidPhone(): Boolean {
+                            return this.matches("^1[3-9]\\d{9}\$".toRegex())
+                        }
+                        
+                        fun String.isValidUrl(): Boolean {
+                            return this.startsWith("http://") || this.startsWith("https://")
+                        }
+                        
+                        // 2. 转换函数
+                        fun String.toCamelCase(): String {
+                            return this.split(" ").joinToString("") { word ->
+                                word.lowercase().replaceFirstChar { it.uppercaseChar() }
+                            }
+                        }
+                        
+                        fun String.toSnakeCase(): String {
+                            return this.replace(" ", "_").lowercase()
+                        }
+                        
+                        fun String.truncate(maxLength: Int, suffix: String = "..."): String {
+                            return if (this.length <= maxLength) {
+                                this
+                            } else {
+                                this.substring(0, maxLength - suffix.length) + suffix
+                            }
+                        }
+                        
+                        // 3. 提取函数
+                        fun String.extractNumbers(): String {
+                            return this.filter { it.isDigit() }
+                        }
+                        
+                        fun String.extractEmails(): List<String> {
+                            val emailRegex = "[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}".toRegex()
+                            return emailRegex.findAll(this).map { it.value }.toList()
+                        }
+                        
+                        // 使用
+                        val email = "test@example.com"
+                        println(email.isValidEmail())  // true
+                        
+                        val text = "hello world"
+                        println(text.toCamelCase())  // "HelloWorld"
+                        println(text.toSnakeCase())  // "hello_world"
+                    """.trimIndent(),
+                    explanation = "字符串扩展函数可以用于验证、转换、提取等操作。合理使用字符串扩展函数可以让代码更简洁、更易读。"
+                ),
+                CodeExample(
+                    title = "示例2：集合扩展函数",
+                    code = """
+                        // 1. 安全访问函数
+                        fun <T> List<T>.secondOrNull(): T? {
+                            return if (this.size >= 2) this[1] else null
+                        }
+                        
+                        fun <T> List<T>.thirdOrNull(): T? {
+                            return if (this.size >= 3) this[2] else null
+                        }
+                        
+                        fun <T> List<T>.getOrNull(index: Int): T? {
+                            return if (index in this.indices) this[index] else null
+                        }
+                        
+                        // 2. 转换函数
+                        fun <T> List<T>.chunked(size: Int): List<List<T>> {
+                            return this.windowed(size, size, partialWindows = true)
+                        }
+                        
+                        fun <T, R> List<T>.mapIndexedNotNull(transform: (Int, T) -> R?): List<R> {
+                            return this.mapIndexed(transform).filterNotNull()
+                        }
+                        
+                        // 3. 过滤函数
+                        fun <T> List<T>.distinctBy(selector: (T) -> Any?): List<T> {
+                            val seen = mutableSetOf<Any?>()
+                            return this.filter { seen.add(selector(it)) }
+                        }
+                        
+                        // 4. 分组函数
+                        fun <T> List<T>.groupByCount(): Map<T, Int> {
+                            return this.groupingBy { it }.eachCount()
+                        }
+                        
+                        // 5. 统计函数
+                        fun <T : Number> List<T>.averageOrNull(): Double? {
+                            return if (this.isEmpty()) null else this.average()
+                        }
+                        
+                        // 使用
+                        val list = listOf(1, 2, 3, 4, 5)
+                        println(list.secondOrNull())  // 2
+                        println(list.chunked(2))  // [[1, 2], [3, 4], [5]]
+                    """.trimIndent(),
+                    explanation = "集合扩展函数可以用于安全访问、转换、过滤、分组、统计等操作。合理使用集合扩展函数可以简化集合操作代码。"
+                ),
+                CodeExample(
+                    title = "示例3：Android View扩展函数",
+                    code = """
+                        // import android.view.View
+                        // import android.view.ViewGroup
+                        // import androidx.core.view.isVisible
+                        
+                        // 1. 可见性扩展函数
+                        // fun View.show() {
+                        //     this.visibility = View.VISIBLE
+                        // }
+                        // 
+                        // fun View.hide() {
+                        //     this.visibility = View.GONE
+                        // }
+                        // 
+                        // fun View.invisible() {
+                        //     this.visibility = View.INVISIBLE
+                        // }
+                        // 
+                        // fun View.toggleVisibility() {
+                        //     this.visibility = if (this.visibility == View.VISIBLE) {
+                        //         View.GONE
+                        //     } else {
+                        //         View.VISIBLE
+                        //     }
+                        // }
+                        
+                        // 2. 点击扩展函数
+                        // fun View.onClick(action: () -> Unit) {
+                        //     this.setOnClickListener { action() }
+                        // }
+                        // 
+                        // fun View.onLongClick(action: () -> Boolean) {
+                        //     this.setOnLongClickListener { action() }
+                        // }
+                        
+                        // 3. 布局扩展函数
+                        // fun ViewGroup.removeAllViews() {
+                        //     this.removeAllViews()
+                        // }
+                        // 
+                        // fun ViewGroup.addView(view: View) {
+                        //     this.addView(view)
+                        // }
+                        
+                        // 4. 尺寸扩展函数
+                        // fun View.setWidth(width: Int) {
+                        //     val params = this.layoutParams
+                        //     params.width = width
+                        //     this.layoutParams = params
+                        // }
+                        // 
+                        // fun View.setHeight(height: Int) {
+                        //     val params = this.layoutParams
+                        //     params.height = height
+                        //     this.layoutParams = params
+                        // }
+                        
+                        // 5. 使用示例
+                        // val button = findViewById<Button>(R.id.button)
+                        // button.show()
+                        // button.onClick {
+                        //     println("Button clicked")
+                        // }
+                    """.trimIndent(),
+                    explanation = "Android View扩展函数可以简化View的操作，包括可见性、点击事件、布局、尺寸等。合理使用View扩展函数可以让Android代码更简洁。"
+                ),
+                CodeExample(
+                    title = "示例4：Context扩展函数",
+                    code = """
+                        // import android.content.Context
+                        // import android.widget.Toast
+                        // 
+                        // // 1. Toast扩展函数
+                        // fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
+                        //     Toast.makeText(this, message, duration).show()
+                        // }
+                        // 
+                        // fun Context.showLongToast(message: String) {
+                        //     Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                        // }
+                        
+                        // 2. 资源扩展函数
+                        // fun Context.getString(resId: Int): String {
+                        //     return this.getString(resId)
+                        // }
+                        // 
+                        // fun Context.getColor(resId: Int): Int {
+                        //     return ContextCompat.getColor(this, resId)
+                        // }
+                        // 
+                        // fun Context.getDrawable(resId: Int): Drawable? {
+                        //     return ContextCompat.getDrawable(this, resId)
+                        // }
+                        
+                        // 3. Intent扩展函数
+                        // fun Context.startActivity(clazz: Class<*>) {
+                        //     startActivity(Intent(this, clazz))
+                        // }
+                        // 
+                        // fun Context.startActivity(action: String) {
+                        //     startActivity(Intent(action))
+                        // }
+                        
+                        // 4. 权限扩展函数
+                        // fun Context.hasPermission(permission: String): Boolean {
+                        //     return ContextCompat.checkSelfPermission(
+                        //         this,
+                        //         permission
+                        //     ) == PackageManager.PERMISSION_GRANTED
+                        // }
+                        
+                        // 5. 使用示例
+                        // class MainActivity : AppCompatActivity() {
+                        //     override fun onCreate(savedInstanceState: Bundle?) {
+                        //         super.onCreate(savedInstanceState)
+                        //         
+                        //         showToast("Hello")
+                        //         startActivity(SecondActivity::class.java)
+                        //     }
+                        // }
+                    """.trimIndent(),
+                    explanation = "Context扩展函数可以简化Android开发中的常见操作，包括Toast、资源获取、Intent启动、权限检查等。合理使用Context扩展函数可以提高开发效率。"
+                ),
+                CodeExample(
+                    title = "示例5：扩展函数最佳实践",
+                    code = """
+                        // 1. 组织扩展函数
+                        // 将相关扩展函数放在同一个文件中
+                        // StringExtensions.kt
+                        fun String.isValidEmail(): Boolean { ... }
+                        fun String.isValidPhone(): Boolean { ... }
+                        
+                        // CollectionExtensions.kt
+                        fun <T> List<T>.secondOrNull(): T? { ... }
+                        fun <T> List<T>.chunked(size: Int): List<List<T>> { ... }
+                        
+                        // ViewExtensions.kt
+                        // fun View.show() { ... }
+                        // fun View.hide() { ... }
+                        
+                        // 2. 命名规范
+                        // 使用清晰的函数名
+                        fun String.removeSpaces(): String { ... }  // ✅ 好
+                        // fun String.rs(): String { ... }  // ❌ 不好
+                        
+                        // 3. 文档注释
+                        /**
+                         * 验证字符串是否为有效的邮箱地址
+                         * @return true如果字符串是有效的邮箱地址，否则返回false
+                         */
+                        fun String.isValidEmail(): Boolean { ... }
+                        
+                        // 4. 避免过度使用
+                        // 不要为每个小操作都创建扩展函数
+                        // fun String.add(a: String): String = this + a  // ❌ 过度使用
+                        
+                        // 5. 考虑性能
+                        // 对于频繁调用的扩展函数，考虑性能影响
+                        fun String.process(): String {
+                            // 复杂的处理逻辑
+                            return this
+                        }
+                        
+                        // 6. 测试扩展函数
+                        // 扩展函数应该像普通函数一样进行测试
+                        @Test
+                        fun testIsValidEmail() {
+                            assertTrue("test@example.com".isValidEmail())
+                            assertFalse("invalid".isValidEmail())
+                        }
+                    """.trimIndent(),
+                    explanation = "扩展函数的最佳实践包括：合理组织扩展函数、使用清晰的命名、添加文档注释、避免过度使用、考虑性能、进行测试等。遵循最佳实践可以让扩展函数更易维护。"
+                )
+            ),
+            useCases = listOf(
+                "字符串处理：为String添加验证、转换、提取等函数",
+                "集合操作：为集合添加安全访问、转换、过滤等函数",
+                "Android开发：为View、Context等类添加便捷函数",
+                "工具函数：创建领域特定的工具函数",
+                "代码复用：将常用操作封装为扩展函数"
+            ),
+            keyPoints = listOf(
+                "字符串扩展函数可以用于验证、转换、提取等操作",
+                "集合扩展函数可以用于安全访问、转换、过滤等操作",
+                "Android View扩展函数可以简化View的操作",
+                "Context扩展函数可以简化Android开发中的常见操作",
+                "合理组织扩展函数，使用清晰的命名和文档注释"
+            ),
+            notes = listOf(
+                "将相关扩展函数放在同一个文件中",
+                "使用清晰的函数名，避免缩写",
+                "为扩展函数添加文档注释",
+                "避免过度使用扩展函数",
+                "考虑扩展函数的性能影响"
+            ),
+            practiceTips = "建议：合理使用扩展函数增强API，但不要过度使用。将相关扩展函数组织在同一个文件中。使用清晰的命名和文档注释。在Android开发中，为View、Context等类添加扩展函数可以大大提高开发效率。注意扩展函数的性能影响。"
         )
     )
 }
