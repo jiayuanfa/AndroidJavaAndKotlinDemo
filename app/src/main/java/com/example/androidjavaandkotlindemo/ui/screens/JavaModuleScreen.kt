@@ -24,7 +24,7 @@ import com.example.androidjavaandkotlindemo.data.JavaFeaturesData
 @Composable
 fun JavaModuleScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToDetail: (String, String?) -> Unit = { _, _ -> }
+    onNavigateToDetail: (String, String?, String?) -> Unit = { _, _, _ -> }
 ) {
     val javaFeatures = remember { JavaFeaturesData.getJavaFeatures() }
     
@@ -67,7 +67,7 @@ fun JavaModuleScreen(
                 ExpandableFeatureCard(
                     feature = feature,
                     onItemClick = { item ->
-                        onNavigateToDetail(item.name, item.description)
+                        onNavigateToDetail(item.name, item.description, item.id)
                     }
                 )
             }

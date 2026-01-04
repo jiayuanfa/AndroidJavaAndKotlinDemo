@@ -24,7 +24,7 @@ import com.example.androidjavaandkotlindemo.data.KotlinFeaturesData
 @Composable
 fun KotlinModuleScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToDetail: (String, String?) -> Unit = { _, _ -> }
+    onNavigateToDetail: (String, String?, String?) -> Unit = { _, _, _ -> }
 ) {
     val kotlinFeatures = remember { KotlinFeaturesData.getKotlinFeatures() }
     
@@ -67,7 +67,7 @@ fun KotlinModuleScreen(
                 ExpandableKotlinFeatureCard(
                     feature = feature,
                     onItemClick = { item ->
-                        onNavigateToDetail(item.name, item.description)
+                        onNavigateToDetail(item.name, item.description, item.id)
                     }
                 )
             }

@@ -59,10 +59,11 @@ fun AppNavigation(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
-                onNavigateToDetail = { title, description ->
+                onNavigateToDetail = { title, description, knowledgeId ->
                     val encodedTitle = java.net.URLEncoder.encode(title, StandardCharsets.UTF_8.toString())
                     val encodedDesc = java.net.URLEncoder.encode(description ?: "", StandardCharsets.UTF_8.toString())
-                    navController.navigate("detail/$encodedTitle/$encodedDesc")
+                    val encodedId = java.net.URLEncoder.encode(knowledgeId ?: "", StandardCharsets.UTF_8.toString())
+                    navController.navigate("detail/$encodedTitle/$encodedDesc/$encodedId")
                 }
             )
         }
@@ -72,10 +73,11 @@ fun AppNavigation(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
-                onNavigateToDetail = { title, description ->
+                onNavigateToDetail = { title, description, knowledgeId ->
                     val encodedTitle = java.net.URLEncoder.encode(title, StandardCharsets.UTF_8.toString())
                     val encodedDesc = java.net.URLEncoder.encode(description ?: "", StandardCharsets.UTF_8.toString())
-                    navController.navigate("detail/$encodedTitle/$encodedDesc")
+                    val encodedId = java.net.URLEncoder.encode(knowledgeId ?: "", StandardCharsets.UTF_8.toString())
+                    navController.navigate("detail/$encodedTitle/$encodedDesc/$encodedId")
                 }
             )
         }
@@ -85,10 +87,11 @@ fun AppNavigation(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
-                onNavigateToDetail = { title, description ->
+                onNavigateToDetail = { title, description, knowledgeId ->
                     val encodedTitle = java.net.URLEncoder.encode(title, StandardCharsets.UTF_8.toString())
                     val encodedDesc = java.net.URLEncoder.encode(description ?: "", StandardCharsets.UTF_8.toString())
-                    navController.navigate("detail/$encodedTitle/$encodedDesc")
+                    val encodedId = java.net.URLEncoder.encode(knowledgeId ?: "", StandardCharsets.UTF_8.toString())
+                    navController.navigate("detail/$encodedTitle/$encodedDesc/$encodedId")
                 }
             )
         }
@@ -98,10 +101,11 @@ fun AppNavigation(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
-                onNavigateToDetail = { title, description ->
+                onNavigateToDetail = { title, description, knowledgeId ->
                     val encodedTitle = java.net.URLEncoder.encode(title, StandardCharsets.UTF_8.toString())
                     val encodedDesc = java.net.URLEncoder.encode(description ?: "", StandardCharsets.UTF_8.toString())
-                    navController.navigate("detail/$encodedTitle/$encodedDesc")
+                    val encodedId = java.net.URLEncoder.encode(knowledgeId ?: "", StandardCharsets.UTF_8.toString())
+                    navController.navigate("detail/$encodedTitle/$encodedDesc/$encodedId")
                 }
             )
         }
@@ -111,33 +115,41 @@ fun AppNavigation(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
-                onNavigateToDetail = { title, description ->
+                onNavigateToDetail = { title, description, knowledgeId ->
                     val encodedTitle = java.net.URLEncoder.encode(title, StandardCharsets.UTF_8.toString())
                     val encodedDesc = java.net.URLEncoder.encode(description ?: "", StandardCharsets.UTF_8.toString())
-                    navController.navigate("detail/$encodedTitle/$encodedDesc")
+                    val encodedId = java.net.URLEncoder.encode(knowledgeId ?: "", StandardCharsets.UTF_8.toString())
+                    navController.navigate("detail/$encodedTitle/$encodedDesc/$encodedId")
                 }
             )
         }
         
-        // 详情页路由
-        composable(
-            route = "detail/{title}/{description}",
-            arguments = listOf(
-                navArgument("title") { type = NavType.StringType },
-                navArgument("description") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val title = URLDecoder.decode(backStackEntry.arguments?.getString("title") ?: "", StandardCharsets.UTF_8.toString())
-            val description = URLDecoder.decode(backStackEntry.arguments?.getString("description") ?: "", StandardCharsets.UTF_8.toString())
-            
-            FeatureDetailScreen(
-                title = title,
-                description = if (description.isEmpty()) null else description,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
+            // 详情页路由
+            composable(
+                route = "detail/{title}/{description}/{knowledgeId}",
+                arguments = listOf(
+                    navArgument("title") { type = NavType.StringType },
+                    navArgument("description") { type = NavType.StringType },
+                    navArgument("knowledgeId") { 
+                        type = NavType.StringType
+                        defaultValue = ""
+                        nullable = true
+                    }
+                )
+            ) { backStackEntry ->
+                val title = URLDecoder.decode(backStackEntry.arguments?.getString("title") ?: "", StandardCharsets.UTF_8.toString())
+                val description = URLDecoder.decode(backStackEntry.arguments?.getString("description") ?: "", StandardCharsets.UTF_8.toString())
+                val knowledgeId = backStackEntry.arguments?.getString("knowledgeId")?.takeIf { it.isNotEmpty() }
+                
+                FeatureDetailScreen(
+                    title = title,
+                    description = if (description.isEmpty()) null else description,
+                    knowledgeId = knowledgeId,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
     }
 }
 

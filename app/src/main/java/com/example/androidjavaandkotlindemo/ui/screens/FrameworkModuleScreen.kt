@@ -24,7 +24,7 @@ import com.example.androidjavaandkotlindemo.data.FrameworkFeaturesData
 @Composable
 fun FrameworkModuleScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToDetail: (String, String?) -> Unit = { _, _ -> }
+    onNavigateToDetail: (String, String?, String?) -> Unit = { _, _, _ -> }
 ) {
     val frameworkFeatures = remember { FrameworkFeaturesData.getFrameworkFeatures() }
     
@@ -67,7 +67,7 @@ fun FrameworkModuleScreen(
                 ExpandableFrameworkFeatureCard(
                     feature = feature,
                     onItemClick = { item ->
-                        onNavigateToDetail(item.name, item.description)
+                        onNavigateToDetail(item.name, item.description, item.id)
                     }
                 )
             }
