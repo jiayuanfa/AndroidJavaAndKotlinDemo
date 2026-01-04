@@ -2127,6 +2127,1587 @@ object KnowledgeDetailsRepository {
                 "函数类型在Kotlin标准库中广泛使用"
             ),
             practiceTips = "建议：对于复杂的函数类型，使用typealias创建别名提高可读性。在API设计时，合理使用函数类型可以让API更灵活。在Android开发中，函数类型特别适合用于回调函数和事件处理。"
+        ),
+        
+        // ========== Kotlin 协程（Coroutines） ==========
+        
+        // 1. 协程基础、挂起函数、协程构建器、协程作用域
+        KnowledgeDetail(
+            id = "coroutines_basic",
+            title = "协程基础、挂起函数、协程构建器、协程作用域",
+            overview = "Kotlin协程是轻量级的线程，用于简化异步编程。理解协程的基础概念、挂起函数、协程构建器和作用域，是掌握Kotlin异步编程的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：协程基础概念",
+                    code = """
+                        // 协程是轻量级的线程，可以在不阻塞线程的情况下挂起和恢复
+                        
+                        import kotlinx.coroutines.*
+                        
+                        // 最简单的协程
+                        fun main() = runBlocking {
+                            launch {
+                                delay(1000L)  // 非阻塞延迟1秒
+                                println("World!")
+                            }
+                            println("Hello,")  // 立即执行
+                        }
+                        // 输出：Hello, World!
+                        
+                        // 协程的特点：
+                        // 1. 轻量级：可以创建数千个协程而不会导致性能问题
+                        // 2. 挂起：可以在不阻塞线程的情况下暂停执行
+                        // 3. 结构化并发：协程有明确的生命周期和作用域
+                        
+                        // 对比线程
+                        fun compareWithThread() = runBlocking {
+                            // 创建1000个协程
+                            repeat(1000) {
+                                launch {
+                                    delay(1000L)
+                                    print(".")
+                                }
+                            }
+                            // 创建1000个线程会消耗大量资源，但协程很轻量
+                        }
+                    """.trimIndent(),
+                    explanation = "协程是轻量级的线程，可以在不阻塞线程的情况下挂起和恢复。协程比线程更轻量，可以创建大量协程而不会导致性能问题。"
+                ),
+                CodeExample(
+                    title = "示例2：挂起函数（suspend function）",
+                    code = """
+                        // 挂起函数：使用suspend关键字标记，可以在协程中调用
+                        
+                        import kotlinx.coroutines.*
+                        
+                        // 挂起函数定义
+                        suspend fun fetchData(): String {
+                            delay(1000L)  // 模拟网络请求
+                            return "Data loaded"
+                        }
+                        
+                        // 挂起函数可以调用其他挂起函数
+                        suspend fun processData(): String {
+                            val data = fetchData()  // 调用挂起函数
+                            delay(500L)  // 模拟处理
+                            return data.uppercase()
+                        }
+                        
+                        // 在协程中调用挂起函数
+                        fun main() = runBlocking {
+                            val result = fetchData()
+                            println(result)  // "Data loaded"
+                            
+                            val processed = processData()
+                            println(processed)  // "DATA LOADED"
+                        }
+                        
+                        // 挂起函数的特点：
+                        // 1. 只能在协程或其他挂起函数中调用
+                        // 2. 可以挂起协程，不阻塞线程
+                        // 3. 挂起时释放线程，线程可以执行其他任务
+                        
+                        // 错误示例：不能在普通函数中直接调用挂起函数
+                        // fun normalFunction() {
+                        //     fetchData()  // ❌ 错误！
+                        // }
+                    """.trimIndent(),
+                    explanation = "挂起函数使用suspend关键字标记，可以在协程中调用。挂起函数可以挂起协程而不阻塞线程，这是协程的核心特性。"
+                ),
+                CodeExample(
+                    title = "示例3：协程构建器（launch、async、runBlocking）",
+                    code = """
+                        import kotlinx.coroutines.*
+                        
+                        // 1. launch：启动一个协程，不返回结果
+                        fun main() = runBlocking {
+                            val job = launch {
+                                delay(1000L)
+                                println("World!")
+                            }
+                            println("Hello,")
+                            job.join()  // 等待协程完成
+                        }
+                        
+                        // 2. async：启动一个协程，返回Deferred结果
+                        fun main() = runBlocking {
+                            val deferred = async {
+                                delay(1000L)
+                                "Result"
+                            }
+                            println("Waiting...")
+                            val result = deferred.await()  // 等待并获取结果
+                            println(result)  // "Result"
+                        }
+                        
+                        // 3. runBlocking：阻塞当前线程直到协程完成
+                        fun main() {
+                            runBlocking {
+                                delay(1000L)
+                                println("Blocked for 1 second")
+                            }
+                            println("After runBlocking")
+                        }
+                        
+                        // 并发执行多个async
+                        fun main() = runBlocking {
+                            val deferred1 = async { fetchData1() }
+                            val deferred2 = async { fetchData2() }
+                            
+                            val result1 = deferred1.await()
+                            val result2 = deferred2.await()
+                            println("${'$'}result1 and ${'$'}result2")
+                        }
+                        
+                        suspend fun fetchData1(): String {
+                            delay(1000L)
+                            return "Data1"
+                        }
+                        
+                        suspend fun fetchData2(): String {
+                            delay(1000L)
+                            return "Data2"
+                        }
+                        // 总耗时约1秒（并发执行），而不是2秒
+                    """.trimIndent(),
+                    explanation = "协程构建器用于启动协程。launch用于启动不返回结果的协程，async用于启动返回Deferred结果的协程，runBlocking用于阻塞线程直到协程完成。"
+                ),
+                CodeExample(
+                    title = "示例4：协程作用域（CoroutineScope）",
+                    code = """
+                        import kotlinx.coroutines.*
+                        
+                        // 协程作用域定义了协程的生命周期
+                        
+                        // 1. GlobalScope：全局作用域，不推荐使用
+                        fun globalScopeExample() {
+                            GlobalScope.launch {
+                                delay(1000L)
+                                println("GlobalScope")
+                            }
+                            // 协程可能不会执行完，因为程序可能提前结束
+                        }
+                        
+                        // 2. runBlocking作用域
+                        fun runBlockingExample() = runBlocking {
+                            launch {
+                                delay(1000L)
+                                println("In runBlocking scope")
+                            }
+                            // runBlocking会等待所有子协程完成
+                        }
+                        
+                        // 3. coroutineScope：创建新的作用域，挂起直到所有子协程完成
+                        suspend fun coroutineScopeExample() = coroutineScope {
+                            launch {
+                                delay(1000L)
+                                println("Task 1")
+                            }
+                            launch {
+                                delay(2000L)
+                                println("Task 2")
+                            }
+                            // coroutineScope会等待所有子协程完成
+                        }
+                        
+                        // 4. 自定义作用域
+                        class MyActivity {
+                            private val scope = CoroutineScope(Dispatchers.Main)
+                            
+                            fun loadData() {
+                                scope.launch {
+                                    val data = fetchData()
+                                    updateUI(data)
+                                }
+                            }
+                            
+                            fun onDestroy() {
+                                scope.cancel()  // 取消作用域中的所有协程
+                            }
+                        }
+                        
+                        // 5. 结构化并发
+                        suspend fun structuredConcurrency() = coroutineScope {
+                            val parent = launch {
+                                val child1 = launch {
+                                    delay(1000L)
+                                    println("Child 1")
+                                }
+                                val child2 = launch {
+                                    delay(2000L)
+                                    println("Child 2")
+                                }
+                            }
+                            // 如果parent被取消，child1和child2也会被取消
+                        }
+                    """.trimIndent(),
+                    explanation = "协程作用域定义了协程的生命周期。结构化并发确保子协程的生命周期不会超过父协程。coroutineScope创建新的作用域并等待所有子协程完成。"
+                ),
+                CodeExample(
+                    title = "示例5：协程实践",
+                    code = """
+                        import kotlinx.coroutines.*
+                        
+                        // 1. 网络请求示例
+                        suspend fun fetchUserData(userId: String): User {
+                            return withContext(Dispatchers.IO) {
+                                // 在IO线程执行网络请求
+                                apiService.getUser(userId)
+                            }
+                        }
+                        
+                        // 2. 并发处理多个请求
+                        suspend fun fetchMultipleUsers(userIds: List<String>): List<User> {
+                            return coroutineScope {
+                                userIds.map { id ->
+                                    async { fetchUserData(id) }
+                                }.awaitAll()
+                            }
+                        }
+                        
+                        // 3. 超时处理
+                        suspend fun fetchWithTimeout(): String {
+                            return withTimeoutOrNull(5000L) {
+                                delay(3000L)
+                                "Success"
+                            } ?: "Timeout"
+                        }
+                        
+                        // 4. 取消协程
+                        fun cancelExample() = runBlocking {
+                            val job = launch {
+                                try {
+                                    repeat(1000) { i ->
+                                        println("Job: I'm sleeping ${'$'}i ...")
+                                        delay(500L)
+                                    }
+                                } catch (e: CancellationException) {
+                                    println("Job cancelled")
+                                    throw e
+                                }
+                            }
+                            
+                            delay(1300L)
+                            println("Cancelling job")
+                            job.cancel()
+                            job.join()
+                        }
+                        
+                        // 5. 协程与Flow结合
+                        fun flowExample() = runBlocking {
+                            flow {
+                                for (i in 1..5) {
+                                    delay(100)
+                                    emit(i)
+                                }
+                            }.collect { value ->
+                                println(value)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "协程在实际开发中用于网络请求、并发处理、超时控制、取消操作等场景。合理使用协程可以简化异步编程，提高代码可读性。"
+                )
+            ),
+            useCases = listOf(
+                "网络请求：使用协程处理异步网络请求",
+                "并发处理：使用async并发执行多个任务",
+                "后台任务：使用协程执行后台任务而不阻塞主线程",
+                "超时控制：使用withTimeout控制操作超时",
+                "取消操作：使用Job取消不需要的协程"
+            ),
+            keyPoints = listOf(
+                "协程是轻量级的线程，可以创建大量协程而不会导致性能问题",
+                "挂起函数使用suspend关键字，可以在协程中调用",
+                "launch启动不返回结果的协程，async启动返回Deferred结果的协程",
+                "协程作用域定义协程的生命周期，结构化并发确保子协程不会超过父协程",
+                "runBlocking阻塞线程，coroutineScope挂起但不阻塞线程"
+            ),
+            notes = listOf(
+                "挂起函数只能在协程或其他挂起函数中调用",
+                "GlobalScope不推荐使用，应该使用自定义作用域",
+                "结构化并发确保子协程的生命周期不会超过父协程",
+                "协程挂起时不阻塞线程，线程可以执行其他任务",
+                "使用Job可以取消协程，取消时会抛出CancellationException"
+            ),
+            practiceTips = "建议：优先使用coroutineScope而不是GlobalScope。合理使用async并发执行多个任务。在Android开发中，使用viewModelScope和lifecycleScope管理协程生命周期。避免在协程中使用runBlocking，除非在测试中。"
+        ),
+        
+        // 2. 协程上下文和调度器、Job和SupervisorJob
+        KnowledgeDetail(
+            id = "coroutines_context",
+            title = "协程上下文和调度器、Job和SupervisorJob",
+            overview = "协程上下文定义了协程的执行环境，包括调度器、Job等。理解协程上下文和调度器，以及Job和SupervisorJob的区别，是掌握协程高级特性的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：协程上下文（CoroutineContext）",
+                    code = """
+                        import kotlinx.coroutines.*
+                        
+                        // 协程上下文是协程的执行环境，包含多个元素
+                        
+                        // 1. 查看当前协程上下文
+                        fun main() = runBlocking {
+                            println("Context: ${'$'}coroutineContext")
+                            // 输出包含：Job、ContinuationInterceptor（调度器）等
+                        }
+                        
+                        // 2. 上下文元素
+                        // - Job：协程的作业
+                        // - Dispatcher：调度器，决定协程在哪个线程执行
+                        // - CoroutineName：协程名称
+                        // - CoroutineExceptionHandler：异常处理器
+                        
+                        // 3. 组合上下文
+                        fun main() = runBlocking {
+                            val context = Dispatchers.Default + CoroutineName("MyCoroutine")
+                            launch(context) {
+                                println("Running in: ${'$'}coroutineContext")
+                            }
+                        }
+                        
+                        // 4. 继承和覆盖上下文
+                        fun main() = runBlocking {
+                            val parentContext = Dispatchers.Main + CoroutineName("Parent")
+                            launch(parentContext) {
+                                println("Parent: ${'$'}coroutineContext")
+                                launch {
+                                    // 继承父协程的上下文
+                                    println("Child: ${'$'}coroutineContext")
+                                }
+                                launch(Dispatchers.IO) {
+                                    // 覆盖调度器，但继承其他元素
+                                    println("Child with IO: ${'$'}coroutineContext")
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "协程上下文定义了协程的执行环境，包含Job、Dispatcher、CoroutineName等元素。子协程继承父协程的上下文，但可以覆盖特定元素。"
+                ),
+                CodeExample(
+                    title = "示例2：调度器（Dispatcher）",
+                    code = """
+                        import kotlinx.coroutines.*
+                        
+                        // 调度器决定协程在哪个线程执行
+                        
+                        fun main() = runBlocking {
+                            // 1. Dispatchers.Main：主线程（Android UI线程）
+                            launch(Dispatchers.Main) {
+                                println("Main: ${'$'}{Thread.currentThread().name}")
+                                // 在Android中用于更新UI
+                            }
+                            
+                            // 2. Dispatchers.Default：CPU密集型任务
+                            launch(Dispatchers.Default) {
+                                println("Default: ${'$'}{Thread.currentThread().name}")
+                                // 用于计算密集型任务
+                            }
+                            
+                            // 3. Dispatchers.IO：IO操作
+                            launch(Dispatchers.IO) {
+                                println("IO: ${'$'}{Thread.currentThread().name}")
+                                // 用于网络请求、文件操作等
+                            }
+                            
+                            // 4. Dispatchers.Unconfined：不限制线程
+                            launch(Dispatchers.Unconfined) {
+                                println("Unconfined: ${'$'}{Thread.currentThread().name}")
+                                // 不推荐使用，除非有特殊需求
+                            }
+                            
+                            // 5. 切换调度器
+                            suspend fun switchDispatcher() {
+                                withContext(Dispatchers.IO) {
+                                    // 在IO线程执行
+                                    val data = fetchData()
+                                }
+                                // 回到原来的线程
+                                updateUI(data)
+                            }
+                            
+                            // 6. 自定义调度器
+                            val customDispatcher = Executors.newSingleThreadExecutor()
+                                .asCoroutineDispatcher()
+                            launch(customDispatcher) {
+                                println("Custom: ${'$'}{Thread.currentThread().name}")
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "调度器决定协程在哪个线程执行。Main用于UI操作，Default用于CPU密集型任务，IO用于IO操作。使用withContext可以切换调度器。"
+                ),
+                CodeExample(
+                    title = "示例3：Job",
+                    code = """
+                        import kotlinx.coroutines.*
+                        
+                        // Job代表一个协程的作业，可以控制协程的生命周期
+                        
+                        fun main() = runBlocking {
+                            // 1. 获取Job
+                            val job = launch {
+                                delay(1000L)
+                                println("Job completed")
+                            }
+                            
+                            // 2. 等待Job完成
+                            job.join()
+                            println("After job")
+                            
+                            // 3. 取消Job
+                            val job2 = launch {
+                                repeat(1000) { i ->
+                                    println("Job: I'm sleeping ${'$'}i ...")
+                                    delay(500L)
+                                }
+                            }
+                            delay(1300L)
+                            job2.cancel()  // 取消Job
+                            job2.join()    // 等待取消完成
+                            
+                            // 4. 检查Job状态
+                            val job3 = launch {
+                                delay(1000L)
+                            }
+                            println("Is active: ${'$'}{job3.isActive}")    // true
+                            println("Is completed: ${'$'}{job3.isCompleted}")  // false
+                            job3.join()
+                            println("Is completed: ${'$'}{job3.isCompleted}")  // true
+                            
+                            // 5. Job层次结构
+                            val parentJob = launch {
+                                val childJob1 = launch {
+                                    delay(1000L)
+                                }
+                                val childJob2 = launch {
+                                    delay(2000L)
+                                }
+                                // 如果parentJob被取消，childJob1和childJob2也会被取消
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Job代表协程的作业，可以控制协程的生命周期。Job有层次结构，取消父Job会取消所有子Job。可以使用isActive、isCompleted等属性检查Job状态。"
+                ),
+                CodeExample(
+                    title = "示例4：SupervisorJob",
+                    code = """
+                        import kotlinx.coroutines.*
+                        
+                        // SupervisorJob：子Job的失败不会影响其他子Job和父Job
+                        
+                        fun main() = runBlocking {
+                            // 1. 普通Job：一个子Job失败会取消所有子Job
+                            val supervisor = SupervisorJob()
+                            val scope = CoroutineScope(Dispatchers.Default + supervisor)
+                            
+                            val job1 = scope.launch {
+                                delay(1000L)
+                                throw Exception("Job1 failed")
+                            }
+                            
+                            val job2 = scope.launch {
+                                delay(2000L)
+                                println("Job2 completed")
+                            }
+                            
+                            delay(500L)
+                            // job1失败不会影响job2
+                            job2.join()  // Job2会正常完成
+                            
+                            // 2. supervisorScope：使用SupervisorJob的作用域
+                            supervisorScope {
+                                val child1 = launch {
+                                    delay(1000L)
+                                    throw Exception("Child1 failed")
+                                }
+                                
+                                val child2 = launch {
+                                    delay(2000L)
+                                    println("Child2 completed")
+                                }
+                                
+                                delay(500L)
+                                // child1失败不会影响child2
+                                child2.join()  // Child2会正常完成
+                            }
+                            
+                            // 3. 对比普通Job
+                            coroutineScope {
+                                val child1 = launch {
+                                    delay(1000L)
+                                    throw Exception("Child1 failed")
+                                }
+                                
+                                val child2 = launch {
+                                    delay(2000L)
+                                    println("Child2 completed")
+                                }
+                                
+                                // child1失败会导致整个作用域失败，child2也会被取消
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "SupervisorJob允许子Job独立失败，不会影响其他子Job和父Job。supervisorScope创建使用SupervisorJob的作用域。适用于需要独立处理多个任务的场景。"
+                ),
+                CodeExample(
+                    title = "示例5：协程上下文实践",
+                    code = """
+                        import kotlinx.coroutines.*
+                        
+                        // 1. 在Android中使用
+                        class MyViewModel : ViewModel() {
+                            private val viewModelScope = CoroutineScope(
+                                SupervisorJob() + Dispatchers.Main
+                            )
+                            
+                            fun loadData() {
+                                viewModelScope.launch {
+                                    val data = withContext(Dispatchers.IO) {
+                                        fetchData()
+                                    }
+                                    updateUI(data)
+                                }
+                            }
+                            
+                            override fun onCleared() {
+                                super.onCleared()
+                                viewModelScope.cancel()
+                            }
+                        }
+                        
+                        // 2. 异常处理
+                        val exceptionHandler = CoroutineExceptionHandler { _, exception ->
+                            println("Caught exception: ${'$'}exception")
+                        }
+                        
+                        val scope = CoroutineScope(
+                            SupervisorJob() + Dispatchers.Main + exceptionHandler
+                        )
+                        
+                        scope.launch {
+                            throw Exception("Error")
+                        }
+                        
+                        // 3. 命名协程
+                        fun main() = runBlocking {
+                            launch(CoroutineName("DataLoader")) {
+                                println("Running: ${'$'}{coroutineContext[CoroutineName]?.name}")
+                            }
+                        }
+                        
+                        // 4. 组合多个上下文元素
+                        val customContext = Dispatchers.IO +
+                                CoroutineName("MyCoroutine") +
+                                CoroutineExceptionHandler { _, e -> println("Error: ${'$'}e") }
+                        
+                        CoroutineScope(customContext).launch {
+                            // 使用自定义上下文
+                        }
+                    """.trimIndent(),
+                    explanation = "在实际开发中，合理组合协程上下文元素可以创建适合特定场景的协程环境。在Android中，使用SupervisorJob可以防止一个任务失败影响其他任务。"
+                )
+            ),
+            useCases = listOf(
+                "线程切换：使用调度器在合适的线程执行任务",
+                "任务管理：使用Job管理协程的生命周期",
+                "错误隔离：使用SupervisorJob隔离任务错误",
+                "上下文传递：通过上下文传递协程相关信息",
+                "异常处理：使用CoroutineExceptionHandler处理异常"
+            ),
+            keyPoints = listOf(
+                "协程上下文定义协程的执行环境，包含Job、Dispatcher等元素",
+                "调度器决定协程在哪个线程执行（Main、Default、IO等）",
+                "Job代表协程的作业，可以控制协程的生命周期",
+                "SupervisorJob允许子Job独立失败，不会影响其他子Job",
+                "子协程继承父协程的上下文，但可以覆盖特定元素"
+            ),
+            notes = listOf(
+                "Dispatchers.Main在Android中用于更新UI",
+                "Dispatchers.Default用于CPU密集型任务，IO用于IO操作",
+                "取消父Job会取消所有子Job（普通Job）",
+                "SupervisorJob适用于需要独立处理多个任务的场景",
+                "使用withContext可以切换调度器"
+            ),
+            practiceTips = "建议：在Android中，使用Dispatchers.Main更新UI，使用Dispatchers.IO执行网络请求。使用SupervisorJob防止一个任务失败影响其他任务。合理组合上下文元素创建适合的协程环境。"
+        ),
+        
+        // 3. Flow响应式数据流、StateFlow和SharedFlow
+        KnowledgeDetail(
+            id = "flow",
+            title = "Flow响应式数据流、StateFlow和SharedFlow",
+            overview = "Flow是Kotlin的响应式数据流，类似于RxJava的Observable。StateFlow和SharedFlow是Flow的特殊实现，用于状态管理和事件流。理解这些概念是掌握Kotlin响应式编程的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Flow基础",
+                    code = """
+                        import kotlinx.coroutines.*
+                        import kotlinx.coroutines.flow.*
+                        
+                        // Flow是冷流（Cold Stream），只有在收集时才开始发射数据
+                        
+                        // 1. 创建Flow
+                        fun simpleFlow(): Flow<Int> = flow {
+                            for (i in 1..5) {
+                                delay(100)
+                                emit(i)  // 发射数据
+                            }
+                        }
+                        
+                        // 2. 收集Flow
+                        fun main() = runBlocking {
+                            simpleFlow().collect { value ->
+                                println(value)
+                            }
+                            // 输出：1, 2, 3, 4, 5
+                        }
+                        
+                        // 3. Flow操作符
+                        fun main() = runBlocking {
+                            flowOf(1, 2, 3, 4, 5)
+                                .filter { it % 2 == 0 }  // 过滤
+                                .map { it * it }         // 转换
+                                .collect { println(it) }  // 收集
+                            // 输出：4, 16
+                        }
+                        
+                        // 4. 多个收集者
+                        fun main() = runBlocking {
+                            val flow = simpleFlow()
+                            flow.collect { println("Collector 1: ${'$'}it") }
+                            flow.collect { println("Collector 2: ${'$'}it") }
+                            // 每个收集者都会触发Flow的重新执行
+                        }
+                    """.trimIndent(),
+                    explanation = "Flow是冷流，只有在收集时才开始发射数据。可以使用flow构建器创建Flow，使用collect收集数据。Flow支持类似集合的操作符。"
+                ),
+                CodeExample(
+                    title = "示例2：Flow操作符",
+                    code = """
+                        import kotlinx.coroutines.*
+                        import kotlinx.coroutines.flow.*
+                        
+                        fun main() = runBlocking {
+                            val numbers = flowOf(1, 2, 3, 4, 5)
+                            
+                            // 1. 转换操作符
+                            numbers.map { it * it }
+                                .collect { println(it) }  // 1, 4, 9, 16, 25
+                            
+                            // 2. 过滤操作符
+                            numbers.filter { it % 2 == 0 }
+                                .collect { println(it) }  // 2, 4
+                            
+                            // 3. 聚合操作符
+                            val sum = numbers.reduce { acc, value -> acc + value }
+                            println(sum)  // 15
+                            
+                            // 4. 展平操作符
+                            flowOf(listOf(1, 2), listOf(3, 4))
+                                .flatMapConcat { it.asFlow() }
+                                .collect { println(it) }  // 1, 2, 3, 4
+                            
+                            // 5. 缓冲和背压
+                            flow {
+                                for (i in 1..5) {
+                                    delay(100)
+                                    emit(i)
+                                }
+                            }.buffer()  // 缓冲，提高吞吐量
+                                .collect { value ->
+                                    delay(300)
+                                    println(value)
+                                }
+                            
+                            // 6. 组合操作符
+                            val flow1 = flowOf(1, 2, 3)
+                            val flow2 = flowOf("a", "b", "c")
+                            flow1.zip(flow2) { a, b -> "${'$'}a${'$'}b" }
+                                .collect { println(it) }  // 1a, 2b, 3c
+                        }
+                    """.trimIndent(),
+                    explanation = "Flow提供了丰富的操作符，包括转换（map）、过滤（filter）、聚合（reduce）、展平（flatMap）等。这些操作符可以链式调用，创建复杂的数据流处理管道。"
+                ),
+                CodeExample(
+                    title = "示例3：StateFlow",
+                    code = """
+                        import kotlinx.coroutines.*
+                        import kotlinx.coroutines.flow.*
+                        
+                        // StateFlow：状态流，用于管理状态
+                        
+                        // 1. 创建StateFlow
+                        class ViewModel {
+                            private val _uiState = MutableStateFlow(UiState())
+                            val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+                            
+                            fun updateState(newState: UiState) {
+                                _uiState.value = newState
+                            }
+                        }
+                        
+                        data class UiState(
+                            val isLoading: Boolean = false,
+                            val data: String? = null,
+                            val error: String? = null
+                        )
+                        
+                        // 2. 收集StateFlow
+                        fun main() = runBlocking {
+                            val viewModel = ViewModel()
+                            
+                            viewModel.uiState.collect { state ->
+                                println("State: ${'$'}state")
+                            }
+                            
+                            viewModel.updateState(UiState(isLoading = true))
+                            viewModel.updateState(UiState(data = "Loaded"))
+                        }
+                        
+                        // 3. StateFlow特点
+                        // - 总是有当前值（初始值）
+                        // - 新收集者立即收到当前值
+                        // - 只保留最新值
+                        // - 线程安全
+                        
+                        // 4. 在Android中使用
+                        class MyActivity : AppCompatActivity() {
+                            private val viewModel: ViewModel by viewModels()
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                lifecycleScope.launch {
+                                    viewModel.uiState.collect { state ->
+                                        when {
+                                            state.isLoading -> showLoading()
+                                            state.error != null -> showError(state.error)
+                                            state.data != null -> showData(state.data)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "StateFlow是状态流，用于管理状态。StateFlow总是有当前值，新收集者立即收到当前值。在Android中，StateFlow常用于ViewModel中管理UI状态。"
+                ),
+                CodeExample(
+                    title = "示例4：SharedFlow",
+                    code = """
+                        import kotlinx.coroutines.*
+                        import kotlinx.coroutines.flow.*
+                        
+                        // SharedFlow：共享流，用于事件流
+                        
+                        // 1. 创建SharedFlow
+                        class EventBus {
+                            private val _events = MutableSharedFlow<Event>()
+                            val events: SharedFlow<Event> = _events.asSharedFlow()
+                            
+                            suspend fun emit(event: Event) {
+                                _events.emit(event)
+                            }
+                        }
+                        
+                        sealed class Event {
+                            data class UserLoggedIn(val userId: String) : Event()
+                            data class UserLoggedOut : Event()
+                        }
+                        
+                        // 2. 收集SharedFlow
+                        fun main() = runBlocking {
+                            val eventBus = EventBus()
+                            
+                            // 收集者1
+                            launch {
+                                eventBus.events.collect { event ->
+                                    println("Collector 1: ${'$'}event")
+                                }
+                            }
+                            
+                            // 收集者2
+                            launch {
+                                eventBus.events.collect { event ->
+                                    println("Collector 2: ${'$'}event")
+                                }
+                            }
+                            
+                            delay(100)
+                            eventBus.emit(Event.UserLoggedIn("user123"))
+                            // 两个收集者都会收到事件
+                        }
+                        
+                        // 3. SharedFlow配置
+                        val sharedFlow = MutableSharedFlow<Int>(
+                            replay = 2,        // 新收集者收到最近2个值
+                            extraBufferCapacity = 1  // 额外缓冲区容量
+                        )
+                        
+                        // 4. StateFlow vs SharedFlow
+                        // StateFlow：
+                        // - 总是有当前值
+                        // - 新收集者立即收到当前值
+                        // - 用于状态管理
+                        
+                        // SharedFlow：
+                        // - 可能没有当前值
+                        // - 可以配置replay
+                        // - 用于事件流
+                    """.trimIndent(),
+                    explanation = "SharedFlow是共享流，用于事件流。SharedFlow可以配置replay，让新收集者收到最近的值。StateFlow用于状态管理，SharedFlow用于事件流。"
+                ),
+                CodeExample(
+                    title = "示例5：Flow实践",
+                    code = """
+                        import kotlinx.coroutines.*
+                        import kotlinx.coroutines.flow.*
+                        
+                        // 1. 网络请求Flow
+                        fun fetchUsersFlow(): Flow<List<User>> = flow {
+                            while (true) {
+                                val users = apiService.getUsers()
+                                emit(users)
+                                delay(5000)  // 每5秒刷新
+                            }
+                        }.flowOn(Dispatchers.IO)
+                        
+                        // 2. 数据库Flow
+                        @Dao
+                        interface UserDao {
+                            @Query("SELECT * FROM users")
+                            fun getAllUsers(): Flow<List<User>>
+                        }
+                        
+                        // 3. 组合多个Flow
+                        fun main() = runBlocking {
+                            val flow1 = flowOf(1, 2, 3)
+                            val flow2 = flowOf("a", "b")
+                            
+                            merge(flow1, flow2).collect { value ->
+                                println(value)
+                            }
+                        }
+                        
+                        // 4. 错误处理
+                        fun main() = runBlocking {
+                            flow {
+                                emit(1)
+                                throw Exception("Error")
+                                emit(2)
+                            }.catch { e ->
+                                println("Caught: ${'$'}e")
+                                emit(-1)  // 发送默认值
+                            }.collect { value ->
+                                println(value)
+                            }
+                        }
+                        
+                        // 5. 在Android中使用
+                        class MyViewModel : ViewModel() {
+                            private val _searchQuery = MutableStateFlow("")
+                            val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+                            
+                            val searchResults: Flow<List<Item>> = searchQuery
+                                .debounce(300)  // 防抖
+                                .distinctUntilChanged()  // 去重
+                                .filter { it.length > 2 }  // 过滤
+                                .flatMapLatest { query ->
+                                    searchItems(query)
+                                }
+                                .flowOn(Dispatchers.IO)
+                            
+                            fun updateQuery(query: String) {
+                                _searchQuery.value = query
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Flow在实际开发中用于网络请求、数据库查询、搜索等功能。StateFlow用于状态管理，SharedFlow用于事件流。合理使用Flow操作符可以创建强大的响应式数据流。"
+                )
+            ),
+            useCases = listOf(
+                "状态管理：使用StateFlow管理UI状态",
+                "事件流：使用SharedFlow处理事件流",
+                "数据流：使用Flow处理异步数据流",
+                "搜索功能：使用Flow实现搜索防抖和去重",
+                "实时更新：使用Flow实现数据的实时更新"
+            ),
+            keyPoints = listOf(
+                "Flow是冷流，只有在收集时才开始发射数据",
+                "StateFlow用于状态管理，总是有当前值，新收集者立即收到当前值",
+                "SharedFlow用于事件流，可以配置replay让新收集者收到最近的值",
+                "Flow提供了丰富的操作符（map、filter、reduce等）",
+                "StateFlow和SharedFlow都是热流，可以有多个收集者"
+            ),
+            notes = listOf(
+                "Flow是冷流，每个收集者都会触发Flow的重新执行",
+                "StateFlow是SharedFlow的特殊实现，replay=1且总是有当前值",
+                "使用flowOn可以切换Flow的执行上下文",
+                "使用catch可以处理Flow中的异常",
+                "在Android中，StateFlow常用于ViewModel，SharedFlow用于事件总线"
+            ),
+            practiceTips = "建议：在Android中，使用StateFlow管理UI状态，使用SharedFlow处理事件流。合理使用Flow操作符创建数据流处理管道。使用debounce和distinctUntilChanged优化搜索等功能。"
+        ),
+        
+        // 4. 协程异常处理
+        KnowledgeDetail(
+            id = "coroutines_exception",
+            title = "协程异常处理",
+            overview = "协程的异常处理与普通代码不同，需要理解异常传播机制、异常处理器、SupervisorJob等。正确处理协程异常是编写健壮异步代码的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：异常传播机制",
+                    code = """
+                        import kotlinx.coroutines.*
+                        
+                        // 1. launch中的异常
+                        fun main() = runBlocking {
+                            val job = launch {
+                                throw Exception("Error in launch")
+                            }
+                            job.join()
+                            println("After launch")  // 会执行
+                        }
+                        // launch中的异常不会传播到父协程
+                        
+                        // 2. async中的异常
+                        fun main() = runBlocking {
+                            val deferred = async {
+                                throw Exception("Error in async")
+                            }
+                            try {
+                                deferred.await()
+                            } catch (e: Exception) {
+                                println("Caught: ${'$'}e")
+                            }
+                        }
+                        // async中的异常在await时抛出
+                        
+                        // 3. 异常传播到父协程
+                        fun main() = runBlocking {
+                            try {
+                                coroutineScope {
+                                    launch {
+                                        throw Exception("Error")
+                                    }
+                                    delay(100)
+                                }
+                            } catch (e: Exception) {
+                                println("Caught: ${'$'}e")
+                            }
+                        }
+                        // coroutineScope中的异常会传播
+                    """.trimIndent(),
+                    explanation = "launch中的异常不会传播到父协程，async中的异常在await时抛出，coroutineScope中的异常会传播。理解异常传播机制是正确处理异常的基础。"
+                ),
+                CodeExample(
+                    title = "示例2：CoroutineExceptionHandler",
+                    code = """
+                        import kotlinx.coroutines.*
+                        
+                        // CoroutineExceptionHandler：全局异常处理器
+                        
+                        // 1. 创建异常处理器
+                        val exceptionHandler = CoroutineExceptionHandler { _, exception ->
+                            println("Caught exception: ${'$'}exception")
+                        }
+                        
+                        // 2. 在launch中使用
+                        fun main() = runBlocking {
+                            val job = launch(exceptionHandler) {
+                                throw Exception("Error")
+                            }
+                            job.join()
+                        }
+                        
+                        // 3. 在作用域中使用
+                        fun main() = runBlocking {
+                            val scope = CoroutineScope(
+                                SupervisorJob() + Dispatchers.Default + exceptionHandler
+                            )
+                            
+                            scope.launch {
+                                throw Exception("Error 1")
+                            }
+                            
+                            scope.launch {
+                                throw Exception("Error 2")
+                            }
+                            
+                            delay(1000)
+                        }
+                        
+                        // 4. 注意：CoroutineExceptionHandler只在根协程中有效
+                        fun main() = runBlocking {
+                            val handler = CoroutineExceptionHandler { _, e ->
+                                println("Handler: ${'$'}e")
+                            }
+                            
+                            val scope = CoroutineScope(SupervisorJob() + handler)
+                            
+                            scope.launch {
+                                launch {
+                                    // 这个异常不会被handler捕获
+                                    throw Exception("Child error")
+                                }
+                            }
+                            
+                            delay(1000)
+                        }
+                    """.trimIndent(),
+                    explanation = "CoroutineExceptionHandler用于处理未捕获的异常。只在根协程中有效，子协程的异常需要其他方式处理。"
+                ),
+                CodeExample(
+                    title = "示例3：try-catch处理异常",
+                    code = """
+                        import kotlinx.coroutines.*
+                        
+                        // 在协程中使用try-catch
+                        
+                        // 1. 在挂起函数中
+                        suspend fun fetchData(): String {
+                            return try {
+                                delay(1000)
+                                "Data"
+                            } catch (e: Exception) {
+                                "Error: ${'$'}e"
+                            }
+                        }
+                        
+                        // 2. 在launch中
+                        fun main() = runBlocking {
+                            launch {
+                                try {
+                                    delay(1000)
+                                    throw Exception("Error")
+                                } catch (e: Exception) {
+                                    println("Caught: ${'$'}e")
+                                }
+                            }
+                        }
+                        
+                        // 3. 在async中
+                        fun main() = runBlocking {
+                            val deferred = async {
+                                try {
+                                    delay(1000)
+                                    throw Exception("Error")
+                                } catch (e: Exception) {
+                                    "Error: ${'$'}e"
+                                }
+                            }
+                            val result = deferred.await()
+                            println(result)
+                        }
+                        
+                        // 4. 处理多个异常
+                        suspend fun fetchMultiple(): List<String> {
+                            return coroutineScope {
+                                val deferred1 = async { fetchData1() }
+                                val deferred2 = async { fetchData2() }
+                                
+                                try {
+                                    listOf(deferred1.await(), deferred2.await())
+                                } catch (e: Exception) {
+                                    // 处理异常
+                                    emptyList()
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "在协程中可以使用try-catch处理异常。在挂起函数、launch、async中都可以使用try-catch。对于多个并发任务，可以使用coroutineScope统一处理异常。"
+                ),
+                CodeExample(
+                    title = "示例4：SupervisorJob和异常隔离",
+                    code = """
+                        import kotlinx.coroutines.*
+                        
+                        // SupervisorJob：子Job的异常不会影响其他子Job
+                        
+                        // 1. 使用SupervisorJob
+                        fun main() = runBlocking {
+                            val supervisor = SupervisorJob()
+                            val scope = CoroutineScope(Dispatchers.Default + supervisor)
+                            
+                            val job1 = scope.launch {
+                                delay(1000)
+                                throw Exception("Job1 error")
+                            }
+                            
+                            val job2 = scope.launch {
+                                delay(2000)
+                                println("Job2 completed")
+                            }
+                            
+                            delay(500)
+                            // job1失败不会影响job2
+                            job2.join()  // Job2会正常完成
+                        }
+                        
+                        // 2. supervisorScope
+                        suspend fun supervisorExample() = supervisorScope {
+                            val child1 = launch {
+                                delay(1000)
+                                throw Exception("Child1 error")
+                            }
+                            
+                            val child2 = launch {
+                                delay(2000)
+                                println("Child2 completed")
+                            }
+                            
+                            delay(500)
+                            // child1失败不会影响child2
+                            child2.join()
+                        }
+                        
+                        // 3. 对比普通Job
+                        suspend fun normalScope() = coroutineScope {
+                            val child1 = launch {
+                                delay(1000)
+                                throw Exception("Child1 error")
+                            }
+                            
+                            val child2 = launch {
+                                delay(2000)
+                                println("Child2 completed")
+                            }
+                            
+                            // child1失败会导致整个作用域失败，child2也会被取消
+                        }
+                    """.trimIndent(),
+                    explanation = "SupervisorJob允许子Job独立失败，不会影响其他子Job。supervisorScope创建使用SupervisorJob的作用域。适用于需要独立处理多个任务的场景。"
+                ),
+                CodeExample(
+                    title = "示例5：异常处理最佳实践",
+                    code = """
+                        import kotlinx.coroutines.*
+                        
+                        // 1. 在ViewModel中处理异常
+                        class MyViewModel : ViewModel() {
+                            private val _uiState = MutableStateFlow<UiState>(UiState.Idle)
+                            val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+                            
+                            fun loadData() {
+                                viewModelScope.launch {
+                                    _uiState.value = UiState.Loading
+                                    try {
+                                        val data = repository.fetchData()
+                                        _uiState.value = UiState.Success(data)
+                                    } catch (e: Exception) {
+                                        _uiState.value = UiState.Error(e.message ?: "Unknown error")
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 2. 使用Result封装结果
+                        suspend fun fetchDataWithResult(): Result<String> {
+                            return try {
+                                val data = apiService.getData()
+                                Result.success(data)
+                            } catch (e: Exception) {
+                                Result.failure(e)
+                            }
+                        }
+                        
+                        // 3. 重试机制
+                        suspend fun fetchWithRetry(
+                            maxRetries: Int = 3,
+                            delay: Long = 1000
+                        ): String {
+                            repeat(maxRetries) { attempt ->
+                                try {
+                                    return apiService.getData()
+                                } catch (e: Exception) {
+                                    if (attempt == maxRetries - 1) throw e
+                                    delay(delay * (attempt + 1))
+                                }
+                            }
+                            throw Exception("Max retries reached")
+                        }
+                        
+                        // 4. 超时处理
+                        suspend fun fetchWithTimeout(): String {
+                            return withTimeoutOrNull(5000L) {
+                                apiService.getData()
+                            } ?: throw TimeoutCancellationException("Timeout")
+                        }
+                        
+                        // 5. 组合异常处理
+                        suspend fun fetchMultipleSafely(): List<String> {
+                            return supervisorScope {
+                                val deferred1 = async { fetchData1() }
+                                val deferred2 = async { fetchData2() }
+                                
+                                listOfNotNull(
+                                    deferred1.awaitOrNull(),
+                                    deferred2.awaitOrNull()
+                                )
+                            }
+                        }
+                        
+                        suspend fun <T> Deferred<T>.awaitOrNull(): T? {
+                            return try {
+                                await()
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "在实际开发中，应该合理处理协程异常。在ViewModel中使用try-catch更新UI状态，使用Result封装结果，实现重试机制和超时处理。使用SupervisorJob隔离任务异常。"
+                )
+            ),
+            useCases = listOf(
+                "错误处理：使用try-catch处理协程中的异常",
+                "异常隔离：使用SupervisorJob隔离任务异常",
+                "全局处理：使用CoroutineExceptionHandler处理未捕获的异常",
+                "重试机制：实现带重试的网络请求",
+                "超时处理：使用withTimeout处理超时操作"
+            ),
+            keyPoints = listOf(
+                "launch中的异常不会传播到父协程，async中的异常在await时抛出",
+                "CoroutineExceptionHandler只在根协程中有效",
+                "SupervisorJob允许子Job独立失败，不会影响其他子Job",
+                "在协程中可以使用try-catch处理异常",
+                "使用supervisorScope创建使用SupervisorJob的作用域"
+            ),
+            notes = listOf(
+                "launch中的异常需要CoroutineExceptionHandler或try-catch处理",
+                "async中的异常在await时抛出，需要在await处处理",
+                "coroutineScope中的异常会传播，需要使用try-catch",
+                "SupervisorJob适用于需要独立处理多个任务的场景",
+                "在Android中，ViewModel的异常应该更新UI状态而不是崩溃"
+            ),
+            practiceTips = "建议：在ViewModel中使用try-catch更新UI状态。使用SupervisorJob隔离任务异常。实现重试机制和超时处理。使用Result封装结果，而不是直接抛出异常。在Android中，确保异常不会导致应用崩溃。"
+        ),
+        
+        // 5. Android中的协程（viewModelScope、lifecycleScope）
+        KnowledgeDetail(
+            id = "android_coroutines",
+            title = "Android中的协程（viewModelScope、lifecycleScope）",
+            overview = "Android提供了viewModelScope和lifecycleScope等协程作用域，用于管理协程的生命周期。理解这些作用域的使用是Android协程开发的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：viewModelScope",
+                    code = """
+                        import androidx.lifecycle.ViewModel
+                        import androidx.lifecycle.viewModelScope
+                        import kotlinx.coroutines.launch
+                        
+                        // viewModelScope：ViewModel的协程作用域
+                        
+                        class MyViewModel : ViewModel() {
+                            
+                            // 1. 基本使用
+                            fun loadData() {
+                                viewModelScope.launch {
+                                    val data = repository.fetchData()
+                                    _uiState.value = UiState.Success(data)
+                                }
+                            }
+                            
+                            // 2. 异常处理
+                            fun loadDataWithErrorHandling() {
+                                viewModelScope.launch {
+                                    try {
+                                        _uiState.value = UiState.Loading
+                                        val data = repository.fetchData()
+                                        _uiState.value = UiState.Success(data)
+                                    } catch (e: Exception) {
+                                        _uiState.value = UiState.Error(e.message)
+                                    }
+                                }
+                            }
+                            
+                            // 3. 并发任务
+                            fun loadMultipleData() {
+                                viewModelScope.launch {
+                                    val deferred1 = async { repository.fetchData1() }
+                                    val deferred2 = async { repository.fetchData2() }
+                                    
+                                    val data1 = deferred1.await()
+                                    val data2 = deferred2.await()
+                                    
+                                    _uiState.value = UiState.Success(Pair(data1, data2))
+                                }
+                            }
+                            
+                            // 4. viewModelScope特点
+                            // - 在ViewModel清除时自动取消
+                            // - 使用Dispatchers.Main作为默认调度器
+                            // - 使用SupervisorJob，子协程失败不会影响其他协程
+                            
+                            // 5. 切换调度器
+                            fun loadDataFromNetwork() {
+                                viewModelScope.launch {
+                                    val data = withContext(Dispatchers.IO) {
+                                        repository.fetchData()
+                                    }
+                                    // 回到Main线程更新UI
+                                    _uiState.value = UiState.Success(data)
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "viewModelScope是ViewModel的协程作用域，在ViewModel清除时自动取消。使用Dispatchers.Main作为默认调度器，使用SupervisorJob隔离异常。"
+                ),
+                CodeExample(
+                    title = "示例2：lifecycleScope",
+                    code = """
+                        import androidx.lifecycle.lifecycleScope
+                        import kotlinx.coroutines.launch
+                        import kotlinx.coroutines.flow.collect
+                        
+                        // lifecycleScope：LifecycleOwner的协程作用域
+                        
+                        class MainActivity : AppCompatActivity() {
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                // 1. 基本使用
+                                lifecycleScope.launch {
+                                    val data = loadData()
+                                    updateUI(data)
+                                }
+                                
+                                // 2. 生命周期感知
+                                lifecycleScope.launch {
+                                    repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                        // 只在STARTED状态时执行
+                                        viewModel.uiState.collect { state ->
+                                            updateUI(state)
+                                        }
+                                    }
+                                }
+                                
+                                // 3. 在特定生命周期执行
+                                lifecycleScope.launchWhenCreated {
+                                    // 在onCreate之后执行
+                                    initializeData()
+                                }
+                                
+                                lifecycleScope.launchWhenStarted {
+                                    // 在onStart之后执行
+                                    startObserving()
+                                }
+                                
+                                lifecycleScope.launchWhenResumed {
+                                    // 在onResume之后执行
+                                    resumeUpdates()
+                                }
+                                
+                                // 4. 收集Flow
+                                lifecycleScope.launch {
+                                    viewModel.searchResults.collect { results ->
+                                        updateSearchResults(results)
+                                    }
+                                }
+                            }
+                            
+                            // 5. lifecycleScope特点
+                            // - 在Lifecycle销毁时自动取消
+                            // - 使用Dispatchers.Main作为默认调度器
+                            // - 可以感知生命周期状态
+                        }
+                    """.trimIndent(),
+                    explanation = "lifecycleScope是LifecycleOwner的协程作用域，在Lifecycle销毁时自动取消。可以使用launchWhenCreated、launchWhenStarted等生命周期感知函数。"
+                ),
+                CodeExample(
+                    title = "示例3：在Repository中使用协程",
+                    code = """
+                        import kotlinx.coroutines.flow.Flow
+                        import kotlinx.coroutines.flow.flow
+                        
+                        // Repository层使用suspend函数和Flow
+                        
+                        class UserRepository(
+                            private val apiService: ApiService,
+                            private val userDao: UserDao
+                        ) {
+                            
+                            // 1. suspend函数
+                            suspend fun getUser(userId: String): User {
+                                return apiService.getUser(userId)
+                            }
+                            
+                            // 2. Flow从网络获取数据
+                            fun getUserFlow(userId: String): Flow<User> = flow {
+                                val user = apiService.getUser(userId)
+                                emit(user)
+                            }.flowOn(Dispatchers.IO)
+                            
+                            // 3. Flow从数据库获取数据
+                            fun getUsersFromDb(): Flow<List<User>> {
+                                return userDao.getAllUsers()
+                            }
+                            
+                            // 4. 网络+数据库
+                            fun getUsers(): Flow<List<User>> = flow {
+                                // 先尝试从数据库获取
+                                val cachedUsers = userDao.getAllUsers().first()
+                                emit(cachedUsers)
+                                
+                                // 然后从网络获取
+                                try {
+                                    val networkUsers = apiService.getUsers()
+                                    userDao.insertAll(networkUsers)
+                                    emit(networkUsers)
+                                } catch (e: Exception) {
+                                    // 网络失败，使用缓存
+                                }
+                            }.flowOn(Dispatchers.IO)
+                        }
+                    """.trimIndent(),
+                    explanation = "Repository层使用suspend函数和Flow处理数据。可以使用flow构建器创建Flow，使用flowOn切换执行上下文。"
+                ),
+                CodeExample(
+                    title = "示例4：在ViewModel中使用Flow",
+                    code = """
+                        import androidx.lifecycle.ViewModel
+                        import androidx.lifecycle.viewModelScope
+                        import kotlinx.coroutines.flow.*
+                        
+                        class SearchViewModel(
+                            private val repository: SearchRepository
+                        ) : ViewModel() {
+                            
+                            private val _searchQuery = MutableStateFlow("")
+                            val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+                            
+                            // 1. 搜索结果的Flow
+                            val searchResults: StateFlow<List<Item>> = _searchQuery
+                                .debounce(300)  // 防抖
+                                .distinctUntilChanged()  // 去重
+                                .filter { it.length > 2 }  // 过滤
+                                .flatMapLatest { query ->
+                                    repository.search(query)
+                                        .catch { emit(emptyList()) }  // 错误处理
+                                }
+                                .stateIn(
+                                    scope = viewModelScope,
+                                    started = SharingStarted.WhileSubscribed(5000),
+                                    initialValue = emptyList()
+                                )
+                            
+                            // 2. UI状态
+                            private val _uiState = MutableStateFlow<UiState>(UiState.Idle)
+                            val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+                            
+                            fun updateQuery(query: String) {
+                                _searchQuery.value = query
+                            }
+                            
+                            // 3. 加载数据
+                            fun loadData() {
+                                viewModelScope.launch {
+                                    _uiState.value = UiState.Loading
+                                    try {
+                                        val data = repository.fetchData()
+                                        _uiState.value = UiState.Success(data)
+                                    } catch (e: Exception) {
+                                        _uiState.value = UiState.Error(e.message)
+                                    }
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "在ViewModel中使用Flow处理数据流。可以使用StateFlow管理UI状态，使用Flow操作符创建数据流处理管道。使用stateIn将Flow转换为StateFlow。"
+                ),
+                CodeExample(
+                    title = "示例5：Android协程最佳实践",
+                    code = """
+                        import androidx.lifecycle.ViewModel
+                        import androidx.lifecycle.viewModelScope
+                        import androidx.lifecycle.lifecycleScope
+                        import kotlinx.coroutines.*
+                        import kotlinx.coroutines.flow.*
+                        
+                        // 1. ViewModel中使用viewModelScope
+                        class MyViewModel : ViewModel() {
+                            fun loadData() {
+                                viewModelScope.launch {
+                                    // 使用Dispatchers.IO执行网络请求
+                                    val data = withContext(Dispatchers.IO) {
+                                        repository.fetchData()
+                                    }
+                                    // 自动回到Main线程更新UI
+                                    _uiState.value = UiState.Success(data)
+                                }
+                            }
+                        }
+                        
+                        // 2. Activity/Fragment中使用lifecycleScope
+                        class MainActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                lifecycleScope.launch {
+                                    repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                        viewModel.uiState.collect { state ->
+                                            updateUI(state)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 3. 使用StateFlow管理状态
+                        class MyViewModel : ViewModel() {
+                            private val _uiState = MutableStateFlow<UiState>(UiState.Idle)
+                            val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+                        }
+                        
+                        // 4. 使用SharedFlow处理事件
+                        class MyViewModel : ViewModel() {
+                            private val _events = MutableSharedFlow<Event>()
+                            val events: SharedFlow<Event> = _events.asSharedFlow()
+                            
+                            fun triggerEvent(event: Event) {
+                                viewModelScope.launch {
+                                    _events.emit(event)
+                                }
+                            }
+                        }
+                        
+                        // 5. 错误处理
+                        class MyViewModel : ViewModel() {
+                            fun loadData() {
+                                viewModelScope.launch {
+                                    try {
+                                        _uiState.value = UiState.Loading
+                                        val data = repository.fetchData()
+                                        _uiState.value = UiState.Success(data)
+                                    } catch (e: Exception) {
+                                        _uiState.value = UiState.Error(e.message)
+                                    }
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "在Android中使用协程的最佳实践：使用viewModelScope和lifecycleScope管理协程生命周期，使用StateFlow管理状态，使用SharedFlow处理事件，合理处理异常。"
+                )
+            ),
+            useCases = listOf(
+                "状态管理：使用viewModelScope和StateFlow管理UI状态",
+                "数据加载：使用协程加载网络数据",
+                "生命周期感知：使用lifecycleScope感知生命周期",
+                "事件处理：使用SharedFlow处理事件流",
+                "数据流：使用Flow处理响应式数据流"
+            ),
+            keyPoints = listOf(
+                "viewModelScope在ViewModel清除时自动取消，使用Dispatchers.Main作为默认调度器",
+                "lifecycleScope在Lifecycle销毁时自动取消，可以感知生命周期状态",
+                "使用withContext切换调度器，在IO线程执行网络请求，在Main线程更新UI",
+                "使用StateFlow管理UI状态，使用SharedFlow处理事件流",
+                "使用repeatOnLifecycle确保Flow收集只在特定生命周期状态执行"
+            ),
+            notes = listOf(
+                "viewModelScope使用SupervisorJob，子协程失败不会影响其他协程",
+                "lifecycleScope可以使用launchWhenCreated、launchWhenStarted等生命周期感知函数",
+                "在Repository中使用suspend函数和Flow，在ViewModel中使用viewModelScope",
+                "使用stateIn将Flow转换为StateFlow",
+                "使用repeatOnLifecycle避免在后台收集Flow，节省资源"
+            ),
+            practiceTips = "建议：在ViewModel中使用viewModelScope，在Activity/Fragment中使用lifecycleScope。使用StateFlow管理UI状态，使用SharedFlow处理事件。使用withContext在IO线程执行网络请求。使用repeatOnLifecycle确保Flow收集只在需要时执行。合理处理异常，更新UI状态而不是崩溃。"
         )
     )
 }
