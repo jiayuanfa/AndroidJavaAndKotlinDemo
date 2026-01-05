@@ -4559,6 +4559,1255 @@ object KnowledgeDetailsRepository {
                 "考虑扩展函数的性能影响"
             ),
             practiceTips = "建议：合理使用扩展函数增强API，但不要过度使用。将相关扩展函数组织在同一个文件中。使用清晰的命名和文档注释。在Android开发中，为View、Context等类添加扩展函数可以大大提高开发效率。注意扩展函数的性能影响。"
+        ),
+        
+        // ========== Kotlin 委托（Delegation） ==========
+        
+        // 1. 类委托、by关键字
+        KnowledgeDetail(
+            id = "class_delegation",
+            title = "类委托、by关键字",
+            overview = "Kotlin支持类委托，通过by关键字将接口的实现委托给另一个对象。这是实现组合优于继承的优雅方式。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：类委托基础",
+                    code = """
+                        // 类委托：将接口实现委托给另一个对象
+                        
+                        interface Base {
+                            fun print()
+                        }
+                        
+                        class BaseImpl(val x: Int) : Base {
+                            override fun print() {
+                                println(x)
+                            }
+                        }
+                        
+                        // 使用by关键字委托
+                        class Derived(b: Base) : Base by b
+                        
+                        // 使用
+                        val b = BaseImpl(10)
+                        val derived = Derived(b)
+                        derived.print()  // 10
+                        
+                        // Derived类自动获得Base接口的所有方法
+                        // 方法调用会转发给委托对象b
+                    """.trimIndent(),
+                    explanation = "使用by关键字可以将接口实现委托给另一个对象。委托类自动获得接口的所有方法，方法调用会转发给委托对象。"
+                ),
+                CodeExample(
+                    title = "示例2：覆盖委托方法",
+                    code = """
+                        interface Base {
+                            fun print()
+                            fun printMessage()
+                        }
+                        
+                        class BaseImpl(val x: Int) : Base {
+                            override fun print() {
+                                println(x)
+                            }
+                            
+                            override fun printMessage() {
+                                println("BaseImpl")
+                            }
+                        }
+                        
+                        // 可以覆盖委托的方法
+                        class Derived(b: Base) : Base by b {
+                            override fun printMessage() {
+                                println("Derived")
+                            }
+                        }
+                        
+                        val b = BaseImpl(10)
+                        val derived = Derived(b)
+                        derived.print()         // 10 (委托给b)
+                        derived.printMessage()  // "Derived" (覆盖的方法)
+                    """.trimIndent(),
+                    explanation = "委托类可以覆盖委托的方法。覆盖的方法会优先调用，未覆盖的方法会委托给委托对象。"
+                ),
+                CodeExample(
+                    title = "示例3：委托多个接口",
+                    code = """
+                        interface A {
+                            fun funA()
+                        }
+                        
+                        interface B {
+                            fun funB()
+                        }
+                        
+                        class AImpl : A {
+                            override fun funA() {
+                                println("A")
+                            }
+                        }
+                        
+                        class BImpl : B {
+                            override fun funB() {
+                                println("B")
+                            }
+                        }
+                        
+                        // 可以委托多个接口
+                        class AB(a: A, b: B) : A by a, B by b
+                        
+                        val ab = AB(AImpl(), BImpl())
+                        ab.funA()  // "A"
+                        ab.funB()  // "B"
+                    """.trimIndent(),
+                    explanation = "一个类可以委托多个接口，每个接口的实现可以委托给不同的对象。"
+                ),
+                CodeExample(
+                    title = "示例4：委托的优势",
+                    code = """
+                        // 委托模式的优势：组合优于继承
+                        
+                        interface Repository {
+                            fun save(data: String)
+                            fun load(): String
+                        }
+                        
+                        class DatabaseRepository : Repository {
+                            override fun save(data: String) {
+                                println("Saving to database: ${'$'}data")
+                            }
+                            
+                            override fun load(): String {
+                                return "Data from database"
+                            }
+                        }
+                        
+                        // 使用委托，可以轻松切换实现
+                        class CachedRepository(private val repository: Repository) : Repository by repository {
+                            private var cache: String? = null
+                            
+                            override fun load(): String {
+                                if (cache == null) {
+                                    cache = repository.load()
+                                }
+                                return cache!!
+                            }
+                        }
+                        
+                        // 使用
+                        val dbRepo = DatabaseRepository()
+                        val cachedRepo = CachedRepository(dbRepo)
+                        cachedRepo.save("Data")  // 委托给dbRepo
+                        cachedRepo.load()        // 使用缓存逻辑
+                    """.trimIndent(),
+                    explanation = "委托模式的优势是可以轻松组合功能，实现组合优于继承。可以创建装饰器模式，在不修改原类的情况下添加功能。"
+                ),
+                CodeExample(
+                    title = "示例5：委托实践",
+                    code = """
+                        // 1. 装饰器模式
+                        interface Window {
+                            fun draw()
+                        }
+                        
+                        class SimpleWindow : Window {
+                            override fun draw() {
+                                println("Drawing window")
+                            }
+                        }
+                        
+                        class DecoratedWindow(private val window: Window) : Window by window {
+                            override fun draw() {
+                                println("Decorating...")
+                                window.draw()
+                                println("Decorated")
+                            }
+                        }
+                        
+                        // 2. 适配器模式
+                        interface Target {
+                            fun request()
+                        }
+                        
+                        class Adaptee {
+                            fun specificRequest() {
+                                println("Specific request")
+                            }
+                        }
+                        
+                        class Adapter(private val adaptee: Adaptee) : Target {
+                            override fun request() {
+                                adaptee.specificRequest()
+                            }
+                        }
+                        
+                        // 3. 代理模式
+                        interface Subject {
+                            fun doSomething()
+                        }
+                        
+                        class RealSubject : Subject {
+                            override fun doSomething() {
+                                println("Real subject")
+                            }
+                        }
+                        
+                        class Proxy(private val subject: Subject) : Subject by subject {
+                            override fun doSomething() {
+                                println("Before")
+                                subject.doSomething()
+                                println("After")
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "委托模式可以用于实现装饰器模式、适配器模式、代理模式等设计模式。委托让这些模式的实现更简洁。"
+                )
+            ),
+            useCases = listOf(
+                "组合优于继承：使用委托实现组合",
+                "装饰器模式：在不修改原类的情况下添加功能",
+                "适配器模式：适配不同的接口",
+                "代理模式：控制对对象的访问",
+                "功能扩展：轻松扩展类的功能"
+            ),
+            keyPoints = listOf(
+                "使用by关键字将接口实现委托给另一个对象",
+                "委托类自动获得接口的所有方法",
+                "可以覆盖委托的方法，覆盖的方法优先调用",
+                "一个类可以委托多个接口",
+                "委托模式实现组合优于继承"
+            ),
+            notes = listOf(
+                "委托只能用于接口，不能用于类",
+                "委托的方法调用会转发给委托对象",
+                "覆盖的方法会优先调用，未覆盖的方法会委托",
+                "委托对象在委托类构造时传入",
+                "委托模式比继承更灵活"
+            ),
+            practiceTips = "建议：优先使用委托而不是继承，实现组合优于继承。使用委托可以轻松切换实现，创建装饰器、适配器等模式。委托让代码更灵活、更易维护。"
+        ),
+        
+        // 2. 属性委托（lazy、observable、vetoable）
+        KnowledgeDetail(
+            id = "property_delegation",
+            title = "属性委托（lazy、observable、vetoable）",
+            overview = "属性委托允许将属性的getter和setter委托给另一个对象。Kotlin提供了lazy、observable、vetoable等标准委托，也可以自定义委托。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：属性委托基础",
+                    code = """
+                        // 属性委托：将属性的访问委托给另一个对象
+                        
+                        class Delegate {
+                            private var value: String = ""
+                            
+                            operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): String {
+                                println("Getting value")
+                                return value
+                            }
+                            
+                            operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, value: String) {
+                                println("Setting value to ${'$'}value")
+                                this.value = value
+                            }
+                        }
+                        
+                        class Example {
+                            var p: String by Delegate()
+                        }
+                        
+                        val example = Example()
+                        example.p = "Hello"  // "Setting value to Hello"
+                        println(example.p)   // "Getting value" "Hello"
+                    """.trimIndent(),
+                    explanation = "属性委托需要实现getValue和setValue操作符。使用by关键字将属性委托给委托对象。"
+                ),
+                CodeExample(
+                    title = "示例2：lazy委托",
+                    code = """
+                        // lazy：延迟初始化，首次访问时计算
+                        
+                        val lazyValue: String by lazy {
+                            println("Computing...")
+                            "Hello"
+                        }
+                        
+                        println(lazyValue)  // "Computing..." "Hello"
+                        println(lazyValue)  // "Hello" (不再计算)
+                        
+                        // lazy是线程安全的（默认）
+                        val threadSafe: String by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+                            "Thread safe"
+                        }
+                        
+                        // 非线程安全的lazy（性能更好）
+                        val nonThreadSafe: String by lazy(LazyThreadSafetyMode.NONE) {
+                            "Non thread safe"
+                        }
+                        
+                        // 使用场景：昂贵的初始化
+                        class MyClass {
+                            val expensiveProperty: String by lazy {
+                                // 执行昂贵的初始化
+                                computeExpensiveValue()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "lazy委托用于延迟初始化，首次访问时计算，之后复用结果。默认是线程安全的，也可以指定非线程安全模式。"
+                ),
+                CodeExample(
+                    title = "示例3：observable委托",
+                    code = """
+                        import kotlin.properties.Delegates
+                        
+                        // observable：属性变化时通知
+                        
+                        class User {
+                            var name: String by Delegates.observable("Initial") { prop, old, new ->
+                                println("${'$'}{prop.name} changed from ${'$'}old to ${'$'}new")
+                            }
+                        }
+                        
+                        val user = User()
+                        user.name = "Alice"  // "name changed from Initial to Alice"
+                        user.name = "Bob"   // "name changed from Alice to Bob"
+                        
+                        // 使用场景：数据绑定、日志记录
+                        class ViewModel {
+                            var data: String by Delegates.observable("") { _, old, new ->
+                                if (old != new) {
+                                    notifyDataChanged()
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "observable委托在属性值变化时调用回调函数，可以用于数据绑定、日志记录等场景。"
+                ),
+                CodeExample(
+                    title = "示例4：vetoable委托",
+                    code = """
+                        import kotlin.properties.Delegates
+                        
+                        // vetoable：可以否决属性值的变化
+                        
+                        class User {
+                            var age: Int by Delegates.vetoable(0) { prop, old, new ->
+                                if (new >= 0 && new <= 150) {
+                                    println("${'$'}{prop.name} changed from ${'$'}old to ${'$'}new")
+                                    true  // 接受新值
+                                } else {
+                                    println("Invalid age: ${'$'}new")
+                                    false  // 拒绝新值
+                                }
+                            }
+                        }
+                        
+                        val user = User()
+                        user.age = 25   // "age changed from 0 to 25"
+                        user.age = -1   // "Invalid age: -1" (值不变)
+                        println(user.age)  // 25
+                        
+                        // 使用场景：数据验证
+                        class Product {
+                            var price: Double by Delegates.vetoable(0.0) { _, old, new ->
+                                new >= 0.0  // 价格不能为负
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "vetoable委托可以否决属性值的变化，回调函数返回true接受新值，返回false拒绝新值。用于数据验证。"
+                ),
+                CodeExample(
+                    title = "示例5：自定义属性委托",
+                    code = """
+                        // 自定义属性委托
+                        
+                        class MapDelegate<T>(private val map: MutableMap<String, Any?>) {
+                            operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): T {
+                                return map[property.name] as T
+                            }
+                            
+                            operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, value: T) {
+                                map[property.name] = value
+                            }
+                        }
+                        
+                        class User(map: MutableMap<String, Any?>) {
+                            var name: String by MapDelegate(map)
+                            var age: Int by MapDelegate(map)
+                        }
+                        
+                        val map = mutableMapOf<String, Any?>(
+                            "name" to "Alice",
+                            "age" to 25
+                        )
+                        val user = User(map)
+                        println(user.name)  // "Alice"
+                        println(user.age)   // 25
+                        
+                        user.name = "Bob"
+                        println(map["name"])  // "Bob"
+                    """.trimIndent(),
+                    explanation = "可以自定义属性委托，实现getValue和setValue操作符。自定义委托可以实现各种功能，如从Map读取属性、属性验证等。"
+                )
+            ),
+            useCases = listOf(
+                "延迟初始化：使用lazy延迟初始化昂贵的属性",
+                "数据绑定：使用observable监听属性变化",
+                "数据验证：使用vetoable验证属性值",
+                "属性映射：自定义委托从Map读取属性",
+                "缓存：使用lazy缓存计算结果"
+            ),
+            keyPoints = listOf(
+                "属性委托需要实现getValue和setValue操作符",
+                "lazy用于延迟初始化，首次访问时计算",
+                "observable在属性变化时通知，用于数据绑定",
+                "vetoable可以否决属性值变化，用于数据验证",
+                "可以自定义属性委托实现特定功能"
+            ),
+            notes = listOf(
+                "lazy默认是线程安全的，也可以指定非线程安全模式",
+                "observable的回调在值变化后执行",
+                "vetoable的回调返回true接受新值，false拒绝新值",
+                "属性委托可以用于val和var属性",
+                "自定义委托需要实现getValue和setValue操作符"
+            ),
+            practiceTips = "建议：使用lazy延迟初始化昂贵的属性。使用observable实现数据绑定。使用vetoable验证属性值。自定义委托可以实现特定功能，但要保持简单。"
+        ),
+        
+        // 3. 标准委托的使用
+        KnowledgeDetail(
+            id = "standard_delegates",
+            title = "标准委托的使用",
+            overview = "Kotlin标准库提供了多个标准委托，包括lazy、observable、vetoable、notNull等。理解这些标准委托的使用场景可以提高开发效率。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：lazy委托详解",
+                    code = """
+                        // lazy：延迟初始化
+                        
+                        // 1. 基本使用
+                        val data: String by lazy {
+                            println("Initializing...")
+                            loadData()
+                        }
+                        
+                        // 2. 线程安全模式
+                        val safe: String by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+                            "Thread safe"
+                        }
+                        
+                        // 3. 非线程安全模式（性能更好）
+                        val fast: String by lazy(LazyThreadSafetyMode.NONE) {
+                            "Non thread safe"
+                        }
+                        
+                        // 4. 在类中使用
+                        class MyClass {
+                            val expensive: String by lazy {
+                                computeExpensiveValue()
+                            }
+                        }
+                        
+                        // 5. 使用场景
+                        // - 昂贵的初始化
+                        // - 可能不使用的属性
+                        // - 单例模式
+                    """.trimIndent(),
+                    explanation = "lazy委托用于延迟初始化，支持线程安全和非线程安全模式。适用于昂贵的初始化、可能不使用的属性等场景。"
+                ),
+                CodeExample(
+                    title = "示例2：observable和vetoable",
+                    code = """
+                        import kotlin.properties.Delegates
+                        
+                        // 1. observable：监听变化
+                        class ViewModel {
+                            var data: String by Delegates.observable("") { _, old, new ->
+                                if (old != new) {
+                                    onDataChanged(new)
+                                }
+                            }
+                        }
+                        
+                        // 2. vetoable：验证值
+                        class User {
+                            var email: String by Delegates.vetoable("") { _, old, new ->
+                                new.isValidEmail()  // 验证邮箱
+                            }
+                        }
+                        
+                        // 3. 组合使用
+                        class Product {
+                            var price: Double by Delegates.vetoable(0.0) { _, old, new ->
+                                if (new >= 0) {
+                                    true
+                                } else {
+                                    println("Price cannot be negative")
+                                    false
+                                }
+                            }
+                            
+                            var name: String by Delegates.observable("") { _, old, new ->
+                                println("Name changed: ${'$'}old -> ${'$'}new")
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "observable用于监听属性变化，vetoable用于验证属性值。可以组合使用实现数据验证和变化通知。"
+                ),
+                CodeExample(
+                    title = "示例3：notNull委托",
+                    code = """
+                        import kotlin.properties.Delegates
+                        
+                        // notNull：非空属性，必须在初始化前赋值
+                        
+                        class MyClass {
+                            var name: String by Delegates.notNull<String>()
+                            
+                            fun init(name: String) {
+                                this.name = name
+                            }
+                        }
+                        
+                        val obj = MyClass()
+                        // println(obj.name)  // ❌ 错误！未初始化
+                        obj.init("Alice")
+                        println(obj.name)  // ✅ "Alice"
+                        
+                        // 使用场景：需要在构造后初始化的属性
+                        class ViewHolder {
+                            var itemView: View by Delegates.notNull()
+                            
+                            fun bind(view: View) {
+                                this.itemView = view
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "notNull委托用于非空属性，必须在访问前初始化。如果未初始化就访问会抛出异常。"
+                ),
+                CodeExample(
+                    title = "示例4：标准委托实践",
+                    code = """
+                        import kotlin.properties.Delegates
+                        
+                        // 1. Android ViewModel中使用
+                        class MyViewModel : ViewModel() {
+                            private var _uiState = MutableStateFlow<UiState>(UiState.Idle)
+                            val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+                            
+                            var data: String by Delegates.observable("") { _, _, new ->
+                                _uiState.value = UiState.Loaded(new)
+                            }
+                        }
+                        
+                        // 2. 数据验证
+                        class UserForm {
+                            var email: String by Delegates.vetoable("") { _, _, new ->
+                                new.isValidEmail()
+                            }
+                            
+                            var age: Int by Delegates.vetoable(0) { _, _, new ->
+                                new in 0..150
+                            }
+                        }
+                        
+                        // 3. 缓存
+                        class Cache {
+                            private val cache = mutableMapOf<String, String>()
+                            
+                            fun get(key: String): String by lazy {
+                                cache[key] ?: loadFromNetwork(key)
+                            }
+                        }
+                        
+                        // 4. 配置管理
+                        class Config {
+                            var apiUrl: String by Delegates.observable("") { _, old, new ->
+                                if (old != new) {
+                                    updateApiClient(new)
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "标准委托在实际开发中用于ViewModel状态管理、数据验证、缓存、配置管理等场景。合理使用标准委托可以提高代码质量。"
+                ),
+                CodeExample(
+                    title = "示例5：委托选择指南",
+                    code = """
+                        // 1. 延迟初始化 -> lazy
+                        val expensive: String by lazy { compute() }
+                        
+                        // 2. 监听变化 -> observable
+                        var data: String by Delegates.observable("") { _, old, new ->
+                            onChanged(old, new)
+                        }
+                        
+                        // 3. 数据验证 -> vetoable
+                        var age: Int by Delegates.vetoable(0) { _, _, new ->
+                            new >= 0
+                        }
+                        
+                        // 4. 非空属性 -> notNull
+                        var view: View by Delegates.notNull()
+                        
+                        // 5. 自定义需求 -> 自定义委托
+                        class CustomDelegate {
+                            operator fun getValue(...) = ...
+                            operator fun setValue(...) = ...
+                        }
+                    """.trimIndent(),
+                    explanation = "根据需求选择合适的委托：延迟初始化用lazy，监听变化用observable，数据验证用vetoable，非空属性用notNull，特殊需求用自定义委托。"
+                )
+            ),
+            useCases = listOf(
+                "延迟初始化：使用lazy延迟初始化",
+                "状态管理：使用observable管理状态变化",
+                "数据验证：使用vetoable验证数据",
+                "非空属性：使用notNull确保属性非空",
+                "缓存：使用lazy缓存计算结果"
+            ),
+            keyPoints = listOf(
+                "lazy用于延迟初始化，支持线程安全模式",
+                "observable用于监听属性变化",
+                "vetoable用于验证属性值",
+                "notNull用于非空属性，必须在访问前初始化",
+                "根据需求选择合适的标准委托"
+            ),
+            notes = listOf(
+                "lazy默认是线程安全的，也可以指定非线程安全模式",
+                "observable在值变化后执行回调",
+                "vetoable返回true接受新值，false拒绝新值",
+                "notNull未初始化就访问会抛出异常",
+                "标准委托可以满足大部分需求，特殊需求可以自定义"
+            ),
+            practiceTips = "建议：根据需求选择合适的标准委托。延迟初始化用lazy，监听变化用observable，数据验证用vetoable。在Android开发中，合理使用委托可以简化代码，提高可维护性。"
+        ),
+        
+        // ========== Kotlin 泛型（Generics） ==========
+        
+        // 1. 泛型类和函数、类型参数、泛型约束
+        KnowledgeDetail(
+            id = "generics_basic",
+            title = "泛型类和函数、类型参数、泛型约束",
+            overview = "Kotlin的泛型系统提供了类型安全的抽象。理解泛型类、泛型函数、类型参数和泛型约束是掌握Kotlin泛型的基础。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：泛型类",
+                    code = """
+                        // 泛型类：在类名后声明类型参数
+                        
+                        class Box<T>(val value: T)
+                        
+                        val intBox = Box(1)           // Box<Int>
+                        val stringBox = Box("Hello")  // Box<String>
+                        
+                        // 多个类型参数
+                        class Pair<A, B>(val first: A, val second: B)
+                        
+                        val pair = Pair(1, "Hello")  // Pair<Int, String>
+                        
+                        // 泛型类的方法可以使用类型参数
+                        class Stack<T> {
+                            private val items = mutableListOf<T>()
+                            
+                            fun push(item: T) {
+                                items.add(item)
+                            }
+                            
+                            fun pop(): T? {
+                                return if (items.isEmpty()) null else items.removeAt(items.size - 1)
+                            }
+                        }
+                        
+                        val stack = Stack<Int>()
+                        stack.push(1)
+                        stack.push(2)
+                        println(stack.pop())  // 2
+                    """.trimIndent(),
+                    explanation = "泛型类在类名后声明类型参数，可以在类的属性和方法中使用。可以声明多个类型参数。"
+                ),
+                CodeExample(
+                    title = "示例2：泛型函数",
+                    code = """
+                        // 泛型函数：在函数名前声明类型参数
+                        
+                        fun <T> singletonList(item: T): List<T> {
+                            return listOf(item)
+                        }
+                        
+                        val list1 = singletonList(1)        // List<Int>
+                        val list2 = singletonList("Hello")  // List<String>
+                        
+                        // 多个类型参数
+                        fun <T, R> map(list: List<T>, transform: (T) -> R): List<R> {
+                            return list.map(transform)
+                        }
+                        
+                        val numbers = listOf(1, 2, 3)
+                        val strings = map(numbers) { it.toString() }  // List<String>
+                        
+                        // 扩展函数也可以是泛型的
+                        fun <T> List<T>.secondOrNull(): T? {
+                            return if (this.size >= 2) this[1] else null
+                        }
+                        
+                        val list = listOf(1, 2, 3)
+                        println(list.secondOrNull())  // 2
+                    """.trimIndent(),
+                    explanation = "泛型函数在函数名前声明类型参数，Kotlin可以推断类型参数。扩展函数也可以是泛型的。"
+                ),
+                CodeExample(
+                    title = "示例3：类型参数约束",
+                    code = """
+                        // 类型参数约束：限制类型参数必须是某个类型的子类型
+                        
+                        // 上界约束：T必须是Comparable的子类型
+                        fun <T : Comparable<T>> maxOf(a: T, b: T): T {
+                            return if (a > b) a else b
+                        }
+                        
+                        val max = maxOf(1, 2)  // 2
+                        val maxStr = maxOf("a", "b")  // "b"
+                        
+                        // 多个上界约束（使用where子句）
+                        fun <T> copyWhenGreater(list: List<T>, threshold: T): List<String>
+                            where T : CharSequence,
+                                  T : Comparable<T> {
+                            return list.filter { it > threshold }.map { it.toString() }
+                        }
+                        
+                        // 默认上界是Any?
+                        class Box<T>  // T : Any?
+                        
+                        // 非空类型参数
+                        class NonNullBox<T : Any>  // T不能为null
+                    """.trimIndent(),
+                    explanation = "类型参数约束使用冒号语法，限制类型参数必须是某个类型的子类型。可以使用where子句指定多个约束。"
+                ),
+                CodeExample(
+                    title = "示例4：泛型接口",
+                    code = """
+                        // 泛型接口
+                        
+                        interface Repository<T> {
+                            fun save(item: T)
+                            fun findById(id: String): T?
+                            fun findAll(): List<T>
+                        }
+                        
+                        // 实现泛型接口
+                        class UserRepository : Repository<User> {
+                            override fun save(item: User) {
+                                // 保存用户
+                            }
+                            
+                            override fun findById(id: String): User? {
+                                // 查找用户
+                                return null
+                            }
+                            
+                            override fun findAll(): List<User> {
+                                return emptyList()
+                            }
+                        }
+                        
+                        // 泛型接口也可以有类型参数
+                        interface Mapper<in T, out R> {
+                            fun map(input: T): R
+                        }
+                        
+                        class StringToIntMapper : Mapper<String, Int> {
+                            override fun map(input: String): Int {
+                                return input.toIntOrNull() ?: 0
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "接口也可以是泛型的，实现泛型接口时需要指定具体类型。泛型接口可以用于定义通用的数据访问模式。"
+                ),
+                CodeExample(
+                    title = "示例5：泛型实践",
+                    code = """
+                        // 1. 通用容器
+                        class Cache<K, V> {
+                            private val map = mutableMapOf<K, V>()
+                            
+                            fun put(key: K, value: V) {
+                                map[key] = value
+                            }
+                            
+                            fun get(key: K): V? = map[key]
+                        }
+                        
+                        // 2. 通用工厂
+                        interface Factory<T> {
+                            fun create(): T
+                        }
+                        
+                        class StringFactory : Factory<String> {
+                            override fun create(): String = "Default"
+                        }
+                        
+                        fun <T> createInstance(factory: Factory<T>): T {
+                            return factory.create()
+                        }
+                        
+                        // 3. 通用工具函数
+                        fun <T> List<T>.swap(index1: Int, index2: Int) {
+                            val tmp = this[index1]
+                            this[index1] = this[index2]
+                            this[index2] = tmp
+                        }
+                        
+                        // 4. 类型安全的构建器
+                        class Builder<T> {
+                            private var value: T? = null
+                            
+                            fun set(value: T) {
+                                this.value = value
+                            }
+                            
+                            fun build(): T = value ?: throw IllegalStateException()
+                        }
+                    """.trimIndent(),
+                    explanation = "泛型在实际开发中用于创建通用容器、工厂模式、工具函数等。泛型提供了类型安全，避免了类型转换。"
+                )
+            ),
+            useCases = listOf(
+                "类型安全：使用泛型避免类型转换和运行时错误",
+                "代码复用：创建通用的容器和工具类",
+                "API设计：设计灵活的API接口",
+                "集合操作：创建类型安全的集合操作",
+                "工厂模式：实现通用的工厂模式"
+            ),
+            keyPoints = listOf(
+                "泛型类在类名后声明类型参数",
+                "泛型函数在函数名前声明类型参数",
+                "类型参数约束使用冒号语法限制类型",
+                "可以使用where子句指定多个约束",
+                "默认上界是Any?，可以指定非空上界"
+            ),
+            notes = listOf(
+                "Kotlin可以推断泛型类型参数",
+                "类型参数约束限制类型参数必须是某个类型的子类型",
+                "泛型接口可以用于定义通用的数据访问模式",
+                "泛型提供了编译时类型安全",
+                "可以使用多个类型参数"
+            ),
+            practiceTips = "建议：合理使用泛型提高代码的类型安全性和复用性。使用类型参数约束确保类型安全。在API设计时，使用泛型可以让API更灵活。"
+        ),
+        
+        // 2. 型变（协变out、逆变in、星投影）
+        KnowledgeDetail(
+            id = "variance",
+            title = "型变（协变out、逆变in、星投影）",
+            overview = "Kotlin的型变系统包括协变（out）、逆变（in）和星投影（*）。理解型变是掌握Kotlin泛型高级特性的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：协变（out）",
+                    code = """
+                        // 协变：子类型关系保持不变
+                        // 如果A是B的子类型，那么Producer<A>是Producer<B>的子类型
+                        
+                        // 声明处型变：在类声明时使用out
+                        interface Producer<out T> {
+                            fun produce(): T
+                        }
+                        
+                        class StringProducer : Producer<String> {
+                            override fun produce(): String = "Hello"
+                        }
+                        
+                        // 协变允许向上转型
+                        val producer: Producer<Any> = StringProducer()  // ✅ 可以
+                        
+                        // 使用处型变：在使用时使用out
+                        fun printProducer(producer: Producer<out Number>) {
+                            val value: Number = producer.produce()
+                            println(value)
+                        }
+                        
+                        val intProducer: Producer<Int> = object : Producer<Int> {
+                            override fun produce(): Int = 42
+                        }
+                        printProducer(intProducer)  // ✅ 可以
+                        
+                        // out关键字限制：只能作为返回类型，不能作为参数类型
+                        // interface Producer<out T> {
+                        //     fun produce(): T  // ✅ 可以
+                        //     fun consume(item: T)  // ❌ 错误！不能作为参数
+                        // }
+                    """.trimIndent(),
+                    explanation = "协变使用out关键字，表示类型参数只能作为返回类型。协变允许子类型向上转型，适用于只读操作。"
+                ),
+                CodeExample(
+                    title = "示例2：逆变（in）",
+                    code = """
+                        // 逆变：子类型关系反转
+                        // 如果A是B的子类型，那么Consumer<B>是Consumer<A>的子类型
+                        
+                        // 声明处型变：在类声明时使用in
+                        interface Consumer<in T> {
+                            fun consume(item: T)
+                        }
+                        
+                        class AnyConsumer : Consumer<Any> {
+                            override fun consume(item: Any) {
+                                println(item)
+                            }
+                        }
+                        
+                        // 逆变允许向下转型
+                        val consumer: Consumer<String> = AnyConsumer()  // ✅ 可以
+                        consumer.consume("Hello")
+                        
+                        // 使用处型变：在使用时使用in
+                        fun printConsumer(consumer: Consumer<in String>) {
+                            consumer.consume("Hello")
+                        }
+                        
+                        val anyConsumer: Consumer<Any> = object : Consumer<Any> {
+                            override fun consume(item: Any) {
+                                println(item)
+                            }
+                        }
+                        printConsumer(anyConsumer)  // ✅ 可以
+                        
+                        // in关键字限制：只能作为参数类型，不能作为返回类型
+                        // interface Consumer<in T> {
+                        //     fun consume(item: T)  // ✅ 可以
+                        //     fun produce(): T  // ❌ 错误！不能作为返回类型
+                        // }
+                    """.trimIndent(),
+                    explanation = "逆变使用in关键字，表示类型参数只能作为参数类型。逆变允许父类型向下转型，适用于只写操作。"
+                ),
+                CodeExample(
+                    title = "示例3：不变（invariant）",
+                    code = """
+                        // 不变：没有型变，类型必须完全匹配
+                        
+                        class MutableBox<T>(var value: T)
+                        
+                        val intBox = MutableBox(1)
+                        // val numberBox: MutableBox<Number> = intBox  // ❌ 错误！
+                        
+                        // 不变类型不能相互转换
+                        fun setValue(box: MutableBox<Number>) {
+                            box.value = 3.14
+                        }
+                        
+                        // setValue(intBox)  // ❌ 错误！不安全
+                        // 如果允许，intBox.value会被设置为Double，但intBox是MutableBox<Int>
+                        
+                        // 同时读写需要不变
+                        interface MutableList<T> {
+                            fun get(index: Int): T
+                            fun set(index: Int, value: T)
+                        }
+                    """.trimIndent(),
+                    explanation = "不变类型没有型变，类型必须完全匹配。同时读写操作的类型需要不变，以保证类型安全。"
+                ),
+                CodeExample(
+                    title = "示例4：星投影（*）",
+                    code = """
+                        // 星投影：使用*代替类型参数，表示未知类型
+                        
+                        // 1. 协变类型的星投影
+                        interface Producer<out T> {
+                            fun produce(): T
+                        }
+                        
+                        fun printProducer(producer: Producer<*>) {
+                            val value: Any? = producer.produce()  // 只能作为Any?使用
+                            println(value)
+                        }
+                        
+                        // 2. 逆变类型的星投影
+                        interface Consumer<in T> {
+                            fun consume(item: T)
+                        }
+                        
+                        fun printConsumer(consumer: Consumer<*>) {
+                            // consumer.consume(?)  // ❌ 不能调用，不知道具体类型
+                        }
+                        
+                        // 3. 不变类型的星投影
+                        class Box<T>(var value: T)
+                        
+                        fun printBox(box: Box<*>) {
+                            val value: Any? = box.value  // 只能读取为Any?
+                            // box.value = ?  // ❌ 不能写入，不知道具体类型
+                        }
+                        
+                        // 4. 星投影的使用场景
+                        fun processList(list: List<*>) {
+                            // 不知道List的具体类型，只能作为List<Any?>使用
+                            for (item in list) {
+                                println(item)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "星投影使用*代替类型参数，表示未知类型。协变的星投影可以读取为Any?，逆变的星投影不能调用，不变的星投影只能读取不能写入。"
+                ),
+                CodeExample(
+                    title = "示例5：型变实践",
+                    code = """
+                        // 1. List是协变的（只读）
+                        val stringList: List<String> = listOf("a", "b")
+                        val anyList: List<Any> = stringList  // ✅ 可以
+                        
+                        // 2. MutableList是不变的（可读写）
+                        val mutableStringList: MutableList<String> = mutableListOf("a", "b")
+                        // val mutableAnyList: MutableList<Any> = mutableStringList  // ❌ 错误！
+                        
+                        // 3. 函数类型是协变的
+                        val intFunction: (Int) -> Number = { it.toDouble() }
+                        val numberFunction: (Number) -> Number = intFunction  // ✅ 可以
+                        
+                        // 4. 使用处型变
+                        fun copy(from: Array<out Any>, to: Array<in String>) {
+                            // from可以读取为Any
+                            // to可以写入String
+                        }
+                        
+                        val intArray = arrayOf(1, 2, 3)
+                        val anyArray = arrayOfNulls<Any>(3)
+                        copy(intArray, anyArray)  // ✅ 可以
+                        
+                        // 5. 声明处型变 vs 使用处型变
+                        // 声明处型变：在类声明时指定，所有使用都遵循型变
+                        // 使用处型变：在使用时指定，只影响当前使用
+                    """.trimIndent(),
+                    explanation = "在实际开发中，List是协变的，MutableList是不变的。函数类型是协变的。可以使用声明处型变或使用处型变。理解型变有助于编写更灵活的代码。"
+                )
+            ),
+            useCases = listOf(
+                "只读集合：使用协变实现只读集合",
+                "只写操作：使用逆变实现只写操作",
+                "类型安全：使用不变保证类型安全",
+                "API设计：使用型变设计灵活的API",
+                "函数参数：使用使用处型变接受更广泛的类型"
+            ),
+            keyPoints = listOf(
+                "协变（out）：子类型关系保持不变，只能作为返回类型",
+                "逆变（in）：子类型关系反转，只能作为参数类型",
+                "不变：没有型变，类型必须完全匹配",
+                "星投影（*）：表示未知类型，使用有限制",
+                "声明处型变在类声明时指定，使用处型变在使用时指定"
+            ),
+            notes = listOf(
+                "out关键字限制类型参数只能作为返回类型",
+                "in关键字限制类型参数只能作为参数类型",
+                "同时读写操作的类型需要不变",
+                "协变的星投影可以读取为Any?",
+                "List是协变的，MutableList是不变的"
+            ),
+            practiceTips = "建议：理解协变、逆变和不变的区别。只读操作使用协变，只写操作使用逆变，同时读写使用不变。合理使用型变可以让API更灵活，同时保证类型安全。"
+        ),
+        
+        // 3. 泛型实践、reified类型参数
+        KnowledgeDetail(
+            id = "generics_practice",
+            title = "泛型实践、reified类型参数",
+            overview = "reified类型参数允许在运行时访问类型信息，这是Kotlin泛型的高级特性。理解reified类型参数的使用场景可以提高代码的灵活性。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：reified类型参数基础",
+                    code = """
+                        // reified：使类型参数在运行时可用
+                        // 只能用于内联函数（inline function）
+                        
+                        inline fun <reified T> getTypeName(): String {
+                            return T::class.simpleName ?: "Unknown"
+                        }
+                        
+                        println(getTypeName<Int>())      // "Int"
+                        println(getTypeName<String>())    // "String"
+                        
+                        // 不使用reified（错误示例）
+                        // fun <T> getTypeName(): String {
+                        //     return T::class.simpleName  // ❌ 错误！T在运行时被擦除
+                        // }
+                        
+                        // reified必须配合inline使用
+                        inline fun <reified T> isInstance(value: Any): Boolean {
+                            return value is T
+                        }
+                        
+                        println(isInstance<String>("Hello"))  // true
+                        println(isInstance<Int>("Hello"))     // false
+                    """.trimIndent(),
+                    explanation = "reified类型参数使用reified关键字，只能在inline函数中使用。reified允许在运行时访问类型信息，避免了类型擦除的问题。"
+                ),
+                CodeExample(
+                    title = "示例2：reified类型参数实践",
+                    code = """
+                        // 1. 类型检查
+                        inline fun <reified T> List<*>.filterIsInstance(): List<T> {
+                            return this.filterIsInstance<T>()
+                        }
+                        
+                        val mixed = listOf(1, "Hello", 2, "World")
+                        val strings = mixed.filterIsInstance<String>()  // ["Hello", "World"]
+                        
+                        // 2. 创建实例
+                        inline fun <reified T> createInstance(): T? {
+                            return try {
+                                T::class.java.getDeclaredConstructor().newInstance()
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                        
+                        val string = createInstance<String>()  // ""
+                        val list = createInstance<ArrayList<String>>()  // ArrayList()
+                        
+                        // 3. 获取类型信息
+                        inline fun <reified T> getTypeInfo(): String {
+                            val kClass = T::class
+                            return "Name: ${'$'}{kClass.simpleName}, Qualified: ${'$'}{kClass.qualifiedName}"
+                        }
+                        
+                        println(getTypeInfo<Int>())  // "Name: Int, Qualified: kotlin.Int"
+                    """.trimIndent(),
+                    explanation = "reified类型参数可以用于类型检查、创建实例、获取类型信息等场景。reified让泛型函数更强大、更灵活。"
+                ),
+                CodeExample(
+                    title = "示例3：reified在Android中的应用",
+                    code = """
+                        // 1. 启动Activity
+                        // inline fun <reified T : Activity> Context.startActivity() {
+                        //     startActivity(Intent(this, T::class.java))
+                        // }
+                        // 
+                        // // 使用
+                        // startActivity<MainActivity>()
+                        
+                        // 2. 获取Fragment参数
+                        // inline fun <reified T> Fragment.getArgument(key: String): T? {
+                        //     return arguments?.get(key) as? T
+                        // }
+                        // 
+                        // // 使用
+                        // val userId: String? = getArgument("userId")
+                        
+                        // 3. 依赖注入
+                        inline fun <reified T> getService(): T {
+                            return ServiceLocator.getService(T::class.java)
+                        }
+                        
+                        // 使用
+                        val apiService = getService<ApiService>()
+                        
+                        // 4. JSON解析
+                        inline fun <reified T> String.fromJson(): T? {
+                            return try {
+                                Gson().fromJson(this, T::class.java)
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                        
+                        // 使用
+                        val user: User? = jsonString.fromJson<User>()
+                    """.trimIndent(),
+                    explanation = "reified类型参数在Android开发中非常有用，可以简化Activity启动、Fragment参数获取、依赖注入、JSON解析等操作。"
+                ),
+                CodeExample(
+                    title = "示例4：reified的限制",
+                    code = """
+                        // 1. reified只能用于inline函数
+                        // fun <reified T> normalFunction() {  // ❌ 错误！
+                        //     // reified必须配合inline
+                        // }
+                        
+                        // 2. 不能用于非内联函数
+                        inline fun <reified T> outerFunction() {
+                            // 可以调用其他reified函数
+                            innerFunction<T>()
+                        }
+                        
+                        inline fun <reified T> innerFunction() {
+                            println(T::class.simpleName)
+                        }
+                        
+                        // 3. 不能用于非内联的lambda
+                        inline fun <reified T> process(block: () -> Unit) {
+                            block()
+                            // 在block中不能使用T，因为block可能不是内联的
+                        }
+                        
+                        // 4. 类型参数必须是reified
+                        inline fun <reified T> checkType(value: Any): Boolean {
+                            return value is T  // ✅ 可以，T是reified
+                        }
+                        
+                        // fun <T> checkType(value: Any): Boolean {
+                        //     return value is T  // ❌ 错误！T不是reified
+                        // }
+                    """.trimIndent(),
+                    explanation = "reified类型参数只能用于inline函数，不能用于非内联函数或非内联的lambda。reified类型参数在运行时可用，非reified类型参数在运行时被擦除。"
+                ),
+                CodeExample(
+                    title = "示例5：泛型最佳实践",
+                    code = """
+                        // 1. 使用类型参数约束
+                        fun <T : Comparable<T>> sort(list: List<T>): List<T> {
+                            return list.sorted()
+                        }
+                        
+                        // 2. 使用协变和逆变
+                        interface Repository<out T> {
+                            fun findAll(): List<T>
+                        }
+                        
+                        interface Writer<in T> {
+                            fun write(item: T)
+                        }
+                        
+                        // 3. 使用reified简化代码
+                        inline fun <reified T> List<*>.filterByType(): List<T> {
+                            return this.filterIsInstance<T>()
+                        }
+                        
+                        // 4. 避免不必要的泛型
+                        // 如果类型总是相同，不需要泛型
+                        class StringList {  // 而不是 List<String>
+                            // ...
+                        }
+                        
+                        // 5. 使用类型别名简化复杂泛型
+                        typealias StringMap = Map<String, String>
+                        typealias Callback<T> = (T) -> Unit
+                        
+                        // 6. 合理使用星投影
+                        fun process(items: List<*>) {
+                            // 当不需要知道具体类型时使用星投影
+                        }
+                    """.trimIndent(),
+                    explanation = "泛型最佳实践包括：使用类型参数约束、合理使用协变和逆变、使用reified简化代码、避免不必要的泛型、使用类型别名、合理使用星投影等。"
+                )
+            ),
+            useCases = listOf(
+                "类型检查：使用reified进行运行时类型检查",
+                "实例创建：使用reified创建泛型类型的实例",
+                "Android开发：简化Activity启动、Fragment参数获取等",
+                "依赖注入：使用reified简化依赖注入",
+                "JSON解析：使用reified简化JSON解析"
+            ),
+            keyPoints = listOf(
+                "reified类型参数只能在inline函数中使用",
+                "reified允许在运行时访问类型信息",
+                "reified避免了类型擦除的问题",
+                "reified可以用于类型检查、创建实例、获取类型信息",
+                "reified在Android开发中非常有用"
+            ),
+            notes = listOf(
+                "reified必须配合inline使用",
+                "非reified类型参数在运行时被擦除",
+                "reified类型参数在运行时可用",
+                "reified不能用于非内联函数或非内联的lambda",
+                "reified让泛型函数更强大、更灵活"
+            ),
+            practiceTips = "建议：合理使用reified类型参数简化代码，特别是在Android开发中。使用reified可以避免类型擦除的问题，让泛型函数更强大。注意reified只能用于inline函数。"
         )
     )
 }
