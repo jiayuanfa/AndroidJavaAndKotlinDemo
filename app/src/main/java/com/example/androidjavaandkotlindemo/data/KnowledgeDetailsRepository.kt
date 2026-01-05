@@ -7629,6 +7629,300 @@ object KnowledgeDetailsRepository {
                 "also常用于执行副作用和调试"
             ),
             practiceTips = "建议：根据需求选择合适的作用域函数。需要返回对象本身用apply或also，需要返回lambda结果用let、run或with。需要空安全调用用let。合理使用作用域函数可以让代码更简洁，但不要过度使用。"
+        ),
+        
+        // ========== Kotlin 操作符重载 ==========
+        
+        // 1. 操作符重载基础、中缀函数
+        KnowledgeDetail(
+            id = "operator_overload",
+            title = "操作符重载基础、中缀函数",
+            overview = "Kotlin允许重载操作符，让自定义类型可以使用操作符语法。中缀函数允许使用更自然的语法调用函数。理解操作符重载和中缀函数可以让代码更简洁、更易读。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：算术操作符重载",
+                    code = """
+                        // 算术操作符：+、-、*、/、%
+                        
+                        data class Point(val x: Int, val y: Int) {
+                            // 重载+操作符
+                            operator fun plus(other: Point): Point {
+                                return Point(x + other.x, y + other.y)
+                            }
+                            
+                            // 重载-操作符
+                            operator fun minus(other: Point): Point {
+                                return Point(x - other.x, y - other.y)
+                            }
+                            
+                            // 重载*操作符
+                            operator fun times(factor: Int): Point {
+                                return Point(x * factor, y * factor)
+                            }
+                        }
+                        
+                        val p1 = Point(10, 20)
+                        val p2 = Point(5, 10)
+                        
+                        val sum = p1 + p2      // Point(15, 30)
+                        val diff = p1 - p2     // Point(5, 10)
+                        val scaled = p1 * 2    // Point(20, 40)
+                        
+                        // 也可以重载其他类型
+                        operator fun Point.plus(value: Int): Point {
+                            return Point(x + value, y + value)
+                        }
+                        
+                        val p3 = p1 + 5  // Point(15, 25)
+                    """.trimIndent(),
+                    explanation = "使用operator关键字重载操作符。可以重载算术操作符（+、-、*、/、%），让自定义类型支持操作符语法。"
+                ),
+                CodeExample(
+                    title = "示例2：比较操作符重载",
+                    code = """
+                        // 比较操作符：==、!=、<、>、<=、>=
+                        
+                        data class Money(val amount: Int, val currency: String) {
+                            // 重载比较操作符
+                            operator fun compareTo(other: Money): Int {
+                                require(currency == other.currency) {
+                                    "Cannot compare different currencies"
+                                }
+                                return amount.compareTo(other.amount)
+                            }
+                        }
+                        
+                        val money1 = Money(100, "USD")
+                        val money2 = Money(200, "USD")
+                        
+                        println(money1 < money2)   // true
+                        println(money1 > money2)   // false
+                        println(money1 <= money2)   // true
+                        println(money1 >= money2)   // false
+                        
+                        // ==和!=自动使用equals方法
+                        val money3 = Money(100, "USD")
+                        println(money1 == money3)   // true（数据类自动生成equals）
+                        println(money1 != money2)   // true
+                    """.trimIndent(),
+                    explanation = "可以重载比较操作符（<、>、<=、>=），需要实现compareTo方法。==和!=自动使用equals方法，数据类自动生成equals。"
+                ),
+                CodeExample(
+                    title = "示例3：索引操作符重载",
+                    code = """
+                        // 索引操作符：[]、[]=
+                        
+                        class Matrix(val rows: Int, val cols: Int) {
+                            private val data = Array(rows) { IntArray(cols) }
+                            
+                            // 重载get操作符（读取）
+                            operator fun get(row: Int, col: Int): Int {
+                                return data[row][col]
+                            }
+                            
+                            // 重载set操作符（写入）
+                            operator fun set(row: Int, col: Int, value: Int) {
+                                data[row][col] = value
+                            }
+                        }
+                        
+                        val matrix = Matrix(3, 3)
+                        matrix[0, 0] = 1  // 调用set
+                        matrix[0, 1] = 2
+                        matrix[1, 0] = 3
+        
+                        println(matrix[0, 0])  // 1（调用get）
+                        println(matrix[0, 1])  // 2
+                        
+                        // 也可以用于Map-like结构
+                        class Registry {
+                            private val map = mutableMapOf<String, Any>()
+                            
+                            operator fun get(key: String): Any? {
+                                return map[key]
+                            }
+                            
+                            operator fun set(key: String, value: Any) {
+                                map[key] = value
+                            }
+                        }
+                        
+                        val registry = Registry()
+                        registry["name"] = "Alice"
+                        println(registry["name"])  // "Alice"
+                    """.trimIndent(),
+                    explanation = "可以重载索引操作符[]和[]=，需要实现get和set方法。常用于矩阵、Map-like结构等场景。"
+                ),
+                CodeExample(
+                    title = "示例4：调用操作符重载",
+                    code = """
+                        // 调用操作符：()
+                        
+                        class Adder(val value: Int) {
+                            operator fun invoke(amount: Int): Int {
+                                return value + amount
+                            }
+                        }
+                        
+                        val adder = Adder(10)
+                        val result = adder(5)  // 15，像函数一样调用
+        
+                        // 函数类型也可以重载invoke
+                        class Calculator {
+                            operator fun invoke(operation: String, a: Int, b: Int): Int {
+                                return when (operation) {
+                                    "add" -> a + b
+                                    "multiply" -> a * b
+                                    else -> 0
+                                }
+                            }
+                        }
+                        
+                        val calc = Calculator()
+                        val sum = calc("add", 5, 3)  // 8
+                        val product = calc("multiply", 5, 3)  // 15
+                        
+                        // 用于DSL
+                        class Html {
+                            operator fun invoke(block: Html.() -> Unit): String {
+                                block()
+                                return toString()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "可以重载调用操作符()，让对象可以像函数一样调用。需要实现invoke方法。常用于函数对象、DSL等场景。"
+                ),
+                CodeExample(
+                    title = "示例5：中缀函数",
+                    code = """
+                        // 中缀函数：使用infix关键字，可以省略点和括号
+                        
+                        // 1. 基本语法
+                        infix fun Int.add(other: Int): Int {
+                            return this + other
+                        }
+                        
+                        val sum = 5 add 3  // 8，等价于 5.add(3)
+                        
+                        // 2. 自定义中缀函数
+                        infix fun String.matches(regex: String): Boolean {
+                            return this.matches(regex.toRegex())
+                        }
+                        
+                        val isValid = "hello@example.com" matches "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\$"
+                        // 等价于 "hello@example.com".matches("...")
+                        
+                        // 3. 中缀函数的要求
+                        // - 必须是成员函数或扩展函数
+                        // - 只能有一个参数
+                        // - 参数不能有默认值
+                        // - 不能是可变参数
+                        
+                        class Person(val name: String) {
+                            infix fun marriedTo(other: Person): Boolean {
+                                return true  // 示例
+                            }
+                        }
+                        
+                        val alice = Person("Alice")
+                        val bob = Person("Bob")
+                        val areMarried = alice marriedTo bob  // 更自然的语法
+                        
+                        // 4. 中缀函数与操作符
+                        infix fun <T> T.shouldBe(expected: T) {
+                            if (this != expected) {
+                                throw AssertionError("Expected ${'$'}expected but got ${'$'}this")
+                            }
+                        }
+                        
+                        val result = 2 + 2
+                        result shouldBe 4  // 测试框架风格的语法
+                    """.trimIndent(),
+                    explanation = "中缀函数使用infix关键字，可以省略点和括号，让函数调用更自然。中缀函数必须是成员函数或扩展函数，只能有一个参数。"
+                ),
+                CodeExample(
+                    title = "示例6：操作符重载实践",
+                    code = """
+                        // 1. 向量运算
+                        data class Vector(val x: Double, val y: Double) {
+                            operator fun plus(other: Vector) = Vector(x + other.x, y + other.y)
+                            operator fun minus(other: Vector) = Vector(x - other.x, y - other.y)
+                            operator fun times(scalar: Double) = Vector(x * scalar, y * scalar)
+                            operator fun div(scalar: Double) = Vector(x / scalar, y / scalar)
+                            
+                            operator fun unaryMinus() = Vector(-x, -y)  // 一元操作符
+                            operator fun unaryPlus() = this
+                        }
+                        
+                        val v1 = Vector(1.0, 2.0)
+                        val v2 = Vector(3.0, 4.0)
+                        val sum = v1 + v2  // Vector(4.0, 6.0)
+                        val negated = -v1  // Vector(-1.0, -2.0)
+                        
+                        // 2. 范围操作符
+                        class Date(val year: Int, val month: Int, val day: Int) {
+                            operator fun rangeTo(other: Date): DateRange {
+                                return DateRange(this, other)
+                            }
+                        }
+                        
+                        val start = Date(2024, 1, 1)
+                        val end = Date(2024, 12, 31)
+                        val range = start..end  // 使用..操作符
+                        
+                        // 3. in操作符
+                        class Container<T>(private val items: List<T>) {
+                            operator fun contains(item: T): Boolean {
+                                return items.contains(item)
+                            }
+                        }
+                        
+                        val container = Container(listOf(1, 2, 3))
+                        val exists = 2 in container  // true
+                        val notExists = 5 in container  // false
+                        
+                        // 4. 解构操作符（componentN）
+                        data class Point3D(val x: Int, val y: Int, val z: Int)
+                        
+                        val point = Point3D(1, 2, 3)
+                        val (x, y, z) = point  // 解构
+                        
+                        // 5. 中缀函数实践
+                        infix fun <T> T.should(assertion: (T) -> Boolean): T {
+                            if (!assertion(this)) {
+                                throw AssertionError("Assertion failed")
+                            }
+                            return this
+                        }
+                        
+                        val number = 10
+                        number should { it > 5 }  // 测试风格
+                    """.trimIndent(),
+                    explanation = "操作符重载在实际开发中用于向量运算、范围操作、容器操作等场景。中缀函数可以让代码更自然、更易读。合理使用操作符重载可以提高代码的可读性。"
+                )
+            ),
+            useCases = listOf(
+                "数学运算：为自定义类型重载算术操作符",
+                "容器操作：重载索引操作符和in操作符",
+                "函数对象：重载调用操作符让对象可调用",
+                "DSL构建：使用操作符重载和中缀函数构建DSL",
+                "代码简化：使用中缀函数让代码更自然"
+            ),
+            keyPoints = listOf(
+                "使用operator关键字重载操作符",
+                "可以重载算术、比较、索引、调用等操作符",
+                "中缀函数使用infix关键字，可以省略点和括号",
+                "中缀函数必须是成员函数或扩展函数，只能有一个参数",
+                "操作符重载可以让代码更简洁、更易读"
+            ),
+            notes = listOf(
+                "操作符重载需要实现特定的函数（如plus、minus、compareTo等）",
+                "==和!=自动使用equals方法",
+                "中缀函数不能有默认参数和可变参数",
+                "合理使用操作符重载，不要过度使用",
+                "操作符重载常用于数学运算、容器操作、DSL等场景"
+            ),
+            practiceTips = "建议：合理使用操作符重载提高代码可读性，但不要过度使用。中缀函数可以让代码更自然，特别是在DSL和测试框架中。注意操作符重载的语义应该清晰明确。"
         )
     )
 }
