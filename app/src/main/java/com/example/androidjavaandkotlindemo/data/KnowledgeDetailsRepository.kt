@@ -10593,6 +10593,3751 @@ object KnowledgeDetailsRepository {
                 "合理设计项目结构可以提高可维护性"
             ),
             practiceTips = "建议：使用KMM共享业务逻辑和UI代码，采用清晰的分层架构。使用Compose Multiplatform共享UI，注意处理平台差异。合理设计依赖注入和测试策略，提高代码的可维护性。"
+        ),
+        
+        // ========== Java 基础语法 ==========
+        
+        // 1. 变量和数据类型（基本类型、引用类型、包装类）
+        KnowledgeDetail(
+            id = "java_var_decl",
+            title = "变量和数据类型（基本类型、引用类型、包装类）",
+            overview = "Java中的数据类型分为基本类型和引用类型。基本类型有8种，包装类是对基本类型的封装。理解数据类型是Java编程的基础。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：基本数据类型",
+                    code = """
+                        // Java有8种基本数据类型
+                        
+                        // 1. 整数类型
+                        byte b = 127;           // 1字节，-128到127
+                        short s = 32767;       // 2字节，-32768到32767
+                        int i = 2147483647;     // 4字节，-2^31到2^31-1
+                        long l = 9223372036854775807L;  // 8字节，需要L后缀
+                        
+                        // 2. 浮点类型
+                        float f = 3.14f;       // 4字节，需要f后缀
+                        double d = 3.141592653589793;  // 8字节，默认浮点类型
+                        
+                        // 3. 字符类型
+                        char c = 'A';          // 2字节，Unicode字符
+                        
+                        // 4. 布尔类型
+                        boolean bool = true;   // 1位，true或false
+                        
+                        // 5. 默认值（成员变量）
+                        class Test {
+                            byte b;      // 默认值：0
+                            short s;     // 默认值：0
+                            int i;       // 默认值：0
+                            long l;      // 默认值：0L
+                            float f;     // 默认值：0.0f
+                            double d;    // 默认值：0.0
+                            char c;      // 默认值：'\\u0000'
+                            boolean bool; // 默认值：false
+                        }
+                    """.trimIndent(),
+                    explanation = "Java有8种基本数据类型：byte、short、int、long、float、double、char、boolean。成员变量有默认值，局部变量必须初始化。"
+                ),
+                CodeExample(
+                    title = "示例2：引用类型",
+                    code = """
+                        // 引用类型包括类、接口、数组等
+                        
+                        // 1. 类类型
+                        String str = "Hello";           // String是引用类型
+                        Object obj = new Object();      // Object是引用类型
+                        
+                        // 2. 数组类型
+                        int[] arr = new int[10];       // 数组是引用类型
+                        String[] strs = {"a", "b", "c"}; // 数组字面量
+                        
+                        // 3. 接口类型
+                        List<String> list = new ArrayList<>(); // 接口引用
+                        
+                        // 4. 引用类型的默认值
+                        class Test {
+                            String str;      // 默认值：null
+                            Object obj;      // 默认值：null
+                            int[] arr;       // 默认值：null
+                        }
+                        
+                        // 5. 引用和对象
+                        String s1 = "Hello";
+                        String s2 = s1;      // s2和s1指向同一个对象
+                        s2 = "World";        // s2指向新对象，s1不变
+                    """.trimIndent(),
+                    explanation = "引用类型包括类、接口、数组等，变量存储的是对象的引用（地址），默认值为null。多个引用可以指向同一个对象。"
+                ),
+                CodeExample(
+                    title = "示例3：包装类",
+                    code = """
+                        // 包装类是对基本类型的封装
+                        
+                        // 1. 包装类类型
+                        Integer i = new Integer(10);     // 装箱
+                        Integer j = Integer.valueOf(10); // 推荐方式（缓存）
+                        int k = i.intValue();            // 拆箱
+                        
+                        // 2. 自动装箱和拆箱（Java 5+）
+                        Integer a = 10;      // 自动装箱
+                        int b = a;          // 自动拆箱
+                        
+                        // 3. 包装类常量
+                        System.out.println(Integer.MAX_VALUE);  // 2147483647
+                        System.out.println(Integer.MIN_VALUE);  // -2147483648
+                        System.out.println(Integer.SIZE);        // 32
+                        
+                        // 4. 包装类方法
+                        String str = "123";
+                        int num = Integer.parseInt(str);        // 字符串转int
+                        String numStr = Integer.toString(123); // int转字符串
+                        
+                        // 5. 所有包装类
+                        // Byte, Short, Integer, Long
+                        // Float, Double
+                        // Character
+                        // Boolean
+                        
+                        // 6. 缓存机制
+                        Integer x = 127;
+                        Integer y = 127;
+                        System.out.println(x == y);  // true（缓存范围内）
+                        
+                        Integer m = 128;
+                        Integer n = 128;
+                        System.out.println(m == n);  // false（超出缓存范围）
+                        System.out.println(m.equals(n)); // true（值相等）
+                    """.trimIndent(),
+                    explanation = "包装类是对基本类型的封装，提供对象操作和方法。Java 5+支持自动装箱和拆箱。包装类有缓存机制（-128到127）。"
+                ),
+                CodeExample(
+                    title = "示例4：类型转换",
+                    code = """
+                        // 1. 自动类型转换（隐式转换）
+                        int i = 10;
+                        long l = i;        // int自动转换为long
+                        float f = i;       // int自动转换为float
+                        double d = f;      // float自动转换为double
+                        
+                        // 2. 强制类型转换（显式转换）
+                        double d = 3.14;
+                        int i = (int) d;    // 强制转换为int，结果为3（截断）
+                        
+                        long l = 100L;
+                        int i2 = (int) l;   // 强制转换
+                        
+                        // 3. 包装类转换
+                        int i = 10;
+                        Integer integer = Integer.valueOf(i);  // int转Integer
+                        int j = integer.intValue();            // Integer转int
+                        
+                        // 4. 字符串转换
+                        String str = "123";
+                        int num = Integer.parseInt(str);      // 字符串转int
+                        String numStr = String.valueOf(123);   // int转字符串
+                        
+                        // 5. 类型提升
+                        byte b1 = 10;
+                        byte b2 = 20;
+                        // byte result = b1 + b2;  // 错误！运算结果提升为int
+                        int result = b1 + b2;      // 正确
+                        byte result2 = (byte)(b1 + b2); // 强制转换
+                    """.trimIndent(),
+                    explanation = "类型转换包括自动转换（小类型转大类型）和强制转换（大类型转小类型）。运算时会发生类型提升。"
+                )
+            ),
+            useCases = listOf(
+                "变量声明：声明和初始化变量",
+                "类型选择：根据需求选择合适的数据类型",
+                "包装类使用：在集合中使用包装类",
+                "类型转换：在不同类型间转换",
+                "性能优化：基本类型性能更好，包装类功能更丰富"
+            ),
+            keyPoints = listOf(
+                "Java有8种基本数据类型：byte、short、int、long、float、double、char、boolean",
+                "引用类型包括类、接口、数组，默认值为null",
+                "包装类是对基本类型的封装，提供对象操作和方法",
+                "Java 5+支持自动装箱和拆箱",
+                "类型转换包括自动转换和强制转换"
+            ),
+            notes = listOf(
+                "成员变量有默认值，局部变量必须初始化",
+                "包装类有缓存机制（-128到127）",
+                "基本类型性能更好，包装类功能更丰富",
+                "集合只能存储引用类型，不能存储基本类型",
+                "运算时会发生类型提升"
+            ),
+            practiceTips = "建议：根据需求选择合适的数据类型，基本类型性能更好，包装类功能更丰富。在集合中使用包装类，注意自动装箱和拆箱的性能影响。理解类型转换规则，避免精度丢失。"
+        ),
+        
+        // 2. 运算符（算术、关系、逻辑、位运算）
+        KnowledgeDetail(
+            id = "java_operators",
+            title = "运算符（算术、关系、逻辑、位运算）",
+            overview = "Java提供了丰富的运算符，包括算术运算符、关系运算符、逻辑运算符、位运算符等。理解运算符的优先级和结合性是编写正确代码的基础。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：算术运算符",
+                    code = """
+                        // 1. 基本算术运算符
+                        int a = 10;
+                        int b = 3;
+                        
+                        System.out.println(a + b);  // 13，加法
+                        System.out.println(a - b);  // 7，减法
+                        System.out.println(a * b);  // 30，乘法
+                        System.out.println(a / b);  // 3，除法（整数除法）
+                        System.out.println(a % b);  // 1，取余
+                        
+                        // 2. 浮点运算
+                        double x = 10.0;
+                        double y = 3.0;
+                        System.out.println(x / y);  // 3.333...，浮点除法
+                        
+                        // 3. 自增自减运算符
+                        int i = 10;
+                        System.out.println(i++);    // 10，先使用后自增
+                        System.out.println(i);      // 11
+                        
+                        int j = 10;
+                        System.out.println(++j);    // 11，先自增后使用
+                        System.out.println(j);      // 11
+                        
+                        // 4. 复合赋值运算符
+                        int num = 10;
+                        num += 5;   // 等价于 num = num + 5
+                        num -= 3;   // 等价于 num = num - 3
+                        num *= 2;   // 等价于 num = num * 2
+                        num /= 4;   // 等价于 num = num / 4
+                        num %= 3;   // 等价于 num = num % 3
+                    """.trimIndent(),
+                    explanation = "算术运算符包括+、-、*、/、%，以及自增++、自减--。注意整数除法和浮点除法的区别。"
+                ),
+                CodeExample(
+                    title = "示例2：关系运算符",
+                    code = """
+                        // 关系运算符返回boolean值
+                        
+                        int a = 10;
+                        int b = 20;
+                        
+                        System.out.println(a == b);  // false，等于
+                        System.out.println(a != b);  // true，不等于
+                        System.out.println(a < b);   // true，小于
+                        System.out.println(a > b);   // false，大于
+                        System.out.println(a <= b);  // true，小于等于
+                        System.out.println(a >= b);  // false，大于等于
+                        
+                        // 2. 对象比较
+                        String s1 = "Hello";
+                        String s2 = "Hello";
+                        String s3 = new String("Hello");
+                        
+                        System.out.println(s1 == s2);      // true（字符串常量池）
+                        System.out.println(s1 == s3);      // false（不同对象）
+                        System.out.println(s1.equals(s3)); // true（值相等）
+                        
+                        // 3. 浮点数比较
+                        double x = 0.1 + 0.2;
+                        double y = 0.3;
+                        System.out.println(x == y);        // false（精度问题）
+                        System.out.println(Math.abs(x - y) < 1e-9); // true（误差比较）
+                    """.trimIndent(),
+                    explanation = "关系运算符用于比较值，返回boolean。注意==比较引用，equals()比较值。浮点数比较需要考虑精度问题。"
+                ),
+                CodeExample(
+                    title = "示例3：逻辑运算符",
+                    code = """
+                        // 1. 逻辑与（&&）和逻辑或（||）
+                        boolean a = true;
+                        boolean b = false;
+                        
+                        System.out.println(a && b);  // false，逻辑与（短路）
+                        System.out.println(a || b);  // true，逻辑或（短路）
+                        System.out.println(!a);      // false，逻辑非
+                        
+                        // 2. 短路求值
+                        int x = 10;
+                        if (x > 0 && x++ < 20) {  // x++不会执行（短路）
+                            System.out.println("OK");
+                        }
+                        System.out.println(x);  // 10
+                        
+                        // 3. 非短路运算符（&和|）
+                        int y = 10;
+                        if (y > 0 & y++ < 20) {  // y++会执行
+                            System.out.println("OK");
+                        }
+                        System.out.println(y);  // 11
+                        
+                        // 4. 逻辑异或（^）
+                        System.out.println(true ^ true);   // false
+                        System.out.println(true ^ false);  // true
+                        System.out.println(false ^ false); // false
+                    """.trimIndent(),
+                    explanation = "逻辑运算符包括&&（逻辑与，短路）、||（逻辑或，短路）、!（逻辑非）、&（按位与，非短路）、|（按位或，非短路）、^（异或）。"
+                ),
+                CodeExample(
+                    title = "示例4：位运算符",
+                    code = """
+                        // 位运算符对二进制位进行操作
+                        
+                        int a = 5;   // 二进制：0101
+                        int b = 3;   // 二进制：0011
+                        
+                        // 1. 按位与（&）
+                        System.out.println(a & b);  // 1，二进制：0001
+                        // 0101
+                        // 0011
+                        // ----
+                        // 0001
+                        
+                        // 2. 按位或（|）
+                        System.out.println(a | b);  // 7，二进制：0111
+                        // 0101
+                        // 0011
+                        // ----
+                        // 0111
+                        
+                        // 3. 按位异或（^）
+                        System.out.println(a ^ b);  // 6，二进制：0110
+                        // 0101
+                        // 0011
+                        // ----
+                        // 0110
+                        
+                        // 4. 按位取反（~）
+                        System.out.println(~a);     // -6，二进制：1111...1010
+                        
+                        // 5. 左移（<<）
+                        System.out.println(a << 1); // 10，二进制：1010（左移1位，相当于*2）
+                        
+                        // 6. 右移（>>）
+                        System.out.println(a >> 1); // 2，二进制：0010（右移1位，相当于/2）
+                        
+                        // 7. 无符号右移（>>>）
+                        int c = -8;
+                        System.out.println(c >> 1);  // -4（符号位填充）
+                        System.out.println(c >>> 1); // 2147483644（0填充）
+                    """.trimIndent(),
+                    explanation = "位运算符对二进制位进行操作，包括&（按位与）、|（按位或）、^（按位异或）、~（按位取反）、<<（左移）、>>（右移）、>>>（无符号右移）。"
+                ),
+                CodeExample(
+                    title = "示例5：运算符优先级",
+                    code = """
+                        // 运算符优先级（从高到低）
+                        
+                        // 1. 括号优先级最高
+                        int result1 = (2 + 3) * 4;  // 20
+                        int result2 = 2 + 3 * 4;     // 14
+                        
+                        // 2. 算术运算符 > 关系运算符 > 逻辑运算符
+                        boolean b1 = 2 + 3 > 4 && 5 < 6;  // true
+                        // 等价于：(2 + 3) > 4 && 5 < 6
+                        
+                        // 3. 常见优先级顺序
+                        // 1. () [] .
+                        // 2. ++ -- ! ~
+                        // 3. * / %
+                        // 4. + -
+                        // 5. << >> >>>
+                        // 6. < > <= >= instanceof
+                        // 7. == !=
+                        // 8. &
+                        // 9. ^
+                        // 10. |
+                        // 11. &&
+                        // 12. ||
+                        // 13. ?:
+                        // 14. = += -= *= /= %=
+                        
+                        // 4. 使用括号提高可读性
+                        int x = 10;
+                        int y = 20;
+                        int z = 30;
+                        boolean result = (x > 0) && (y > 0) || (z > 0);  // 清晰
+                    """.trimIndent(),
+                    explanation = "运算符有优先级，括号优先级最高。建议使用括号提高代码可读性，避免依赖优先级。"
+                )
+            ),
+            useCases = listOf(
+                "算术运算：进行数学计算",
+                "条件判断：使用关系运算符和逻辑运算符",
+                "位操作：进行位级别的操作（性能优化）",
+                "数据转换：使用位移运算符进行快速乘除",
+                "条件表达式：使用三元运算符简化代码"
+            ),
+            keyPoints = listOf(
+                "算术运算符包括+、-、*、/、%、++、--",
+                "关系运算符返回boolean值，用于比较",
+                "逻辑运算符包括&&、||、!，支持短路求值",
+                "位运算符对二进制位进行操作",
+                "运算符有优先级，括号优先级最高"
+            ),
+            notes = listOf(
+                "注意整数除法和浮点除法的区别",
+                "==比较引用，equals()比较值",
+                "&&和||支持短路求值，提高性能",
+                "位运算符可以用于性能优化",
+                "使用括号提高代码可读性"
+            ),
+            practiceTips = "建议：理解运算符的优先级和结合性，使用括号提高代码可读性。注意==和equals()的区别，浮点数比较考虑精度问题。合理使用位运算符进行性能优化。"
+        ),
+        
+        // 3. 控制流（if-else、switch、for、while）
+        KnowledgeDetail(
+            id = "java_control_flow",
+            title = "控制流（if-else、switch、for、while）",
+            overview = "控制流语句用于控制程序的执行顺序，包括条件语句（if-else、switch）和循环语句（for、while、do-while）。理解控制流是编写逻辑代码的基础。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：if-else语句",
+                    code = """
+                        // 1. 基本if语句
+                        int score = 85;
+                        if (score >= 60) {
+                            System.out.println("及格");
+                        }
+                        
+                        // 2. if-else语句
+                        if (score >= 90) {
+                            System.out.println("优秀");
+                        } else if (score >= 80) {
+                            System.out.println("良好");
+                        } else if (score >= 60) {
+                            System.out.println("及格");
+                        } else {
+                            System.out.println("不及格");
+                        }
+                        
+                        // 3. 三元运算符
+                        String result = score >= 60 ? "及格" : "不及格";
+                        
+                        // 4. 嵌套if语句
+                        if (score >= 60) {
+                            if (score >= 90) {
+                                System.out.println("优秀");
+                            } else {
+                                System.out.println("及格");
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "if-else语句用于条件判断，支持多分支。三元运算符可以简化简单的if-else。"
+                ),
+                CodeExample(
+                    title = "示例2：switch语句",
+                    code = """
+                        // 1. 传统switch语句
+                        int day = 3;
+                        switch (day) {
+                            case 1:
+                                System.out.println("星期一");
+                                break;
+                            case 2:
+                                System.out.println("星期二");
+                                break;
+                            case 3:
+                                System.out.println("星期三");
+                                break;
+                            default:
+                                System.out.println("其他");
+                        }
+                        
+                        // 2. switch表达式（Java 14+）
+                        String dayName = switch (day) {
+                            case 1 -> "星期一";
+                            case 2 -> "星期二";
+                            case 3 -> "星期三";
+                            default -> "其他";
+                        };
+                        
+                        // 3. yield关键字（Java 14+）
+                        int result = switch (day) {
+                            case 1, 2, 3, 4, 5 -> {
+                                System.out.println("工作日");
+                                yield 1;
+                            }
+                            case 6, 7 -> {
+                                System.out.println("周末");
+                                yield 2;
+                            }
+                            default -> 0;
+                        };
+                        
+                        // 4. 字符串switch（Java 7+）
+                        String color = "red";
+                        switch (color) {
+                            case "red":
+                                System.out.println("红色");
+                                break;
+                            case "blue":
+                                System.out.println("蓝色");
+                                break;
+                            default:
+                                System.out.println("其他颜色");
+                        }
+                    """.trimIndent(),
+                    explanation = "switch语句用于多分支选择，支持整数、字符、字符串、枚举。Java 14+支持switch表达式和yield关键字。"
+                ),
+                CodeExample(
+                    title = "示例3：for循环",
+                    code = """
+                        // 1. 传统for循环
+                        for (int i = 0; i < 10; i++) {
+                            System.out.println(i);
+                        }
+                        
+                        // 2. 增强for循环（for-each）
+                        int[] arr = {1, 2, 3, 4, 5};
+                        for (int num : arr) {
+                            System.out.println(num);
+                        }
+                        
+                        List<String> list = Arrays.asList("a", "b", "c");
+                        for (String str : list) {
+                            System.out.println(str);
+                        }
+                        
+                        // 3. 嵌套for循环
+                        for (int i = 1; i <= 9; i++) {
+                            for (int j = 1; j <= i; j++) {
+                                System.out.print(j + "*" + i + "=" + (i * j) + "\\t");
+                            }
+                            System.out.println();
+                        }
+                        
+                        // 4. 循环控制
+                        for (int i = 0; i < 10; i++) {
+                            if (i == 5) {
+                                break;      // 跳出循环
+                            }
+                            if (i % 2 == 0) {
+                                continue;   // 跳过本次循环
+                            }
+                            System.out.println(i);
+                        }
+                    """.trimIndent(),
+                    explanation = "for循环用于重复执行代码，支持传统for循环和增强for循环（for-each）。break跳出循环，continue跳过本次循环。"
+                ),
+                CodeExample(
+                    title = "示例4：while和do-while循环",
+                    code = """
+                        // 1. while循环
+                        int i = 0;
+                        while (i < 10) {
+                            System.out.println(i);
+                            i++;
+                        }
+                        
+                        // 2. do-while循环（至少执行一次）
+                        int j = 0;
+                        do {
+                            System.out.println(j);
+                            j++;
+                        } while (j < 10);
+                        
+                        // 3. 无限循环
+                        while (true) {
+                            // 需要break或return退出
+                            if (condition) {
+                                break;
+                            }
+                        }
+                        
+                        // 4. 循环控制
+                        int k = 0;
+                        while (k < 10) {
+                            if (k == 5) {
+                                break;      // 跳出循环
+                            }
+                            if (k % 2 == 0) {
+                                k++;
+                                continue;   // 跳过本次循环
+                            }
+                            System.out.println(k);
+                            k++;
+                        }
+                    """.trimIndent(),
+                    explanation = "while循环先判断条件再执行，do-while循环先执行再判断（至少执行一次）。break跳出循环，continue跳过本次循环。"
+                ),
+                CodeExample(
+                    title = "示例5：标签和跳转",
+                    code = """
+                        // 1. 标签break
+                        outer: for (int i = 0; i < 3; i++) {
+                            inner: for (int j = 0; j < 3; j++) {
+                                if (i == 1 && j == 1) {
+                                    break outer;  // 跳出外层循环
+                                }
+                                System.out.println(i + ", " + j);
+                            }
+                        }
+                        
+                        // 2. 标签continue
+                        outer: for (int i = 0; i < 3; i++) {
+                            inner: for (int j = 0; j < 3; j++) {
+                                if (i == 1 && j == 1) {
+                                    continue outer;  // 继续外层循环
+                                }
+                                System.out.println(i + ", " + j);
+                            }
+                        }
+                        
+                        // 3. return语句
+                        public int findIndex(int[] arr, int target) {
+                            for (int i = 0; i < arr.length; i++) {
+                                if (arr[i] == target) {
+                                    return i;  // 返回并退出方法
+                                }
+                            }
+                            return -1;
+                        }
+                    """.trimIndent(),
+                    explanation = "标签可以用于控制嵌套循环的跳转。return语句用于退出方法并返回值。"
+                )
+            ),
+            useCases = listOf(
+                "条件判断：使用if-else和switch进行条件判断",
+                "循环处理：使用for、while进行重复操作",
+                "数据遍历：使用增强for循环遍历集合",
+                "流程控制：使用break、continue控制循环流程",
+                "嵌套逻辑：使用嵌套控制流处理复杂逻辑"
+            ),
+            keyPoints = listOf(
+                "if-else用于条件判断，支持多分支",
+                "switch用于多分支选择，支持多种类型",
+                "for循环用于重复执行，支持传统和增强for循环",
+                "while和do-while用于条件循环",
+                "break跳出循环，continue跳过本次循环"
+            ),
+            notes = listOf(
+                "switch语句需要break，否则会继续执行（fall-through）",
+                "增强for循环不能修改集合元素",
+                "do-while至少执行一次",
+                "标签可以用于控制嵌套循环",
+                "合理使用控制流提高代码可读性"
+            ),
+            practiceTips = "建议：合理使用控制流语句，提高代码可读性。注意switch的fall-through特性，使用break避免意外执行。增强for循环适合遍历，但不能修改集合。使用标签控制嵌套循环的跳转。"
+        ),
+        
+        // 4. 方法和函数（重载、参数传递、可变参数）
+        KnowledgeDetail(
+            id = "java_methods",
+            title = "方法和函数（重载、参数传递、可变参数）",
+            overview = "方法是Java中组织代码的基本单位。方法可以重载，支持可变参数，理解参数传递机制（值传递）是编写正确代码的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：方法声明和调用",
+                    code = """
+                        // 1. 方法声明
+                        public class Calculator {
+                            // 方法修饰符 返回类型 方法名(参数列表)
+                            public int add(int a, int b) {
+                                return a + b;  // 返回值
+                            }
+                            
+                            // 无返回值方法
+                            public void print(String message) {
+                                System.out.println(message);
+                            }
+                            
+                            // 静态方法
+                            public static int multiply(int a, int b) {
+                                return a * b;
+                            }
+                        }
+                        
+                        // 2. 方法调用
+                        Calculator calc = new Calculator();
+                        int result = calc.add(3, 5);  // 实例方法调用
+                        calc.print("Hello");
+                        
+                        int product = Calculator.multiply(3, 5);  // 静态方法调用
+                    """.trimIndent(),
+                    explanation = "方法包括修饰符、返回类型、方法名、参数列表和方法体。实例方法通过对象调用，静态方法通过类名调用。"
+                ),
+                CodeExample(
+                    title = "示例2：方法重载",
+                    code = """
+                        // 方法重载：同一类中方法名相同，参数列表不同
+                        public class MathUtils {
+                            // 重载1：两个int参数
+                            public int add(int a, int b) {
+                                return a + b;
+                            }
+                            
+                            // 重载2：三个int参数
+                            public int add(int a, int b, int c) {
+                                return a + b + c;
+                            }
+                            
+                            // 重载3：两个double参数
+                            public double add(double a, double b) {
+                                return a + b;
+                            }
+                            
+                            // 重载4：int和double参数
+                            public double add(int a, double b) {
+                                return a + b;
+                            }
+                        }
+                        
+                        // 使用
+                        MathUtils utils = new MathUtils();
+                        int result1 = utils.add(3, 5);        // 调用重载1
+                        int result2 = utils.add(3, 5, 7);   // 调用重载2
+                        double result3 = utils.add(3.0, 5.0); // 调用重载3
+                        double result4 = utils.add(3, 5.0);   // 调用重载4
+                        
+                        // 注意：仅返回类型不同不能构成重载
+                        // public int add(int a, int b) { ... }
+                        // public double add(int a, int b) { ... }  // 错误！
+                    """.trimIndent(),
+                    explanation = "方法重载要求方法名相同，参数列表不同（参数类型、个数、顺序）。仅返回类型不同不能构成重载。"
+                ),
+                CodeExample(
+                    title = "示例3：参数传递（值传递）",
+                    code = """
+                        // Java中参数传递是值传递
+                        
+                        // 1. 基本类型参数传递
+                        public void modifyPrimitive(int x) {
+                            x = 100;  // 修改的是副本，不影响原值
+                        }
+                        
+                        int num = 10;
+                        modifyPrimitive(num);
+                        System.out.println(num);  // 10，未改变
+                        
+                        // 2. 引用类型参数传递
+                        public void modifyReference(int[] arr) {
+                            arr[0] = 100;  // 修改数组元素，影响原数组
+                            arr = new int[]{999};  // 修改引用，不影响原引用
+                        }
+                        
+                        int[] array = {1, 2, 3};
+                        modifyReference(array);
+                        System.out.println(array[0]);  // 100，改变了
+                        System.out.println(array.length);  // 3，未改变
+                        
+                        // 3. 对象参数传递
+                        class Person {
+                            String name;
+                            Person(String name) { this.name = name; }
+                        }
+                        
+                        public void modifyObject(Person p) {
+                            p.name = "Changed";  // 修改对象属性，影响原对象
+                            p = new Person("New");  // 修改引用，不影响原引用
+                        }
+                        
+                        Person person = new Person("Original");
+                        modifyObject(person);
+                        System.out.println(person.name);  // "Changed"，改变了
+                    """.trimIndent(),
+                    explanation = "Java参数传递是值传递：基本类型传递值副本，引用类型传递引用副本。修改引用不影响原引用，但修改对象属性会影响原对象。"
+                ),
+                CodeExample(
+                    title = "示例4：可变参数",
+                    code = """
+                        // 可变参数（varargs）：参数数量可变
+                        
+                        // 1. 基本使用
+                        public int sum(int... numbers) {
+                            int total = 0;
+                            for (int num : numbers) {
+                                total += num;
+                            }
+                            return total;
+                        }
+                        
+                        int result1 = sum(1, 2, 3);           // 3个参数
+                        int result2 = sum(1, 2, 3, 4, 5);      // 5个参数
+                        int result3 = sum();                   // 0个参数
+                        
+                        // 2. 可变参数本质是数组
+                        public void print(String... messages) {
+                            for (String msg : messages) {
+                                System.out.println(msg);
+                            }
+                            // 等价于
+                            // for (int i = 0; i < messages.length; i++) {
+                            //     System.out.println(messages[i]);
+                            // }
+                        }
+                        
+                        // 3. 可变参数必须放在最后
+                        public void method(String name, int... numbers) {
+                            // 正确
+                        }
+                        
+                        // public void method(int... numbers, String name) {
+                        //     // 错误！可变参数必须在最后
+                        // }
+                        
+                        // 4. 方法重载和可变参数
+                        public void test(int a) {
+                            System.out.println("一个参数");
+                        }
+                        
+                        public void test(int... a) {
+                            System.out.println("可变参数");
+                        }
+                        
+                        test(1);      // 调用一个参数版本
+                        test(1, 2);   // 调用可变参数版本
+                    """.trimIndent(),
+                    explanation = "可变参数使用...语法，本质是数组，必须放在参数列表最后。可以传递0个或多个参数。"
+                ),
+                CodeExample(
+                    title = "示例5：方法返回值和return",
+                    code = """
+                        // 1. 有返回值方法
+                        public int getMax(int a, int b) {
+                            if (a > b) {
+                                return a;  // 返回值并退出方法
+                            }
+                            return b;     // 返回值并退出方法
+                        }
+                        
+                        // 2. 无返回值方法（void）
+                        public void printMessage(String msg) {
+                            System.out.println(msg);
+                            // 可以提前返回
+                            if (msg == null) {
+                                return;  // 退出方法，不返回值
+                            }
+                            System.out.println("Message: " + msg);
+                        }
+                        
+                        // 3. 返回对象
+                        public Person createPerson(String name, int age) {
+                            return new Person(name, age);
+                        }
+                        
+                        // 4. 返回数组
+                        public int[] getNumbers() {
+                            return new int[]{1, 2, 3, 4, 5};
+                        }
+                        
+                        // 5. 返回集合
+                        public List<String> getNames() {
+                            return Arrays.asList("Alice", "Bob", "Charlie");
+                        }
+                        
+                        // 6. 方法链式调用
+                        public class StringBuilder {
+                            private String str = "";
+                            
+                            public StringBuilder append(String s) {
+                                str += s;
+                                return this;  // 返回自身，支持链式调用
+                            }
+                            
+                            public String toString() {
+                                return str;
+                            }
+                        }
+                        
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("Hello").append(" ").append("World");
+                    """.trimIndent(),
+                    explanation = "方法可以返回基本类型、对象、数组、集合等。void方法不返回值，可以使用return提前退出。返回this支持链式调用。"
+                )
+            ),
+            useCases = listOf(
+                "代码组织：使用方法组织代码逻辑",
+                "代码复用：通过方法调用复用代码",
+                "参数处理：使用重载和可变参数处理不同情况",
+                "数据传递：理解值传递机制",
+                "链式调用：返回this支持链式调用"
+            ),
+            keyPoints = listOf(
+                "方法包括修饰符、返回类型、方法名、参数列表和方法体",
+                "方法重载要求方法名相同，参数列表不同",
+                "Java参数传递是值传递",
+                "可变参数使用...语法，本质是数组",
+                "方法可以返回基本类型、对象、数组、集合等"
+            ),
+            notes = listOf(
+                "仅返回类型不同不能构成重载",
+                "基本类型传递值副本，引用类型传递引用副本",
+                "可变参数必须放在参数列表最后",
+                "void方法可以使用return提前退出",
+                "返回this支持链式调用"
+            ),
+            practiceTips = "建议：合理使用方法组织代码，提高代码复用性。使用方法重载处理不同参数情况。理解值传递机制，避免意外的副作用。可变参数适合处理参数数量不确定的情况。"
+        ),
+        
+        // ========== Java 面向对象编程 ==========
+        
+        // 1. 类和对象（构造函数、初始化块）
+        KnowledgeDetail(
+            id = "java_class_object",
+            title = "类和对象（构造函数、初始化块）",
+            overview = "类是Java面向对象编程的基础，对象是类的实例。构造函数用于初始化对象，初始化块用于执行初始化代码。理解类和对象是掌握面向对象编程的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：类声明和对象创建",
+                    code = """
+                        // 1. 类声明
+                        public class Person {
+                            // 成员变量（属性）
+                            private String name;
+                            private int age;
+                            
+                            // 方法
+                            public void introduce() {
+                                System.out.println("I'm " + name + ", " + age + " years old.");
+                            }
+                        }
+                        
+                        // 2. 对象创建
+                        Person person = new Person();  // 使用new关键字创建对象
+                        person.name = "Alice";
+                        person.age = 25;
+                        person.introduce();
+                        
+                        // 3. 对象引用
+                        Person p1 = new Person();
+                        Person p2 = p1;  // p2和p1指向同一个对象
+                        p2.name = "Bob";
+                        System.out.println(p1.name);  // "Bob"，因为指向同一个对象
+                    """.trimIndent(),
+                    explanation = "类使用class关键字声明，包含成员变量和方法。使用new关键字创建对象，对象变量存储的是对象的引用。"
+                ),
+                CodeExample(
+                    title = "示例2：构造函数",
+                    code = """
+                        public class Person {
+                            private String name;
+                            private int age;
+                            
+                            // 1. 默认构造函数（无参）
+                            public Person() {
+                                this.name = "Unknown";
+                                this.age = 0;
+                            }
+                            
+                            // 2. 带参构造函数
+                            public Person(String name, int age) {
+                                this.name = name;  // this引用当前对象
+                                this.age = age;
+                            }
+                            
+                            // 3. 构造函数重载
+                            public Person(String name) {
+                                this(name, 0);  // 调用其他构造函数
+                            }
+                            
+                            // 4. 私有构造函数（单例模式）
+                            private Person(String name, int age, boolean flag) {
+                                // 特殊用途
+                            }
+                        }
+                        
+                        // 使用
+                        Person p1 = new Person();              // 调用无参构造函数
+                        Person p2 = new Person("Alice", 25);   // 调用带参构造函数
+                        Person p3 = new Person("Bob");         // 调用单参构造函数
+                    """.trimIndent(),
+                    explanation = "构造函数用于初始化对象，与类名相同，无返回类型。可以重载，支持this()调用其他构造函数。"
+                ),
+                CodeExample(
+                    title = "示例3：初始化块",
+                    code = """
+                        public class Person {
+                            private String name;
+                            private int age;
+                            
+                            // 1. 实例初始化块（每次创建对象时执行）
+                            {
+                                System.out.println("实例初始化块执行");
+                                name = "Default";
+                                age = 0;
+                            }
+                            
+                            // 2. 静态初始化块（类加载时执行一次）
+                            static {
+                                System.out.println("静态初始化块执行");
+                            }
+                            
+                            // 3. 构造函数
+                            public Person(String name, int age) {
+                                System.out.println("构造函数执行");
+                                this.name = name;
+                                this.age = age;
+                            }
+                            
+                            // 执行顺序：
+                            // 1. 静态初始化块（类加载时）
+                            // 2. 实例初始化块（对象创建时）
+                            // 3. 构造函数（对象创建时）
+                        }
+                        
+                        // 使用
+                        Person p = new Person("Alice", 25);
+                        // 输出：
+                        // 静态初始化块执行（如果类未加载）
+                        // 实例初始化块执行
+                        // 构造函数执行
+                    """.trimIndent(),
+                    explanation = "初始化块用于执行初始化代码。实例初始化块每次创建对象时执行，静态初始化块类加载时执行一次。执行顺序：静态初始化块 -> 实例初始化块 -> 构造函数。"
+                ),
+                CodeExample(
+                    title = "示例4：this关键字",
+                    code = """
+                        public class Person {
+                            private String name;
+                            private int age;
+                            
+                            public Person(String name, int age) {
+                                this.name = name;      // this引用当前对象
+                                this.age = age;
+                            }
+                            
+                            // this调用其他构造函数
+                            public Person(String name) {
+                                this(name, 0);  // 必须放在第一行
+                            }
+                            
+                            // this作为参数传递
+                            public void printInfo() {
+                                print(this);  // 传递当前对象
+                            }
+                            
+                            public void print(Person p) {
+                                System.out.println(p.name + ", " + p.age);
+                            }
+                            
+                            // this返回当前对象（链式调用）
+                            public Person setName(String name) {
+                                this.name = name;
+                                return this;  // 返回当前对象
+                            }
+                            
+                            public Person setAge(int age) {
+                                this.age = age;
+                                return this;
+                            }
+                        }
+                        
+                        // 使用
+                        Person p = new Person("Alice", 25);
+                        p.setName("Bob").setAge(30);  // 链式调用
+                    """.trimIndent(),
+                    explanation = "this关键字引用当前对象，可以用于访问成员变量、调用其他构造函数、作为参数传递、返回当前对象支持链式调用。"
+                )
+            ),
+            useCases = listOf(
+                "对象建模：使用类建模现实世界实体",
+                "代码组织：使用类组织相关代码",
+                "对象创建：使用构造函数初始化对象",
+                "初始化逻辑：使用初始化块执行初始化代码",
+                "链式调用：返回this支持链式调用"
+            ),
+            keyPoints = listOf(
+                "类使用class关键字声明，包含成员变量和方法",
+                "使用new关键字创建对象，对象变量存储引用",
+                "构造函数用于初始化对象，与类名相同",
+                "初始化块用于执行初始化代码",
+                "this关键字引用当前对象"
+            ),
+            notes = listOf(
+                "对象变量存储的是对象的引用，不是对象本身",
+                "构造函数可以重载，支持this()调用其他构造函数",
+                "静态初始化块类加载时执行一次",
+                "实例初始化块每次创建对象时执行",
+                "this()调用必须放在构造函数第一行"
+            ),
+            practiceTips = "建议：合理设计类的结构，使用构造函数初始化对象。使用初始化块处理复杂的初始化逻辑。理解this关键字的使用，支持链式调用提高代码可读性。"
+        ),
+        
+        // 2. 封装（访问修饰符、Getter/Setter）
+        KnowledgeDetail(
+            id = "java_encapsulation",
+            title = "封装（访问修饰符、Getter/Setter）",
+            overview = "封装是面向对象编程的核心特性之一，通过访问修饰符控制成员的可见性，使用Getter/Setter方法访问和修改私有属性。封装提高了代码的安全性和可维护性。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：访问修饰符",
+                    code = """
+                        public class AccessModifiers {
+                            public int publicVar = 1;        // 公共，任何地方可访问
+                            protected int protectedVar = 2;  // 受保护，同包或子类可访问
+                            int defaultVar = 3;              // 默认，同包可访问
+                            private int privateVar = 4;      // 私有，仅本类可访问
+                            
+                            public void test() {
+                                System.out.println(publicVar);     // ✅ 本类可访问
+                                System.out.println(protectedVar); // ✅ 本类可访问
+                                System.out.println(defaultVar);    // ✅ 本类可访问
+                                System.out.println(privateVar);    // ✅ 本类可访问
+                            }
+                        }
+                        
+                        class SubClass extends AccessModifiers {
+                            public void test() {
+                                System.out.println(publicVar);     // ✅ 子类可访问
+                                System.out.println(protectedVar);   // ✅ 子类可访问
+                                System.out.println(defaultVar);    // ✅ 同包可访问
+                                // System.out.println(privateVar); // ❌ 私有，不可访问
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Java有4种访问修饰符：public（公共）、protected（受保护）、默认（包私有）、private（私有）。访问修饰符控制成员的可见性。"
+                ),
+                CodeExample(
+                    title = "示例2：Getter/Setter方法",
+                    code = """
+                        public class Person {
+                            // 私有属性
+                            private String name;
+                            private int age;
+                            
+                            // Getter方法（获取属性值）
+                            public String getName() {
+                                return name;
+                            }
+                            
+                            public int getAge() {
+                                return age;
+                            }
+                            
+                            // Setter方法（设置属性值）
+                            public void setName(String name) {
+                                // 可以添加验证逻辑
+                                if (name == null || name.trim().isEmpty()) {
+                                    throw new IllegalArgumentException("Name cannot be empty");
+                                }
+                                this.name = name;
+                            }
+                            
+                            public void setAge(int age) {
+                                // 可以添加验证逻辑
+                                if (age < 0 || age > 150) {
+                                    throw new IllegalArgumentException("Invalid age");
+                                }
+                                this.age = age;
+                            }
+                        }
+                        
+                        // 使用
+                        Person person = new Person();
+                        person.setName("Alice");
+                        person.setAge(25);
+                        System.out.println(person.getName());  // "Alice"
+                        System.out.println(person.getAge());   // 25
+                    """.trimIndent(),
+                    explanation = "Getter/Setter方法用于访问和修改私有属性。Getter返回属性值，Setter设置属性值，可以在Setter中添加验证逻辑。"
+                ),
+                CodeExample(
+                    title = "示例3：封装的优点",
+                    code = """
+                        // 1. 数据保护
+                        public class BankAccount {
+                            private double balance;
+                            
+                            public void deposit(double amount) {
+                                if (amount > 0) {
+                                    balance += amount;
+                                }
+                            }
+                            
+                            public void withdraw(double amount) {
+                                if (amount > 0 && amount <= balance) {
+                                    balance -= amount;
+                                } else {
+                                    throw new IllegalArgumentException("Invalid amount");
+                                }
+                            }
+                            
+                            public double getBalance() {
+                                return balance;
+                            }
+                        }
+                        
+                        // 2. 灵活性（可以改变实现而不影响调用者）
+                        public class Temperature {
+                            private double celsius;
+                            
+                            // 可以改变内部实现，但接口不变
+                            public double getCelsius() {
+                                return celsius;
+                            }
+                            
+                            public double getFahrenheit() {
+                                return celsius * 9.0 / 5.0 + 32;
+                            }
+                            
+                            public void setCelsius(double celsius) {
+                                this.celsius = celsius;
+                            }
+                            
+                            public void setFahrenheit(double fahrenheit) {
+                                this.celsius = (fahrenheit - 32) * 5.0 / 9.0;
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "封装提供了数据保护、灵活性、可维护性等优点。可以控制数据的访问和修改，改变实现而不影响调用者。"
+                )
+            ),
+            useCases = listOf(
+                "数据保护：使用private保护数据，通过方法访问",
+                "数据验证：在Setter中添加验证逻辑",
+                "灵活性：改变实现而不影响调用者",
+                "代码维护：封装提高代码的可维护性",
+                "API设计：提供清晰的公共接口"
+            ),
+            keyPoints = listOf(
+                "Java有4种访问修饰符：public、protected、默认、private",
+                "Getter/Setter方法用于访问和修改私有属性",
+                "封装提供了数据保护、灵活性、可维护性",
+                "可以在Setter中添加验证逻辑",
+                "封装是面向对象编程的核心特性"
+            ),
+            notes = listOf(
+                "private成员仅本类可访问",
+                "protected成员同包或子类可访问",
+                "默认成员同包可访问",
+                "public成员任何地方可访问",
+                "合理使用访问修饰符提高代码安全性"
+            ),
+            practiceTips = "建议：合理使用访问修饰符控制成员的可见性，优先使用private保护数据。使用Getter/Setter方法访问和修改属性，在Setter中添加验证逻辑。封装提高代码的安全性和可维护性。"
+        ),
+        
+        // 3. 继承（extends、方法重写、super）
+        KnowledgeDetail(
+            id = "java_inheritance",
+            title = "继承（extends、方法重写、super）",
+            overview = "继承是面向对象编程的核心特性，允许子类继承父类的成员。使用extends关键字实现继承，可以重写父类方法，使用super关键字访问父类成员。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：继承基础",
+                    code = """
+                        // 父类
+                        public class Animal {
+                            protected String name;
+                            protected int age;
+                            
+                            public Animal(String name, int age) {
+                                this.name = name;
+                                this.age = age;
+                            }
+                            
+                            public void eat() {
+                                System.out.println(name + " is eating");
+                            }
+                            
+                            public void sleep() {
+                                System.out.println(name + " is sleeping");
+                            }
+                        }
+                        
+                        // 子类继承父类
+                        public class Dog extends Animal {
+                            private String breed;
+                            
+                            public Dog(String name, int age, String breed) {
+                                super(name, age);  // 调用父类构造函数
+                                this.breed = breed;
+                            }
+                            
+                            // 子类可以添加新方法
+                            public void bark() {
+                                System.out.println(name + " is barking");
+                            }
+                        }
+                        
+                        // 使用
+                        Dog dog = new Dog("Buddy", 3, "Golden Retriever");
+                        dog.eat();    // 继承自父类
+                        dog.sleep();  // 继承自父类
+                        dog.bark();   // 子类特有方法
+                    """.trimIndent(),
+                    explanation = "使用extends关键字实现继承，子类继承父类的成员（属性和方法）。子类可以添加新成员，使用super调用父类构造函数。"
+                ),
+                CodeExample(
+                    title = "示例2：方法重写（Override）",
+                    code = """
+                        public class Animal {
+                            public void makeSound() {
+                                System.out.println("Animal makes sound");
+                            }
+                            
+                            public void move() {
+                                System.out.println("Animal moves");
+                            }
+                        }
+                        
+                        public class Dog extends Animal {
+                            // 重写父类方法
+                            @Override
+                            public void makeSound() {
+                                System.out.println("Dog barks");
+                            }
+                            
+                            // 可以调用父类方法
+                            @Override
+                            public void move() {
+                                super.move();  // 调用父类方法
+                                System.out.println("Dog runs");
+                            }
+                        }
+                        
+                        // 使用
+                        Animal animal = new Dog();
+                        animal.makeSound();  // "Dog barks"（多态）
+                        animal.move();       // "Animal moves" + "Dog runs"
+                    """.trimIndent(),
+                    explanation = "方法重写使用@Override注解，子类可以重写父类方法。使用super调用父类方法。重写方法签名必须相同，访问权限不能更严格。"
+                ),
+                CodeExample(
+                    title = "示例3：super关键字",
+                    code = """
+                        public class Animal {
+                            protected String name;
+                            
+                            public Animal(String name) {
+                                this.name = name;
+                            }
+                            
+                            public void display() {
+                                System.out.println("Animal: " + name);
+                            }
+                        }
+                        
+                        public class Dog extends Animal {
+                            private String breed;
+                            
+                            public Dog(String name, String breed) {
+                                super(name);  // 调用父类构造函数
+                                this.breed = breed;
+                            }
+                            
+                            @Override
+                            public void display() {
+                                super.display();  // 调用父类方法
+                                System.out.println("Breed: " + breed);
+                            }
+                            
+                            public void showInfo() {
+                                System.out.println(super.name);  // 访问父类属性
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "super关键字用于访问父类成员：super()调用父类构造函数，super.method()调用父类方法，super.variable访问父类属性。"
+                ),
+                CodeExample(
+                    title = "示例4：继承的限制",
+                    code = """
+                        // 1. Java不支持多继承（一个类只能继承一个父类）
+                        // public class Dog extends Animal, Mammal { }  // ❌ 错误
+                        
+                        // 2. final类不能被继承
+                        final class FinalClass {
+                            // ...
+                        }
+                        // class SubClass extends FinalClass { }  // ❌ 错误
+                        
+                        // 3. final方法不能被重写
+                        public class Animal {
+                            public final void cannotOverride() {
+                                // ...
+                            }
+                        }
+                        
+                        public class Dog extends Animal {
+                            // public void cannotOverride() { }  // ❌ 错误
+                        }
+                        
+                        // 4. private方法不能被重写（实际上是被隐藏）
+                        public class Animal {
+                            private void privateMethod() {
+                                // ...
+                            }
+                        }
+                        
+                        public class Dog extends Animal {
+                            private void privateMethod() {  // 这是新方法，不是重写
+                                // ...
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Java继承的限制：不支持多继承，final类不能被继承，final方法不能被重写，private方法不能被重写（被隐藏）。"
+                )
+            ),
+            useCases = listOf(
+                "代码复用：通过继承复用父类代码",
+                "多态实现：通过继承实现多态",
+                "扩展功能：子类扩展父类功能",
+                "代码组织：使用继承组织类层次结构",
+                "设计模式：继承是许多设计模式的基础"
+            ),
+            keyPoints = listOf(
+                "使用extends关键字实现继承",
+                "子类继承父类的成员（属性和方法）",
+                "方法重写使用@Override注解",
+                "super关键字用于访问父类成员",
+                "Java不支持多继承"
+            ),
+            notes = listOf(
+                "子类可以添加新成员，重写父类方法",
+                "重写方法签名必须相同，访问权限不能更严格",
+                "super()调用必须放在构造函数第一行",
+                "final类不能被继承，final方法不能被重写",
+                "合理使用继承提高代码复用性"
+            ),
+            practiceTips = "建议：合理使用继承提高代码复用性，注意继承的层次不要过深。使用方法重写实现多态，使用super访问父类成员。注意继承的限制，避免过度使用继承。"
+        ),
+        
+        // 4. 多态（运行时多态、向上转型、向下转型）
+        KnowledgeDetail(
+            id = "java_polymorphism",
+            title = "多态（运行时多态、向上转型、向下转型）",
+            overview = "多态是面向对象编程的核心特性，允许同一接口处理不同类型的对象。运行时多态通过方法重写实现，向上转型和向下转型是多态的体现。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：运行时多态",
+                    code = """
+                        class Animal {
+                            public void makeSound() {
+                                System.out.println("Animal makes sound");
+                            }
+                        }
+                        
+                        class Dog extends Animal {
+                            @Override
+                            public void makeSound() {
+                                System.out.println("Dog barks");
+                            }
+                        }
+                        
+                        class Cat extends Animal {
+                            @Override
+                            public void makeSound() {
+                                System.out.println("Cat meows");
+                            }
+                        }
+                        
+                        // 运行时多态
+                        Animal animal1 = new Dog();
+                        Animal animal2 = new Cat();
+                        animal1.makeSound();  // "Dog barks"（运行时决定）
+                        animal2.makeSound();  // "Cat meows"（运行时决定）
+                    """.trimIndent(),
+                    explanation = "运行时多态通过方法重写实现，在运行时根据对象的实际类型调用相应的方法。"
+                ),
+                CodeExample(
+                    title = "示例2：向上转型和向下转型",
+                    code = """
+                        class Animal {
+                            public void eat() {
+                                System.out.println("Animal eats");
+                            }
+                        }
+                        
+                        class Dog extends Animal {
+                            @Override
+                            public void eat() {
+                                System.out.println("Dog eats");
+                            }
+                            
+                            public void bark() {
+                                System.out.println("Dog barks");
+                            }
+                        }
+                        
+                        // 向上转型（自动，安全）
+                        Animal animal = new Dog();  // Dog向上转型为Animal
+                        animal.eat();  // ✅ 可以调用
+                        // animal.bark();  // ❌ 错误！Animal类型没有bark方法
+                        
+                        // 向下转型（需要强制转换，可能不安全）
+                        if (animal instanceof Dog) {
+                            Dog dog = (Dog) animal;  // 向下转型
+                            dog.bark();  // ✅ 可以调用
+                        }
+                    """.trimIndent(),
+                    explanation = "向上转型是自动的、安全的，向下转型需要强制转换，可能不安全，应使用instanceof检查。"
+                ),
+                CodeExample(
+                    title = "示例3：多态的应用",
+                    code = """
+                        // 多态允许同一接口处理不同类型的对象
+                        class Shape {
+                            public void draw() {
+                                System.out.println("Drawing shape");
+                            }
+                        }
+                        
+                        class Circle extends Shape {
+                            @Override
+                            public void draw() {
+                                System.out.println("Drawing circle");
+                            }
+                        }
+                        
+                        class Rectangle extends Shape {
+                            @Override
+                            public void draw() {
+                                System.out.println("Drawing rectangle");
+                            }
+                        }
+                        
+                        // 使用多态
+                        Shape[] shapes = {new Circle(), new Rectangle(), new Circle()};
+                        for (Shape shape : shapes) {
+                            shape.draw();  // 多态调用
+                        }
+                    """.trimIndent(),
+                    explanation = "多态允许同一接口处理不同类型的对象，提高代码的灵活性和可扩展性。"
+                )
+            ),
+            useCases = listOf(
+                "接口统一：使用多态统一处理不同类型的对象",
+                "代码扩展：添加新类型不需要修改现有代码",
+                "设计模式：多态是许多设计模式的基础",
+                "框架设计：使用多态设计灵活的框架",
+                "代码复用：通过多态提高代码复用性"
+            ),
+            keyPoints = listOf(
+                "多态是面向对象编程的核心特性",
+                "运行时多态通过方法重写实现",
+                "向上转型是自动的、安全的",
+                "向下转型需要强制转换，应使用instanceof检查",
+                "多态提高代码的灵活性和可扩展性"
+            ),
+            notes = listOf(
+                "运行时多态在运行时根据对象的实际类型调用方法",
+                "向上转型后只能访问父类成员",
+                "向下转型前应使用instanceof检查",
+                "多态是方法重写的体现",
+                "合理使用多态提高代码质量"
+            ),
+            practiceTips = "建议：合理使用多态提高代码的灵活性和可扩展性。注意向上转型和向下转型的区别，向下转型前使用instanceof检查。多态是面向对象编程的核心，理解多态有助于设计更好的代码结构。"
+        ),
+        
+        // 5. 抽象类和接口（默认方法、静态方法）
+        KnowledgeDetail(
+            id = "java_abstract_interface",
+            title = "抽象类和接口（默认方法、静态方法）",
+            overview = "抽象类用于定义不能实例化的类，接口用于定义契约。Java 8+支持接口的默认方法和静态方法。抽象类和接口都支持多态。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：抽象类",
+                    code = """
+                        // 抽象类使用abstract关键字
+                        abstract class Animal {
+                            protected String name;
+                            
+                            // 抽象方法（必须被子类实现）
+                            public abstract void makeSound();
+                            
+                            // 普通方法（可以有实现）
+                            public void eat() {
+                                System.out.println(name + " is eating");
+                            }
+                            
+                            // 可以有构造函数
+                            public Animal(String name) {
+                                this.name = name;
+                            }
+                        }
+                        
+                        // 子类必须实现抽象方法
+                        class Dog extends Animal {
+                            public Dog(String name) {
+                                super(name);
+                            }
+                            
+                            @Override
+                            public void makeSound() {
+                                System.out.println(name + " barks");
+                            }
+                        }
+                        
+                        // 不能实例化抽象类
+                        // Animal animal = new Animal("Test");  // ❌ 错误
+                        Animal dog = new Dog("Buddy");  // ✅ 可以
+                    """.trimIndent(),
+                    explanation = "抽象类使用abstract关键字，可以包含抽象方法和普通方法。抽象类不能实例化，必须被子类继承并实现抽象方法。"
+                ),
+                CodeExample(
+                    title = "示例2：接口",
+                    code = """
+                        // 接口定义契约
+                        interface Flyable {
+                            // 抽象方法（默认public abstract）
+                            void fly();
+                            
+                            // Java 8+ 默认方法
+                            default void takeOff() {
+                                System.out.println("Taking off");
+                            }
+                            
+                            // Java 8+ 静态方法
+                            static void showInfo() {
+                                System.out.println("This is a flyable object");
+                            }
+                        }
+                        
+                        // 类实现接口
+                        class Bird implements Flyable {
+                            @Override
+                            public void fly() {
+                                System.out.println("Bird is flying");
+                            }
+                        }
+                        
+                        // 使用
+                        Bird bird = new Bird();
+                        bird.fly();      // 实现的方法
+                        bird.takeOff();  // 默认方法
+                        Flyable.showInfo();  // 静态方法
+                    """.trimIndent(),
+                    explanation = "接口定义契约，类实现接口必须实现所有抽象方法。Java 8+支持默认方法和静态方法，默认方法可以在接口中提供实现。"
+                ),
+                CodeExample(
+                    title = "示例3：接口的多继承",
+                    code = """
+                        // Java支持接口的多继承
+                        interface A {
+                            void methodA();
+                        }
+                        
+                        interface B {
+                            void methodB();
+                        }
+                        
+                        // 接口可以继承多个接口
+                        interface C extends A, B {
+                            void methodC();
+                        }
+                        
+                        // 类可以实现多个接口
+                        class MyClass implements A, B, C {
+                            @Override
+                            public void methodA() { }
+                            
+                            @Override
+                            public void methodB() { }
+                            
+                            @Override
+                            public void methodC() { }
+                        }
+                    """.trimIndent(),
+                    explanation = "Java支持接口的多继承，一个接口可以继承多个接口，一个类可以实现多个接口。"
+                )
+            ),
+            useCases = listOf(
+                "定义契约：使用接口定义契约",
+                "代码复用：使用抽象类复用代码",
+                "多态实现：通过抽象类和接口实现多态",
+                "设计模式：抽象类和接口是许多设计模式的基础",
+                "API设计：使用接口设计API"
+            ),
+            keyPoints = listOf(
+                "抽象类使用abstract关键字，不能实例化",
+                "接口定义契约，类实现接口",
+                "Java 8+支持接口的默认方法和静态方法",
+                "Java支持接口的多继承",
+                "抽象类和接口都支持多态"
+            ),
+            notes = listOf(
+                "抽象类可以包含抽象方法和普通方法",
+                "接口中的方法默认public abstract",
+                "默认方法可以在接口中提供实现",
+                "静态方法通过接口名调用",
+                "合理选择抽象类或接口"
+            ),
+            practiceTips = "建议：合理选择抽象类或接口，接口更适合定义契约，抽象类更适合代码复用。使用接口的默认方法和静态方法提供便利功能。理解抽象类和接口的区别，根据需求选择。"
+        ),
+        
+        // 6. 内部类和嵌套类
+        KnowledgeDetail(
+            id = "java_inner_class",
+            title = "内部类和嵌套类",
+            overview = "内部类是定义在类内部的类，包括成员内部类、局部内部类、匿名内部类、静态嵌套类。内部类可以访问外部类的成员，提高代码的封装性。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：成员内部类",
+                    code = """
+                        class Outer {
+                            private int outerVar = 10;
+                            
+                            // 成员内部类
+                            class Inner {
+                                private int innerVar = 20;
+                                
+                                public void display() {
+                                    System.out.println("Outer: " + outerVar);  // 可以访问外部类成员
+                                    System.out.println("Inner: " + innerVar);
+                                }
+                            }
+                            
+                            public void createInner() {
+                                Inner inner = new Inner();
+                                inner.display();
+                            }
+                        }
+                        
+                        // 使用
+                        Outer outer = new Outer();
+                        Outer.Inner inner = outer.new Inner();  // 创建内部类对象
+                        inner.display();
+                    """.trimIndent(),
+                    explanation = "成员内部类定义在类内部，可以访问外部类的成员。创建内部类对象需要外部类对象。"
+                ),
+                CodeExample(
+                    title = "示例2：静态嵌套类",
+                    code = """
+                        class Outer {
+                            private static int staticVar = 10;
+                            private int instanceVar = 20;
+                            
+                            // 静态嵌套类
+                            static class StaticNested {
+                                public void display() {
+                                    System.out.println("Static: " + staticVar);  // 可以访问静态成员
+                                    // System.out.println(instanceVar);  // ❌ 不能访问实例成员
+                                }
+                            }
+                        }
+                        
+                        // 使用（不需要外部类对象）
+                        Outer.StaticNested nested = new Outer.StaticNested();
+                        nested.display();
+                    """.trimIndent(),
+                    explanation = "静态嵌套类使用static关键字，不能访问外部类的实例成员，只能访问静态成员。创建静态嵌套类对象不需要外部类对象。"
+                ),
+                CodeExample(
+                    title = "示例3：局部内部类和匿名内部类",
+                    code = """
+                        class Outer {
+                            public void method() {
+                                // 局部内部类
+                                class LocalInner {
+                                    public void display() {
+                                        System.out.println("Local inner class");
+                                    }
+                                }
+                                
+                                LocalInner local = new LocalInner();
+                                local.display();
+                                
+                                // 匿名内部类
+                                Runnable runnable = new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        System.out.println("Anonymous inner class");
+                                    }
+                                };
+                                runnable.run();
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "局部内部类定义在方法内部，匿名内部类是没有名字的内部类，常用于实现接口或继承类。"
+                )
+            ),
+            useCases = listOf(
+                "代码组织：使用内部类组织相关代码",
+                "封装性：内部类提高代码的封装性",
+                "回调：使用匿名内部类实现回调",
+                "事件处理：使用内部类处理事件",
+                "设计模式：内部类是某些设计模式的基础"
+            ),
+            keyPoints = listOf(
+                "内部类包括成员内部类、局部内部类、匿名内部类、静态嵌套类",
+                "成员内部类可以访问外部类成员",
+                "静态嵌套类不能访问外部类实例成员",
+                "局部内部类定义在方法内部",
+                "匿名内部类常用于实现接口或继承类"
+            ),
+            notes = listOf(
+                "成员内部类需要外部类对象创建",
+                "静态嵌套类不需要外部类对象创建",
+                "局部内部类只能访问final或effectively final的局部变量",
+                "匿名内部类常用于事件处理和回调",
+                "合理使用内部类提高代码封装性"
+            ),
+            practiceTips = "建议：合理使用内部类提高代码的封装性和组织性。注意不同类型内部类的访问规则，静态嵌套类适合工具类，匿名内部类适合简单的回调。"
+        ),
+        
+        // 7. 枚举（Enum）
+        KnowledgeDetail(
+            id = "java_enum",
+            title = "枚举（Enum）",
+            overview = "枚举是Java 5引入的特性，用于定义一组常量。枚举类型安全，可以包含方法、构造函数、实现接口等。枚举是单例模式的天然实现。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：基本枚举",
+                    code = """
+                        // 基本枚举
+                        enum Season {
+                            SPRING, SUMMER, AUTUMN, WINTER
+                        }
+                        
+                        // 使用
+                        Season season = Season.SPRING;
+                        System.out.println(season);  // SPRING
+                        
+                        // 遍历枚举
+                        for (Season s : Season.values()) {
+                            System.out.println(s);
+                        }
+                        
+                        // 获取枚举名称和序号
+                        System.out.println(season.name());      // SPRING
+                        System.out.println(season.ordinal());  // 0
+                    """.trimIndent(),
+                    explanation = "枚举使用enum关键字定义，枚举值是常量。可以使用values()遍历，name()获取名称，ordinal()获取序号。"
+                ),
+                CodeExample(
+                    title = "示例2：带构造函数的枚举",
+                    code = """
+                        enum Planet {
+                            MERCURY(3.303e+23, 2.4397e6),
+                            VENUS(4.869e+24, 6.0518e6),
+                            EARTH(5.976e+24, 6.37814e6);
+                            
+                            private final double mass;
+                            private final double radius;
+                            
+                            Planet(double mass, double radius) {
+                                this.mass = mass;
+                                this.radius = radius;
+                            }
+                            
+                            public double getMass() {
+                                return mass;
+                            }
+                            
+                            public double getRadius() {
+                                return radius;
+                            }
+                        }
+                        
+                        // 使用
+                        Planet earth = Planet.EARTH;
+                        System.out.println(earth.getMass());
+                    """.trimIndent(),
+                    explanation = "枚举可以包含构造函数、字段、方法。枚举值是单例，构造函数在枚举值定义时调用。"
+                ),
+                CodeExample(
+                    title = "示例3：枚举实现接口",
+                    code = """
+                        interface Operation {
+                            double apply(double x, double y);
+                        }
+                        
+                        enum Calculator implements Operation {
+                            PLUS {
+                                @Override
+                                public double apply(double x, double y) {
+                                    return x + y;
+                                }
+                            },
+                            MINUS {
+                                @Override
+                                public double apply(double x, double y) {
+                                    return x - y;
+                                }
+                            };
+                        }
+                        
+                        // 使用
+                        double result = Calculator.PLUS.apply(10, 5);  // 15
+                    """.trimIndent(),
+                    explanation = "枚举可以实现接口，每个枚举值可以提供不同的实现。枚举适合实现策略模式。"
+                )
+            ),
+            useCases = listOf(
+                "常量定义：使用枚举定义常量",
+                "状态机：使用枚举实现状态机",
+                "策略模式：使用枚举实现策略模式",
+                "单例模式：枚举是单例模式的天然实现",
+                "类型安全：枚举提供类型安全"
+            ),
+            keyPoints = listOf(
+                "枚举使用enum关键字定义",
+                "枚举值是常量，是单例",
+                "枚举可以包含构造函数、字段、方法",
+                "枚举可以实现接口",
+                "枚举提供类型安全"
+            ),
+            notes = listOf(
+                "枚举值是单例，构造函数在枚举值定义时调用",
+                "可以使用values()遍历枚举",
+                "name()获取名称，ordinal()获取序号",
+                "枚举适合实现策略模式和状态机",
+                "枚举是类型安全的常量"
+            ),
+            practiceTips = "建议：使用枚举定义常量，提供类型安全。枚举可以包含方法和实现接口，适合实现策略模式和状态机。枚举是单例模式的天然实现。"
+        ),
+        
+        // ========== Java 集合框架 ==========
+        
+        // 1. List接口（ArrayList、LinkedList）
+        KnowledgeDetail(
+            id = "java_list",
+            title = "List接口（ArrayList、LinkedList）",
+            overview = "List是有序集合，允许重复元素。ArrayList基于数组实现，适合随机访问。LinkedList基于链表实现，适合插入和删除。根据使用场景选择合适的实现。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：ArrayList",
+                    code = """
+                        // ArrayList基于数组实现
+                        List<String> list = new ArrayList<>();
+                        
+                        // 添加元素
+                        list.add("Apple");
+                        list.add("Banana");
+                        list.add("Orange");
+                        
+                        // 访问元素
+                        String first = list.get(0);  // "Apple"
+                        
+                        // 遍历
+                        for (String item : list) {
+                            System.out.println(item);
+                        }
+                        
+                        // 特点：适合随机访问，不适合频繁插入删除
+                    """.trimIndent(),
+                    explanation = "ArrayList基于数组实现，支持随机访问，适合查询操作。插入和删除需要移动元素，性能较低。"
+                ),
+                CodeExample(
+                    title = "示例2：LinkedList",
+                    code = """
+                        // LinkedList基于链表实现
+                        List<String> list = new LinkedList<>();
+                        
+                        list.add("Apple");
+                        list.add("Banana");
+                        list.addFirst("First");  // 在头部添加
+                        list.addLast("Last");    // 在尾部添加
+                        
+                        // 特点：适合插入删除，不适合随机访问
+                    """.trimIndent(),
+                    explanation = "LinkedList基于链表实现，适合插入和删除操作。随机访问需要遍历，性能较低。"
+                )
+            ),
+            useCases = listOf("有序集合：需要保持元素顺序", "重复元素：允许重复元素", "随机访问：ArrayList适合", "频繁插入删除：LinkedList适合"),
+            keyPoints = listOf("List是有序集合，允许重复", "ArrayList基于数组，适合随机访问", "LinkedList基于链表，适合插入删除", "根据使用场景选择实现"),
+            notes = listOf("ArrayList查询快，插入删除慢", "LinkedList插入删除快，查询慢", "List允许null元素", "List不是线程安全的"),
+            practiceTips = "建议：根据使用场景选择合适的List实现。ArrayList适合查询操作，LinkedList适合频繁插入删除。注意List不是线程安全的，多线程环境使用并发集合。"
+        ),
+        
+        // 2. Set接口（HashSet、LinkedHashSet、TreeSet）
+        KnowledgeDetail(
+            id = "java_set",
+            title = "Set接口（HashSet、LinkedHashSet、TreeSet）",
+            overview = "Set是不允许重复元素的集合。HashSet基于哈希表，无序。LinkedHashSet保持插入顺序。TreeSet基于红黑树，有序。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：HashSet",
+                    code = """
+                        Set<String> set = new HashSet<>();
+                        set.add("Apple");
+                        set.add("Banana");
+                        set.add("Apple");  // 重复，不会添加
+                        // 无序，不保证顺序
+                    """.trimIndent(),
+                    explanation = "HashSet基于哈希表实现，不允许重复，无序，查询性能高。"
+                ),
+                CodeExample(
+                    title = "示例2：LinkedHashSet和TreeSet",
+                    code = """
+                        // LinkedHashSet保持插入顺序
+                        Set<String> linkedSet = new LinkedHashSet<>();
+                        
+                        // TreeSet有序（自然顺序或Comparator）
+                        Set<String> treeSet = new TreeSet<>();
+                    """.trimIndent(),
+                    explanation = "LinkedHashSet保持插入顺序，TreeSet有序。"
+                )
+            ),
+            useCases = listOf("去重：使用Set去除重复元素", "唯一性：保证元素唯一", "快速查找：HashSet查询快"),
+            keyPoints = listOf("Set不允许重复元素", "HashSet无序，查询快", "LinkedHashSet保持插入顺序", "TreeSet有序"),
+            notes = listOf("Set不允许null（TreeSet）或允许一个null（HashSet）", "TreeSet需要元素实现Comparable或提供Comparator"),
+            practiceTips = "建议：使用Set去除重复元素，根据需求选择实现。HashSet适合快速查找，TreeSet适合需要排序的场景。"
+        ),
+        
+        // 3. Map接口（HashMap、LinkedHashMap、TreeMap）
+        KnowledgeDetail(
+            id = "java_map",
+            title = "Map接口（HashMap、LinkedHashMap、TreeMap）",
+            overview = "Map是键值对集合。HashMap基于哈希表，无序。LinkedHashMap保持插入顺序。TreeMap基于红黑树，按键排序。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：HashMap",
+                    code = """
+                        Map<String, Integer> map = new HashMap<>();
+                        map.put("Apple", 1);
+                        map.put("Banana", 2);
+                        map.put("Orange", 3);
+                        
+                        // 获取值
+                        Integer value = map.get("Apple");  // 1
+                        
+                        // 遍历
+                        for (Map.Entry<String, Integer> entry : map.entrySet()) {
+                            System.out.println(entry.getKey() + ": " + entry.getValue());
+                        }
+                    """.trimIndent(),
+                    explanation = "HashMap基于哈希表，键值对存储，查询性能高，无序。"
+                )
+            ),
+            useCases = listOf("键值对存储：使用Map存储键值对", "快速查找：HashMap查询快", "排序：TreeMap按键排序"),
+            keyPoints = listOf("Map是键值对集合", "HashMap无序，查询快", "LinkedHashMap保持插入顺序", "TreeMap按键排序"),
+            notes = listOf("HashMap允许一个null键和多个null值", "TreeMap需要键实现Comparable或提供Comparator"),
+            practiceTips = "建议：使用Map存储键值对，根据需求选择实现。HashMap适合快速查找，TreeMap适合需要排序的场景。注意键的唯一性。"
+        ),
+        
+        // 4. Queue接口（PriorityQueue、BlockingQueue）
+        KnowledgeDetail(
+            id = "java_queue",
+            title = "Queue接口（PriorityQueue、BlockingQueue）",
+            overview = "Queue是队列接口，FIFO（先进先出）。PriorityQueue是优先级队列。BlockingQueue是阻塞队列，支持并发操作。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Queue和PriorityQueue",
+                    code = """
+                        Queue<String> queue = new LinkedList<>();
+                        queue.offer("First");
+                        queue.offer("Second");
+                        queue.poll();  // 移除并返回头部元素
+                        
+                        // 优先级队列
+                        PriorityQueue<Integer> pq = new PriorityQueue<>();
+                        pq.offer(3);
+                        pq.offer(1);
+                        pq.offer(2);
+                        pq.poll();  // 1（最小元素）
+                    """.trimIndent(),
+                    explanation = "Queue是FIFO队列，PriorityQueue是优先级队列，按优先级出队。"
+                )
+            ),
+            useCases = listOf("队列操作：使用Queue实现队列", "优先级：使用PriorityQueue", "并发：使用BlockingQueue"),
+            keyPoints = listOf("Queue是FIFO队列", "PriorityQueue是优先级队列", "BlockingQueue支持并发操作"),
+            notes = listOf("Queue接口有多种实现", "PriorityQueue需要元素可比较", "BlockingQueue是线程安全的"),
+            practiceTips = "建议：使用Queue实现队列操作，PriorityQueue适合优先级场景，BlockingQueue适合并发场景。"
+        ),
+        
+        // 5. Collections工具类
+        KnowledgeDetail(
+            id = "java_collections_util",
+            title = "Collections工具类",
+            overview = "Collections工具类提供了操作集合的静态方法，包括排序、查找、同步、不可变集合等。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Collections常用方法",
+                    code = """
+                        List<Integer> list = Arrays.asList(3, 1, 4, 1, 5);
+                        
+                        // 排序
+                        Collections.sort(list);
+                        
+                        // 查找
+                        int index = Collections.binarySearch(list, 4);
+                        
+                        // 反转
+                        Collections.reverse(list);
+                        
+                        // 打乱
+                        Collections.shuffle(list);
+                        
+                        // 同步包装
+                        List<String> syncList = Collections.synchronizedList(new ArrayList<>());
+                        
+                        // 不可变集合
+                        List<String> unmodifiable = Collections.unmodifiableList(list);
+                    """.trimIndent(),
+                    explanation = "Collections工具类提供了排序、查找、同步、不可变集合等方法。"
+                )
+            ),
+            useCases = listOf("排序查找：使用Collections排序和查找", "同步：使用同步包装保证线程安全", "不可变：使用不可变集合"),
+            keyPoints = listOf("Collections提供静态工具方法", "支持排序、查找、同步等操作", "可以创建不可变集合"),
+            notes = listOf("Collections.sort需要元素可比较", "同步包装提供线程安全", "不可变集合不能修改"),
+            practiceTips = "建议：使用Collections工具类操作集合，注意排序需要元素可比较，同步包装提供线程安全。"
+        ),
+        
+        // 6. 集合的最佳实践
+        KnowledgeDetail(
+            id = "java_collections_best",
+            title = "集合的最佳实践",
+            overview = "集合使用的最佳实践包括选择合适的实现、注意线程安全、使用泛型、避免不必要的装箱拆箱、合理使用迭代器等。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：最佳实践",
+                    code = """
+                        // 1. 使用泛型
+                        List<String> list = new ArrayList<>();  // ✅
+                        // List list = new ArrayList();  // ❌ 不使用泛型
+                        
+                        // 2. 初始化容量（如果知道大小）
+                        List<String> list2 = new ArrayList<>(100);
+                        
+                        // 3. 使用接口类型
+                        List<String> list3 = new ArrayList<>();  // ✅
+                        // ArrayList<String> list4 = new ArrayList<>();  // ❌
+                        
+                        // 4. 遍历集合
+                        for (String item : list) {  // ✅ 推荐
+                            System.out.println(item);
+                        }
+                        
+                        // 5. 线程安全
+                        List<String> syncList = Collections.synchronizedList(new ArrayList<>());
+                        // 或使用并发集合
+                        // ConcurrentHashMap, CopyOnWriteArrayList等
+                    """.trimIndent(),
+                    explanation = "集合使用的最佳实践包括使用泛型、初始化容量、使用接口类型、合理遍历、注意线程安全等。"
+                )
+            ),
+            useCases = listOf("代码质量：遵循最佳实践提高代码质量", "性能优化：合理使用集合提高性能", "线程安全：注意多线程环境"),
+            keyPoints = listOf("使用泛型保证类型安全", "初始化容量提高性能", "使用接口类型提高灵活性", "注意线程安全", "合理遍历集合"),
+            notes = listOf("集合不是线程安全的", "使用泛型避免类型转换", "初始化容量减少扩容", "使用接口类型便于切换实现"),
+            practiceTips = "建议：遵循集合使用的最佳实践，使用泛型、初始化容量、使用接口类型、注意线程安全。根据使用场景选择合适的集合实现。"
+        ),
+        
+        // ========== Java 异常处理 ==========
+        
+        // 1. 异常基础（Error、Exception、Checked/Unchecked）
+        KnowledgeDetail(
+            id = "java_exception_basic",
+            title = "异常基础（Error、Exception、Checked/Unchecked）",
+            overview = "Java异常分为Error和Exception。Exception分为Checked异常和Unchecked异常。理解异常层次结构是处理异常的基础。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：异常层次结构",
+                    code = """
+                        // Throwable
+                        //   ├── Error（系统错误，不应捕获）
+                        //   │   ├── OutOfMemoryError
+                        //   │   └── StackOverflowError
+                        //   └── Exception（可处理异常）
+                        //       ├── RuntimeException（Unchecked异常）
+                        //       │   ├── NullPointerException
+                        //       │   ├── IllegalArgumentException
+                        //       │   └── IndexOutOfBoundsException
+                        //       └── 其他Exception（Checked异常）
+                        //           ├── IOException
+                        //           └── SQLException
+                        
+                        // Checked异常：必须处理（try-catch或throws）
+                        // Unchecked异常：可以不处理
+                    """.trimIndent(),
+                    explanation = "异常层次结构：Throwable -> Error/Exception。Exception分为Checked（必须处理）和Unchecked（可以不处理）异常。"
+                )
+            ),
+            useCases = listOf("错误处理：使用异常处理错误", "代码健壮性：提高代码健壮性", "错误信息：提供错误信息"),
+            keyPoints = listOf("Error是系统错误，不应捕获", "Checked异常必须处理", "Unchecked异常可以不处理", "RuntimeException是Unchecked异常"),
+            notes = listOf("Error不应捕获", "Checked异常必须处理", "Unchecked异常可以不处理", "合理使用异常提高代码健壮性"),
+            practiceTips = "建议：理解异常层次结构，Checked异常必须处理，Unchecked异常可以不处理。合理使用异常提高代码健壮性，不要捕获Error。"
+        ),
+        
+        // 2. 异常处理机制（try-catch-finally）
+        KnowledgeDetail(
+            id = "java_exception_handling",
+            title = "异常处理机制（try-catch-finally）",
+            overview = "try-catch-finally用于捕获和处理异常。try块包含可能抛出异常的代码，catch块处理异常，finally块总是执行。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：try-catch-finally",
+                    code = """
+                        try {
+                            // 可能抛出异常的代码
+                            int result = 10 / 0;
+                        } catch (ArithmeticException e) {
+                            // 处理异常
+                            System.out.println("除零错误: " + e.getMessage());
+                        } catch (Exception e) {
+                            // 处理其他异常
+                            System.out.println("其他异常: " + e.getMessage());
+                        } finally {
+                            // 总是执行（用于清理资源）
+                            System.out.println("清理资源");
+                        }
+                    """.trimIndent(),
+                    explanation = "try-catch-finally用于捕获和处理异常。catch可以多个，finally总是执行。"
+                )
+            ),
+            useCases = listOf("异常捕获：使用try-catch捕获异常", "资源清理：使用finally清理资源", "错误处理：处理各种错误情况"),
+            keyPoints = listOf("try包含可能抛出异常的代码", "catch处理异常，可以多个", "finally总是执行", "try-with-resources自动关闭资源"),
+            notes = listOf("catch按顺序匹配", "finally总是执行", "try-with-resources自动关闭资源", "合理使用异常处理"),
+            practiceTips = "建议：使用try-catch-finally处理异常，使用try-with-resources自动关闭资源。finally用于清理资源，注意异常不要被吞掉。"
+        ),
+        
+        // 3. 抛出异常（throw、throws）
+        KnowledgeDetail(
+            id = "java_throw_exception",
+            title = "抛出异常（throw、throws）",
+            overview = "throw用于抛出异常，throws用于声明方法可能抛出的异常。理解throw和throws的区别是编写正确异常处理代码的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：throw和throws",
+                    code = """
+                        // throw：抛出异常
+                        public void method() {
+                            if (condition) {
+                                throw new IllegalArgumentException("参数错误");
+                            }
+                        }
+                        
+                        // throws：声明可能抛出的异常
+                        public void readFile() throws IOException {
+                            // 可能抛出IOException
+                        }
+                        
+                        // 调用者必须处理
+                        try {
+                            readFile();
+                        } catch (IOException e) {
+                            // 处理异常
+                        }
+                    """.trimIndent(),
+                    explanation = "throw用于抛出异常，throws用于声明方法可能抛出的异常。调用者必须处理Checked异常。"
+                )
+            ),
+            useCases = listOf("异常抛出：使用throw抛出异常", "异常声明：使用throws声明异常", "错误传播：传播错误信息"),
+            keyPoints = listOf("throw用于抛出异常", "throws用于声明异常", "Checked异常必须声明", "调用者必须处理Checked异常"),
+            notes = listOf("throw抛出异常对象", "throws声明异常类型", "Checked异常必须声明", "合理使用异常传播错误"),
+            practiceTips = "建议：使用throw抛出异常，使用throws声明异常。Checked异常必须声明，调用者必须处理。合理使用异常传播错误信息。"
+        ),
+        
+        // 4. 常见异常类型
+        KnowledgeDetail(
+            id = "java_common_exceptions",
+            title = "常见异常类型",
+            overview = "Java常见的异常类型包括NullPointerException、IllegalArgumentException、IndexOutOfBoundsException、IOException等。理解常见异常有助于快速定位问题。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：常见异常",
+                    code = """
+                        // NullPointerException：空指针异常
+                        String str = null;
+                        int length = str.length();  // 抛出NullPointerException
+                        
+                        // IllegalArgumentException：非法参数异常
+                        if (age < 0) {
+                            throw new IllegalArgumentException("年龄不能为负");
+                        }
+                        
+                        // IndexOutOfBoundsException：索引越界异常
+                        int[] arr = {1, 2, 3};
+                        int value = arr[10];  // 抛出IndexOutOfBoundsException
+                        
+                        // IOException：IO异常
+                        // FileNotFoundException、SocketException等
+                    """.trimIndent(),
+                    explanation = "常见异常包括NullPointerException、IllegalArgumentException、IndexOutOfBoundsException、IOException等。"
+                )
+            ),
+            useCases = listOf("错误定位：快速定位错误", "异常处理：处理常见异常", "代码调试：理解异常原因"),
+            keyPoints = listOf("NullPointerException：空指针", "IllegalArgumentException：非法参数", "IndexOutOfBoundsException：索引越界", "IOException：IO异常"),
+            notes = listOf("常见异常需要熟悉", "合理处理常见异常", "避免常见异常"),
+            practiceTips = "建议：熟悉常见异常类型，快速定位问题。合理处理常见异常，避免常见异常的发生。"
+        ),
+        
+        // ========== Java 多线程编程 ==========
+        
+        // 1. 线程基础（创建、生命周期）
+        KnowledgeDetail(
+            id = "java_thread_basic",
+            title = "线程基础（创建、生命周期）",
+            overview = "线程是程序执行的最小单位。Java中可以通过继承Thread类或实现Runnable接口创建线程。理解线程生命周期是掌握多线程编程的基础。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：创建线程",
+                    code = """
+                        // 方式1：继承Thread类
+                        class MyThread extends Thread {
+                            @Override
+                            public void run() {
+                                System.out.println("Thread running");
+                            }
+                        }
+                        MyThread thread = new MyThread();
+                        thread.start();
+                        
+                        // 方式2：实现Runnable接口（推荐）
+                        class MyRunnable implements Runnable {
+                            @Override
+                            public void run() {
+                                System.out.println("Runnable running");
+                            }
+                        }
+                        Thread thread2 = new Thread(new MyRunnable());
+                        thread2.start();
+                        
+                        // 方式3：Lambda表达式
+                        Thread thread3 = new Thread(() -> System.out.println("Lambda running"));
+                        thread3.start();
+                    """.trimIndent(),
+                    explanation = "创建线程的方式：继承Thread类、实现Runnable接口（推荐）、Lambda表达式。使用start()启动线程。"
+                )
+            ),
+            useCases = listOf("并发执行：使用线程实现并发", "异步处理：异步处理任务", "提高性能：利用多核CPU"),
+            keyPoints = listOf("线程是程序执行的最小单位", "可以通过继承Thread或实现Runnable创建线程", "使用start()启动线程", "线程有生命周期"),
+            notes = listOf("实现Runnable接口更灵活", "不要直接调用run()方法", "线程生命周期：新建、就绪、运行、阻塞、死亡"),
+            practiceTips = "建议：使用实现Runnable接口的方式创建线程，更灵活。使用start()启动线程，不要直接调用run()。理解线程生命周期。"
+        ),
+        
+        // 2. 线程同步（synchronized、volatile）
+        KnowledgeDetail(
+            id = "java_thread_sync",
+            title = "线程同步（synchronized、volatile）",
+            overview = "线程同步用于解决多线程并发访问共享资源的问题。synchronized用于同步代码块和方法，volatile用于保证变量可见性。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：synchronized",
+                    code = """
+                        class Counter {
+                            private int count = 0;
+                            
+                            // 同步方法
+                            public synchronized void increment() {
+                                count++;
+                            }
+                            
+                            // 同步代码块
+                            public void increment2() {
+                                synchronized (this) {
+                                    count++;
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "synchronized用于同步代码块和方法，保证同一时间只有一个线程可以执行同步代码。"
+                ),
+                CodeExample(
+                    title = "示例2：volatile",
+                    code = """
+                        class Flag {
+                            private volatile boolean flag = false;
+                            
+                            public void setFlag() {
+                                flag = true;
+                            }
+                            
+                            public boolean getFlag() {
+                                return flag;
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "volatile保证变量的可见性，一个线程修改后，其他线程立即可见。但不能保证原子性。"
+                )
+            ),
+            useCases = listOf("线程安全：保证线程安全", "共享资源：同步访问共享资源", "可见性：保证变量可见性"),
+            keyPoints = listOf("synchronized用于同步", "volatile保证可见性", "synchronized保证原子性和可见性", "volatile只保证可见性"),
+            notes = listOf("synchronized有性能开销", "volatile不能保证原子性", "合理使用同步机制", "避免死锁"),
+            practiceTips = "建议：合理使用synchronized和volatile，注意性能开销。synchronized保证原子性和可见性，volatile只保证可见性。避免死锁。"
+        ),
+        
+        // 3. 线程通信（wait、notify）
+        KnowledgeDetail(
+            id = "java_thread_comm",
+            title = "线程通信（wait、notify）",
+            overview = "线程通信用于线程之间的协调。wait()使线程等待，notify()唤醒等待的线程。必须在synchronized块中使用。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：wait和notify",
+                    code = """
+                        class ProducerConsumer {
+                            private Object lock = new Object();
+                            private boolean produced = false;
+                            
+                            public void produce() {
+                                synchronized (lock) {
+                                    while (produced) {
+                                        try {
+                                            lock.wait();  // 等待
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                    // 生产
+                                    produced = true;
+                                    lock.notify();  // 唤醒
+                                }
+                            }
+                            
+                            public void consume() {
+                                synchronized (lock) {
+                                    while (!produced) {
+                                        try {
+                                            lock.wait();
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                    // 消费
+                                    produced = false;
+                                    lock.notify();
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "wait()使线程等待，notify()唤醒等待的线程。必须在synchronized块中使用，使用while循环检查条件。"
+                )
+            ),
+            useCases = listOf("线程协调：协调线程执行", "生产者消费者：实现生产者消费者模式", "线程等待：线程等待条件"),
+            keyPoints = listOf("wait()使线程等待", "notify()唤醒线程", "必须在synchronized块中使用", "使用while循环检查条件"),
+            notes = listOf("wait()会释放锁", "notify()唤醒一个线程", "notifyAll()唤醒所有线程", "使用while循环避免虚假唤醒"),
+            practiceTips = "建议：使用wait()和notify()进行线程通信，必须在synchronized块中使用。使用while循环检查条件，避免虚假唤醒。"
+        ),
+        
+        // 4. 并发工具类（Executor、Future、CountDownLatch）
+        KnowledgeDetail(
+            id = "java_concurrent_utils",
+            title = "并发工具类（Executor、Future、CountDownLatch）",
+            overview = "Java并发包提供了丰富的工具类，包括Executor框架、Future、CountDownLatch等。这些工具类简化了并发编程。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Executor和Future",
+                    code = """
+                        ExecutorService executor = Executors.newFixedThreadPool(10);
+                        Future<String> future = executor.submit(() -> {
+                            return "Result";
+                        });
+                        String result = future.get();  // 获取结果
+                        executor.shutdown();
+                    """.trimIndent(),
+                    explanation = "Executor框架管理线程池，Future用于获取异步任务的结果。"
+                ),
+                CodeExample(
+                    title = "示例2：CountDownLatch",
+                    code = """
+                        CountDownLatch latch = new CountDownLatch(3);
+                        // 3个线程完成后继续
+                        for (int i = 0; i < 3; i++) {
+                            new Thread(() -> {
+                                // 执行任务
+                                latch.countDown();  // 计数减1
+                            }).start();
+                        }
+                        latch.await();  // 等待计数为0
+                    """.trimIndent(),
+                    explanation = "CountDownLatch用于等待多个线程完成，countDown()计数减1，await()等待计数为0。"
+                )
+            ),
+            useCases = listOf("线程池：使用Executor管理线程", "异步任务：使用Future获取结果", "线程协调：使用CountDownLatch协调线程"),
+            keyPoints = listOf("Executor框架管理线程池", "Future用于获取异步结果", "CountDownLatch用于等待多个线程", "并发工具类简化并发编程"),
+            notes = listOf("ExecutorService需要关闭", "Future.get()会阻塞", "CountDownLatch是一次性的", "合理使用并发工具类"),
+            practiceTips = "建议：使用Executor框架管理线程，使用Future获取异步结果，使用CountDownLatch协调线程。注意关闭ExecutorService。"
+        ),
+        
+        // 5. 并发集合（ConcurrentHashMap、BlockingQueue）
+        KnowledgeDetail(
+            id = "java_concurrent_collections",
+            title = "并发集合（ConcurrentHashMap、BlockingQueue）",
+            overview = "并发集合是线程安全的集合，包括ConcurrentHashMap、BlockingQueue等。并发集合适合多线程环境使用。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：并发集合",
+                    code = """
+                        // ConcurrentHashMap：线程安全的HashMap
+                        ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
+                        map.put("key", 1);
+                        
+                        // BlockingQueue：阻塞队列
+                        BlockingQueue<String> queue = new LinkedBlockingQueue<>();
+                        queue.put("item");  // 阻塞直到有空间
+                        String item = queue.take();  // 阻塞直到有元素
+                    """.trimIndent(),
+                    explanation = "ConcurrentHashMap是线程安全的HashMap，BlockingQueue是阻塞队列，适合多线程环境。"
+                )
+            ),
+            useCases = listOf("线程安全：使用并发集合保证线程安全", "生产者消费者：使用BlockingQueue实现", "并发访问：多线程访问集合"),
+            keyPoints = listOf("ConcurrentHashMap是线程安全的", "BlockingQueue是阻塞队列", "并发集合适合多线程环境", "性能优于同步包装"),
+            notes = listOf("并发集合性能更好", "BlockingQueue支持阻塞操作", "合理选择并发集合", "注意并发集合的特性"),
+            practiceTips = "建议：在多线程环境使用并发集合，性能优于同步包装。ConcurrentHashMap适合并发访问，BlockingQueue适合生产者消费者模式。"
+        ),
+        
+        // ========== Java 泛型 ==========
+        
+        // 1. 泛型基础（泛型类、方法、接口）
+        KnowledgeDetail(
+            id = "java_generics_basic",
+            title = "泛型基础（泛型类、方法、接口）",
+            overview = "泛型提供了类型安全，允许在编译时检查类型。可以定义泛型类、泛型方法、泛型接口。泛型提高了代码的复用性和类型安全。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：泛型类和方法",
+                    code = """
+                        // 泛型类
+                        class Box<T> {
+                            private T value;
+                            public void set(T value) { this.value = value; }
+                            public T get() { return value; }
+                        }
+                        
+                        Box<String> stringBox = new Box<>();
+                        stringBox.set("Hello");
+                        String str = stringBox.get();
+                        
+                        // 泛型方法
+                        public <T> T getValue(T value) {
+                            return value;
+                        }
+                    """.trimIndent(),
+                    explanation = "泛型类使用<T>定义类型参数，泛型方法在方法前定义类型参数。泛型提供类型安全。"
+                )
+            ),
+            useCases = listOf("类型安全：提供类型安全", "代码复用：提高代码复用性", "集合：集合使用泛型"),
+            keyPoints = listOf("泛型提供类型安全", "可以定义泛型类、方法、接口", "泛型在编译时检查类型", "避免类型转换"),
+            notes = listOf("泛型在编译时检查", "类型擦除：运行时类型信息丢失", "不能使用基本类型", "合理使用泛型"),
+            practiceTips = "建议：使用泛型提供类型安全，避免类型转换。注意类型擦除，不能使用基本类型。合理使用泛型提高代码质量。"
+        ),
+        
+        // 2. 类型通配符（?、? extends、? super）
+        KnowledgeDetail(
+            id = "java_wildcards",
+            title = "类型通配符（?、? extends、? super）",
+            overview = "类型通配符用于表示未知类型。?表示任意类型，? extends表示上界，? super表示下界。理解通配符有助于编写灵活的泛型代码。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：通配符",
+                    code = """
+                        // ? 任意类型
+                        List<?> list1 = new ArrayList<String>();
+                        
+                        // ? extends 上界（只读）
+                        List<? extends Number> list2 = new ArrayList<Integer>();
+                        // list2.add(1);  // ❌ 不能添加
+                        Number num = list2.get(0);  // ✅ 可以读取
+                        
+                        // ? super 下界（只写）
+                        List<? super Integer> list3 = new ArrayList<Number>();
+                        list3.add(1);  // ✅ 可以添加
+                        // Number num = list3.get(0);  // ❌ 不能读取为Number
+                    """.trimIndent(),
+                    explanation = "?表示任意类型，? extends表示上界（只读），? super表示下界（只写）。PECS原则：Producer Extends, Consumer Super。"
+                )
+            ),
+            useCases = listOf("灵活类型：使用通配符提供灵活类型", "PECS原则：遵循PECS原则", "类型安全：保证类型安全"),
+            keyPoints = listOf("?表示任意类型", "? extends表示上界（只读）", "? super表示下界（只写）", "PECS原则"),
+            notes = listOf("? extends只读", "? super只写", "遵循PECS原则", "合理使用通配符"),
+            practiceTips = "建议：使用通配符提供灵活类型，遵循PECS原则。? extends只读，? super只写。合理使用通配符提高代码灵活性。"
+        ),
+        
+        // 3. 类型擦除和限制
+        KnowledgeDetail(
+            id = "java_type_erasure",
+            title = "类型擦除和限制",
+            overview = "Java泛型使用类型擦除实现，运行时类型信息丢失。类型擦除带来一些限制，如不能使用基本类型、不能创建泛型数组等。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：类型擦除",
+                    code = """
+                        // 编译时
+                        List<String> list1 = new ArrayList<>();
+                        List<Integer> list2 = new ArrayList<>();
+                        
+                        // 运行时（类型擦除后）
+                        // List list1 = new ArrayList();
+                        // List list2 = new ArrayList();
+                        
+                        // 类型擦除的限制
+                        // 1. 不能使用基本类型
+                        // List<int> list;  // ❌ 错误
+                        
+                        // 2. 不能创建泛型数组
+                        // List<String>[] array = new List<String>[10];  // ❌ 错误
+                        
+                        // 3. 不能使用instanceof
+                        // if (list instanceof List<String>) { }  // ❌ 错误
+                    """.trimIndent(),
+                    explanation = "类型擦除在运行时丢失类型信息，带来一些限制：不能使用基本类型、不能创建泛型数组、不能使用instanceof等。"
+                )
+            ),
+            useCases = listOf("理解限制：理解类型擦除的限制", "避免错误：避免类型擦除相关错误", "设计代码：设计考虑类型擦除"),
+            keyPoints = listOf("类型擦除在运行时丢失类型信息", "不能使用基本类型", "不能创建泛型数组", "不能使用instanceof"),
+            notes = listOf("类型擦除是Java泛型的实现方式", "注意类型擦除的限制", "使用包装类代替基本类型", "合理设计泛型代码"),
+            practiceTips = "建议：理解类型擦除的限制，避免相关错误。不能使用基本类型，使用包装类。不能创建泛型数组，使用List代替。"
+        ),
+        
+        // 4. 泛型的最佳实践
+        KnowledgeDetail(
+            id = "java_generics_best",
+            title = "泛型的最佳实践",
+            overview = "泛型使用的最佳实践包括合理使用通配符、遵循PECS原则、避免原始类型、使用有意义的类型参数名等。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：最佳实践",
+                    code = """
+                        // 1. 使用有意义的类型参数名
+                        class Box<T> { }  // ✅
+                        class Box<Element> { }  // ✅ 更好
+                        
+                        // 2. 避免原始类型
+                        List<String> list = new ArrayList<>();  // ✅
+                        // List list = new ArrayList();  // ❌ 原始类型
+                        
+                        // 3. 遵循PECS原则
+                        // Producer Extends, Consumer Super
+                        public void copy(List<? extends T> src, List<? super T> dest) {
+                            for (T item : src) {
+                                dest.add(item);
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "泛型最佳实践：使用有意义的类型参数名、避免原始类型、遵循PECS原则、合理使用通配符。"
+                )
+            ),
+            useCases = listOf("代码质量：提高代码质量", "类型安全：保证类型安全", "代码可读性：提高代码可读性"),
+            keyPoints = listOf("使用有意义的类型参数名", "避免原始类型", "遵循PECS原则", "合理使用通配符"),
+            notes = listOf("遵循最佳实践提高代码质量", "注意类型安全", "提高代码可读性", "合理使用泛型"),
+            practiceTips = "建议：遵循泛型最佳实践，使用有意义的类型参数名，避免原始类型，遵循PECS原则。合理使用泛型提高代码质量。"
+        ),
+        
+        // ========== Java 反射 ==========
+        
+        // 1. 反射基础（Class类）
+        KnowledgeDetail(
+            id = "java_reflection_basic",
+            title = "反射基础（Class类）",
+            overview = "反射允许在运行时检查和操作类、方法、字段等。Class类表示类的元数据，是反射的入口。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：获取Class对象",
+                    code = """
+                        // 方式1：通过类名
+                        Class<?> clazz = String.class;
+                        
+                        // 方式2：通过对象
+                        String str = "Hello";
+                        Class<?> clazz2 = str.getClass();
+                        
+                        // 方式3：通过类名字符串
+                        Class<?> clazz3 = Class.forName("java.lang.String");
+                    """.trimIndent(),
+                    explanation = "获取Class对象的方式：类名.class、对象.getClass()、Class.forName()。Class是反射的入口。"
+                )
+            ),
+            useCases = listOf("动态加载：动态加载类", "框架开发：框架中使用反射", "工具类：反射工具类"),
+            keyPoints = listOf("Class类表示类的元数据", "反射允许运行时检查类", "反射是框架开发的基础"),
+            notes = listOf("反射性能较低", "反射可以访问私有成员", "注意反射的安全限制"),
+            practiceTips = "建议：理解反射机制，注意性能影响。反射适合框架开发，业务代码谨慎使用。"
+        ),
+        
+        // 2. 反射操作（获取信息、创建对象、调用方法）
+        KnowledgeDetail(
+            id = "java_reflection_ops",
+            title = "反射操作（获取信息、创建对象、调用方法）",
+            overview = "反射可以获取类的信息（字段、方法、构造函数等），创建对象，调用方法。反射提供了动态访问代码的能力。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：反射操作",
+                    code = """
+                        Class<?> clazz = Person.class;
+                        
+                        // 获取字段
+                        Field[] fields = clazz.getDeclaredFields();
+                        
+                        // 获取方法
+                        Method[] methods = clazz.getDeclaredMethods();
+                        
+                        // 创建对象
+                        Constructor<?> constructor = clazz.getConstructor(String.class, int.class);
+                        Object obj = constructor.newInstance("Alice", 25);
+                        
+                        // 调用方法
+                        Method method = clazz.getMethod("getName");
+                        String name = (String) method.invoke(obj);
+                    """.trimIndent(),
+                    explanation = "反射可以获取字段、方法、构造函数，创建对象，调用方法。提供了动态访问代码的能力。"
+                )
+            ),
+            useCases = listOf("动态创建：动态创建对象", "动态调用：动态调用方法", "框架开发：框架中使用"),
+            keyPoints = listOf("可以获取字段、方法、构造函数", "可以创建对象", "可以调用方法"),
+            notes = listOf("注意异常处理", "注意性能影响", "可以访问私有成员"),
+            practiceTips = "建议：使用反射进行动态操作，注意异常处理和性能影响。反射适合框架开发。"
+        ),
+        
+        // 3. 反射的应用场景
+        KnowledgeDetail(
+            id = "java_reflection_usage",
+            title = "反射的应用场景",
+            overview = "反射常用于框架开发、依赖注入、序列化、测试框架等场景。理解反射的应用场景有助于合理使用反射。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：应用场景",
+                    code = """
+                        // 1. 依赖注入框架
+                        // 2. ORM框架（对象关系映射）
+                        // 3. 序列化/反序列化
+                        // 4. 测试框架（JUnit）
+                        // 5. 注解处理器
+                    """.trimIndent(),
+                    explanation = "反射常用于框架开发、依赖注入、序列化、测试框架等场景。"
+                )
+            ),
+            useCases = listOf("框架开发：框架中使用反射", "依赖注入：依赖注入框架", "序列化：序列化框架"),
+            keyPoints = listOf("反射常用于框架开发", "依赖注入使用反射", "序列化使用反射"),
+            notes = listOf("反射适合框架开发", "业务代码谨慎使用", "注意性能影响"),
+            practiceTips = "建议：反射主要用于框架开发，业务代码谨慎使用。注意反射的性能影响和安全限制。"
+        ),
+        
+        // ========== Java 注解 ==========
+        
+        // 1. 注解基础（内置注解、元注解）
+        KnowledgeDetail(
+            id = "java_annotation_basic",
+            title = "注解基础（内置注解、元注解）",
+            overview = "注解用于为代码添加元数据。Java提供了内置注解和元注解。理解注解的使用是掌握现代Java开发的基础。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：内置注解和元注解",
+                    code = """
+                        // 内置注解
+                        @Override  // 方法重写
+                        @Deprecated  // 已废弃
+                        @SuppressWarnings("unchecked")  // 抑制警告
+                        
+                        // 元注解
+                        @Target(ElementType.METHOD)  // 应用目标
+                        @Retention(RetentionPolicy.RUNTIME)  // 保留策略
+                        @Documented  // 包含在文档中
+                        @Inherited  // 可继承
+                        public @interface MyAnnotation {
+                            String value() default "";
+                        }
+                    """.trimIndent(),
+                    explanation = "内置注解包括@Override、@Deprecated、@SuppressWarnings。元注解包括@Target、@Retention、@Documented、@Inherited。"
+                )
+            ),
+            useCases = listOf("代码标记：使用注解标记代码", "元数据：添加元数据", "框架：框架中使用注解"),
+            keyPoints = listOf("注解用于添加元数据", "内置注解：@Override、@Deprecated等", "元注解控制注解行为"),
+            notes = listOf("注解不影响代码逻辑", "注解需要处理器处理", "注意注解的保留策略"),
+            practiceTips = "建议：理解注解的使用，注意注解的保留策略。注解需要处理器处理，常用于框架开发。"
+        ),
+        
+        // 2. 自定义注解
+        KnowledgeDetail(
+            id = "java_custom_annotation",
+            title = "自定义注解",
+            overview = "可以定义自定义注解，使用@interface关键字。自定义注解可以包含成员变量，用于传递信息。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：自定义注解",
+                    code = """
+                        @Target(ElementType.METHOD)
+                        @Retention(RetentionPolicy.RUNTIME)
+                        public @interface Test {
+                            String value() default "";
+                            int timeout() default 0;
+                        }
+                        
+                        // 使用
+                        @Test(value = "testMethod", timeout = 1000)
+                        public void testMethod() {
+                            // ...
+                        }
+                    """.trimIndent(),
+                    explanation = "自定义注解使用@interface定义，可以包含成员变量。使用元注解控制注解行为。"
+                )
+            ),
+            useCases = listOf("框架开发：框架中使用自定义注解", "测试框架：测试框架使用注解", "代码生成：注解处理器"),
+            keyPoints = listOf("使用@interface定义注解", "可以包含成员变量", "使用元注解控制行为"),
+            notes = listOf("注解需要处理器处理", "注意保留策略", "合理设计注解"),
+            practiceTips = "建议：合理设计自定义注解，注意保留策略。注解需要处理器处理，常用于框架开发。"
+        ),
+        
+        // 3. 常见注解框架
+        KnowledgeDetail(
+            id = "java_annotation_frameworks",
+            title = "常见注解框架",
+            overview = "常见的注解框架包括Spring、JUnit、Hibernate等。这些框架大量使用注解，简化了开发。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：常见注解",
+                    code = """
+                        // Spring
+                        @Component
+                        @Service
+                        @Autowired
+                        
+                        // JUnit
+                        @Test
+                        @Before
+                        @After
+                        
+                        // Hibernate
+                        @Entity
+                        @Table
+                        @Column
+                    """.trimIndent(),
+                    explanation = "常见注解框架包括Spring、JUnit、Hibernate等，大量使用注解简化开发。"
+                )
+            ),
+            useCases = listOf("框架使用：使用框架注解", "简化开发：简化开发", "代码组织：组织代码"),
+            keyPoints = listOf("Spring使用注解", "JUnit使用注解", "Hibernate使用注解"),
+            notes = listOf("理解框架注解", "合理使用注解", "注意注解的配置"),
+            practiceTips = "建议：熟悉常见注解框架的注解，合理使用注解简化开发。注意注解的配置和使用。"
+        ),
+        
+        // ========== Java 流式API ==========
+        
+        // 1. Stream基础（创建、中间操作、终端操作）
+        KnowledgeDetail(
+            id = "java_stream_basic",
+            title = "Stream基础（创建、中间操作、终端操作）",
+            overview = "Stream API是Java 8引入的函数式编程特性，用于处理集合数据。Stream包括创建、中间操作、终端操作三个阶段。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Stream基础",
+                    code = """
+                        List<String> list = Arrays.asList("a", "b", "c");
+                        
+                        // 创建Stream
+                        Stream<String> stream = list.stream();
+                        
+                        // 中间操作（返回Stream）
+                        stream.filter(s -> s.startsWith("a"))
+                              .map(String::toUpperCase)
+                              .forEach(System.out::println);
+                        
+                        // 终端操作（触发计算）
+                        long count = list.stream().count();
+                    """.trimIndent(),
+                    explanation = "Stream包括创建、中间操作（返回Stream）、终端操作（触发计算）。中间操作是惰性的，终端操作才触发计算。"
+                )
+            ),
+            useCases = listOf("集合处理：处理集合数据", "函数式编程：函数式编程", "代码简化：简化代码"),
+            keyPoints = listOf("Stream用于处理集合", "包括创建、中间操作、终端操作", "中间操作是惰性的"),
+            notes = listOf("中间操作不触发计算", "终端操作触发计算", "Stream只能使用一次"),
+            practiceTips = "建议：使用Stream处理集合数据，注意中间操作是惰性的。Stream只能使用一次，终端操作触发计算。"
+        ),
+        
+        // 2. 中间操作（filter、map、flatMap）
+        KnowledgeDetail(
+            id = "java_intermediate_ops",
+            title = "中间操作（filter、map、flatMap）",
+            overview = "中间操作包括filter（过滤）、map（映射）、flatMap（扁平化映射）等。中间操作返回Stream，是惰性的。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：中间操作",
+                    code = """
+                        List<String> list = Arrays.asList("apple", "banana", "orange");
+                        
+                        // filter：过滤
+                        list.stream().filter(s -> s.length() > 5).forEach(System.out::println);
+                        
+                        // map：映射
+                        list.stream().map(String::toUpperCase).forEach(System.out::println);
+                        
+                        // flatMap：扁平化映射
+                        List<List<String>> nested = Arrays.asList(
+                            Arrays.asList("a", "b"),
+                            Arrays.asList("c", "d")
+                        );
+                        nested.stream().flatMap(List::stream).forEach(System.out::println);
+                    """.trimIndent(),
+                    explanation = "中间操作包括filter（过滤）、map（映射）、flatMap（扁平化映射）。中间操作返回Stream，是惰性的。"
+                )
+            ),
+            useCases = listOf("数据过滤：使用filter过滤", "数据转换：使用map转换", "扁平化：使用flatMap扁平化"),
+            keyPoints = listOf("filter用于过滤", "map用于映射", "flatMap用于扁平化", "中间操作是惰性的"),
+            notes = listOf("中间操作不触发计算", "可以链式调用", "注意性能影响"),
+            practiceTips = "建议：合理使用中间操作，注意性能影响。中间操作是惰性的，可以链式调用。"
+        ),
+        
+        // 3. 终端操作（forEach、collect、reduce）
+        KnowledgeDetail(
+            id = "java_terminal_ops",
+            title = "终端操作（forEach、collect、reduce）",
+            overview = "终端操作触发Stream的计算，包括forEach（遍历）、collect（收集）、reduce（归约）等。终端操作是急切的。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：终端操作",
+                    code = """
+                        List<String> list = Arrays.asList("a", "b", "c");
+                        
+                        // forEach：遍历
+                        list.stream().forEach(System.out::println);
+                        
+                        // collect：收集
+                        List<String> upper = list.stream()
+                                                .map(String::toUpperCase)
+                                                .collect(Collectors.toList());
+                        
+                        // reduce：归约
+                        Optional<String> result = list.stream()
+                                                     .reduce((a, b) -> a + b);
+                    """.trimIndent(),
+                    explanation = "终端操作包括forEach（遍历）、collect（收集）、reduce（归约）。终端操作触发计算，是急切的。"
+                )
+            ),
+            useCases = listOf("数据收集：使用collect收集", "数据归约：使用reduce归约", "数据遍历：使用forEach遍历"),
+            keyPoints = listOf("终端操作触发计算", "forEach用于遍历", "collect用于收集", "reduce用于归约"),
+            notes = listOf("终端操作是急切的", "Stream只能使用一次", "注意性能影响"),
+            practiceTips = "建议：合理使用终端操作，注意性能影响。终端操作触发计算，Stream只能使用一次。"
+        ),
+        
+        // 4. Collectors工具类
+        KnowledgeDetail(
+            id = "java_collectors",
+            title = "Collectors工具类",
+            overview = "Collectors提供了丰富的收集器，用于将Stream收集到集合、Map等。Collectors简化了数据收集操作。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Collectors",
+                    code = """
+                        List<String> list = Arrays.asList("a", "b", "c");
+                        
+                        // 收集到List
+                        List<String> list2 = list.stream().collect(Collectors.toList());
+                        
+                        // 收集到Set
+                        Set<String> set = list.stream().collect(Collectors.toSet());
+                        
+                        // 收集到Map
+                        Map<String, Integer> map = list.stream()
+                            .collect(Collectors.toMap(s -> s, String::length));
+                        
+                        // 分组
+                        Map<Integer, List<String>> grouped = list.stream()
+                            .collect(Collectors.groupingBy(String::length));
+                    """.trimIndent(),
+                    explanation = "Collectors提供了丰富的收集器，包括toList()、toSet()、toMap()、groupingBy()等。"
+                )
+            ),
+            useCases = listOf("数据收集：收集到集合", "数据分组：分组数据", "数据统计：统计数据"),
+            keyPoints = listOf("Collectors提供收集器", "可以收集到List、Set、Map", "支持分组和统计"),
+            notes = listOf("Collectors简化收集", "支持分组", "支持统计"),
+            practiceTips = "建议：使用Collectors简化数据收集，支持分组和统计。合理使用Collectors提高代码可读性。"
+        ),
+        
+        // 5. 并行流（Parallel Stream）
+        KnowledgeDetail(
+            id = "java_parallel_stream",
+            title = "并行流（Parallel Stream）",
+            overview = "并行流利用多核CPU并行处理数据，提高性能。使用parallelStream()创建并行流，适合大数据量处理。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：并行流",
+                    code = """
+                        List<Integer> list = Arrays.asList(1, 2, 3, 4, 5);
+                        
+                        // 并行流
+                        list.parallelStream()
+                            .filter(i -> i > 2)
+                            .forEach(System.out::println);
+                        
+                        // 注意：并行流不保证顺序
+                        // 适合无状态操作
+                        // 不适合有状态操作
+                    """.trimIndent(),
+                    explanation = "并行流使用parallelStream()创建，利用多核CPU并行处理。注意并行流不保证顺序，适合无状态操作。"
+                )
+            ),
+            useCases = listOf("大数据处理：处理大数据量", "性能优化：提高性能", "并行计算：并行计算"),
+            keyPoints = listOf("并行流利用多核CPU", "不保证顺序", "适合无状态操作", "注意线程安全"),
+            notes = listOf("并行流不保证顺序", "适合无状态操作", "不适合有状态操作", "注意性能影响"),
+            practiceTips = "建议：使用并行流处理大数据量，注意不保证顺序。适合无状态操作，不适合有状态操作。注意性能影响。"
+        ),
+        
+        // ========== Java Lambda表达式和函数式接口 ==========
+        
+        // 1. Lambda表达式语法
+        KnowledgeDetail(
+            id = "java_lambda_basic",
+            title = "Lambda表达式语法",
+            overview = "Lambda表达式是Java 8引入的函数式编程特性，简化了匿名内部类的写法。Lambda表达式使代码更简洁。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Lambda语法",
+                    code = """
+                        // 传统方式
+                        Runnable r1 = new Runnable() {
+                            @Override
+                            public void run() {
+                                System.out.println("Hello");
+                            }
+                        };
+                        
+                        // Lambda方式
+                        Runnable r2 = () -> System.out.println("Hello");
+                        
+                        // 带参数
+                        Comparator<String> c = (a, b) -> a.compareTo(b);
+                        
+                        // 方法引用
+                        Comparator<String> c2 = String::compareTo;
+                    """.trimIndent(),
+                    explanation = "Lambda表达式简化了匿名内部类的写法，语法：(参数) -> 表达式。方法引用进一步简化。"
+                )
+            ),
+            useCases = listOf("代码简化：简化代码", "函数式编程：函数式编程", "集合操作：集合操作"),
+            keyPoints = listOf("Lambda简化匿名内部类", "语法：(参数) -> 表达式", "方法引用进一步简化"),
+            notes = listOf("Lambda是语法糖", "需要函数式接口", "注意作用域"),
+            practiceTips = "建议：使用Lambda简化代码，注意需要函数式接口。方法引用进一步简化。注意作用域和变量捕获。"
+        ),
+        
+        // 2. 函数式接口（Function、Consumer、Supplier、Predicate）
+        KnowledgeDetail(
+            id = "java_functional_interfaces",
+            title = "函数式接口（Function、Consumer、Supplier、Predicate）",
+            overview = "函数式接口是只有一个抽象方法的接口。Java提供了Function、Consumer、Supplier、Predicate等常用函数式接口。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：函数式接口",
+                    code = """
+                        // Function：接受一个参数，返回一个结果
+                        Function<String, Integer> f = String::length;
+                        
+                        // Consumer：接受一个参数，无返回值
+                        Consumer<String> c = System.out::println;
+                        
+                        // Supplier：无参数，返回一个结果
+                        Supplier<String> s = () -> "Hello";
+                        
+                        // Predicate：接受一个参数，返回boolean
+                        Predicate<String> p = str -> str.length() > 5;
+                    """.trimIndent(),
+                    explanation = "函数式接口包括Function（转换）、Consumer（消费）、Supplier（供应）、Predicate（判断）。"
+                )
+            ),
+            useCases = listOf("函数式编程：函数式编程", "代码简化：简化代码", "集合操作：集合操作"),
+            keyPoints = listOf("函数式接口只有一个抽象方法", "Function用于转换", "Consumer用于消费", "Supplier用于供应", "Predicate用于判断"),
+            notes = listOf("函数式接口可以标注@FunctionalInterface", "支持Lambda表达式", "合理使用函数式接口"),
+            practiceTips = "建议：理解函数式接口，合理使用Function、Consumer、Supplier、Predicate。函数式接口支持Lambda表达式。"
+        ),
+        
+        // 3. 方法引用
+        KnowledgeDetail(
+            id = "java_method_reference",
+            title = "方法引用",
+            overview = "方法引用是Lambda表达式的简化形式，用于引用已有的方法。方法引用使代码更简洁。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：方法引用",
+                    code = """
+                        List<String> list = Arrays.asList("a", "b", "c");
+                        
+                        // 静态方法引用
+                        list.stream().map(String::valueOf);
+                        
+                        // 实例方法引用
+                        list.stream().map(String::toUpperCase);
+                        
+                        // 构造函数引用
+                        Supplier<List<String>> supplier = ArrayList::new;
+                    """.trimIndent(),
+                    explanation = "方法引用包括静态方法引用、实例方法引用、构造函数引用。方法引用简化Lambda表达式。"
+                )
+            ),
+            useCases = listOf("代码简化：简化Lambda", "方法复用：复用方法", "代码可读性：提高可读性"),
+            keyPoints = listOf("方法引用简化Lambda", "包括静态、实例、构造函数引用", "提高代码可读性"),
+            notes = listOf("方法引用是语法糖", "需要函数式接口", "合理使用方法引用"),
+            practiceTips = "建议：使用方法引用简化Lambda表达式，提高代码可读性。注意方法引用的使用场景。"
+        ),
+        
+        // 4. Lambda的应用
+        KnowledgeDetail(
+            id = "java_lambda_usage",
+            title = "Lambda的应用",
+            overview = "Lambda表达式广泛应用于集合操作、事件处理、并发编程等场景。Lambda使代码更简洁、更易读。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Lambda应用",
+                    code = """
+                        // 集合操作
+                        list.stream().filter(s -> s.length() > 5).forEach(System.out::println);
+                        
+                        // 事件处理
+                        button.setOnClickListener(e -> System.out.println("Clicked"));
+                        
+                        // 并发编程
+                        executor.submit(() -> System.out.println("Task"));
+                    """.trimIndent(),
+                    explanation = "Lambda广泛应用于集合操作、事件处理、并发编程等场景，使代码更简洁。"
+                )
+            ),
+            useCases = listOf("集合操作：集合操作", "事件处理：事件处理", "并发编程：并发编程"),
+            keyPoints = listOf("Lambda应用广泛", "集合操作使用Lambda", "事件处理使用Lambda", "并发编程使用Lambda"),
+            notes = listOf("Lambda使代码简洁", "注意性能影响", "合理使用Lambda"),
+            practiceTips = "建议：合理使用Lambda简化代码，注意性能影响。Lambda使代码更简洁、更易读。"
+        ),
+        
+        // ========== Java IO和NIO ==========
+        
+        // 1. 传统IO（字节流、字符流）
+        KnowledgeDetail(
+            id = "java_traditional_io",
+            title = "传统IO（字节流、字符流）",
+            overview = "传统IO包括字节流（InputStream/OutputStream）和字符流（Reader/Writer）。字节流处理二进制数据，字符流处理文本数据。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：字节流和字符流",
+                    code = """
+                        // 字节流
+                        FileInputStream fis = new FileInputStream("file.txt");
+                        byte[] buffer = new byte[1024];
+                        int bytesRead = fis.read(buffer);
+                        fis.close();
+                        
+                        // 字符流
+                        FileReader fr = new FileReader("file.txt");
+                        BufferedReader br = new BufferedReader(fr);
+                        String line = br.readLine();
+                        br.close();
+                    """.trimIndent(),
+                    explanation = "字节流处理二进制数据，字符流处理文本数据。使用缓冲流提高性能。"
+                )
+            ),
+            useCases = listOf("文件读写：读写文件", "数据处理：处理数据", "网络通信：网络通信"),
+            keyPoints = listOf("字节流处理二进制数据", "字符流处理文本数据", "使用缓冲流提高性能"),
+            notes = listOf("注意关闭流", "使用try-with-resources", "注意异常处理"),
+            practiceTips = "建议：使用try-with-resources自动关闭流，注意异常处理。字节流处理二进制数据，字符流处理文本数据。"
+        ),
+        
+        // 2. NIO（Channel、Buffer、Selector）
+        KnowledgeDetail(
+            id = "java_nio",
+            title = "NIO（Channel、Buffer、Selector）",
+            overview = "NIO提供了非阻塞IO，包括Channel（通道）、Buffer（缓冲区）、Selector（选择器）。NIO适合高并发场景。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：NIO",
+                    code = """
+                        // Channel和Buffer
+                        FileChannel channel = FileChannel.open(Paths.get("file.txt"));
+                        ByteBuffer buffer = ByteBuffer.allocate(1024);
+                        channel.read(buffer);
+                        buffer.flip();
+                        channel.close();
+                        
+                        // Selector用于多路复用
+                        Selector selector = Selector.open();
+                        ServerSocketChannel serverChannel = ServerSocketChannel.open();
+                        serverChannel.configureBlocking(false);
+                        serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+                    """.trimIndent(),
+                    explanation = "NIO包括Channel、Buffer、Selector。NIO提供非阻塞IO，适合高并发场景。"
+                )
+            ),
+            useCases = listOf("高并发：高并发场景", "非阻塞IO：非阻塞IO", "网络编程：网络编程"),
+            keyPoints = listOf("NIO提供非阻塞IO", "Channel是通道", "Buffer是缓冲区", "Selector用于多路复用"),
+            notes = listOf("NIO适合高并发", "注意Buffer的状态", "Selector用于多路复用"),
+            practiceTips = "建议：使用NIO处理高并发场景，注意Buffer的状态。Selector用于多路复用，提高性能。"
+        ),
+        
+        // 3. NIO.2（Files类、WatchService）
+        KnowledgeDetail(
+            id = "java_nio2",
+            title = "NIO.2（Files类、WatchService）",
+            overview = "NIO.2提供了Files类和WatchService，简化了文件操作和文件监控。Files类提供了丰富的文件操作方法。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：NIO.2",
+                    code = """
+                        // Files类
+                        Path path = Paths.get("file.txt");
+                        byte[] data = Files.readAllBytes(path);
+                        List<String> lines = Files.readAllLines(path);
+                        Files.write(path, data);
+                        
+                        // WatchService监控文件变化
+                        WatchService watchService = FileSystems.getDefault().newWatchService();
+                        Path dir = Paths.get(".");
+                        dir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+                    """.trimIndent(),
+                    explanation = "NIO.2提供了Files类和WatchService，简化了文件操作和文件监控。"
+                )
+            ),
+            useCases = listOf("文件操作：文件操作", "文件监控：监控文件变化", "简化代码：简化代码"),
+            keyPoints = listOf("Files类简化文件操作", "WatchService监控文件变化", "NIO.2提供便利方法"),
+            notes = listOf("Files类提供便利方法", "WatchService用于监控", "注意异常处理"),
+            practiceTips = "建议：使用Files类简化文件操作，使用WatchService监控文件变化。NIO.2提供了便利的方法。"
+        ),
+        
+        // ========== Java 网络编程 ==========
+        
+        // 1. Socket编程（TCP/IP、UDP）
+        KnowledgeDetail(
+            id = "java_socket",
+            title = "Socket编程（TCP/IP、UDP）",
+            overview = "Socket编程用于网络通信，包括TCP和UDP。TCP是可靠连接，UDP是无连接。Socket是网络编程的基础。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：TCP Socket",
+                    code = """
+                        // 服务器端
+                        ServerSocket serverSocket = new ServerSocket(8080);
+                        Socket socket = serverSocket.accept();
+                        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                        String message = in.readLine();
+                        socket.close();
+                        
+                        // 客户端
+                        Socket clientSocket = new Socket("localhost", 8080);
+                        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                        out.println("Hello");
+                        clientSocket.close();
+                    """.trimIndent(),
+                    explanation = "TCP Socket提供可靠连接，ServerSocket用于服务器，Socket用于客户端。"
+                )
+            ),
+            useCases = listOf("网络通信：网络通信", "客户端服务器：客户端服务器通信", "数据传输：数据传输"),
+            keyPoints = listOf("TCP是可靠连接", "UDP是无连接", "ServerSocket用于服务器", "Socket用于客户端"),
+            notes = listOf("TCP保证可靠性", "UDP性能更好", "注意异常处理", "注意资源释放"),
+            practiceTips = "建议：使用TCP保证可靠性，使用UDP提高性能。注意异常处理和资源释放。"
+        ),
+        
+        // 2. HTTP客户端（HttpURLConnection）
+        KnowledgeDetail(
+            id = "java_http_client",
+            title = "HTTP客户端（HttpURLConnection）",
+            overview = "HttpURLConnection用于HTTP通信，可以发送HTTP请求和接收HTTP响应。HttpURLConnection是Java标准库提供的HTTP客户端。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：HttpURLConnection",
+                    code = """
+                        URL url = new URL("http://example.com/api");
+                        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                        conn.setRequestMethod("GET");
+                        conn.setRequestProperty("Accept", "application/json");
+                        
+                        int responseCode = conn.getResponseCode();
+                        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                        String response = in.readLine();
+                        conn.disconnect();
+                    """.trimIndent(),
+                    explanation = "HttpURLConnection用于HTTP通信，可以设置请求方法和请求头，获取响应码和响应体。"
+                )
+            ),
+            useCases = listOf("HTTP请求：发送HTTP请求", "API调用：调用API", "网络通信：网络通信"),
+            keyPoints = listOf("HttpURLConnection用于HTTP通信", "可以设置请求方法和请求头", "可以获取响应码和响应体"),
+            notes = listOf("注意异常处理", "注意资源释放", "可以使用更现代的HTTP客户端"),
+            practiceTips = "建议：使用HttpURLConnection进行HTTP通信，注意异常处理和资源释放。可以使用更现代的HTTP客户端（如OkHttp）。"
+        ),
+        
+        // ========== Java JDBC数据库操作 ==========
+        
+        // 1. JDBC基础（驱动、连接）
+        KnowledgeDetail(
+            id = "java_jdbc_basic",
+            title = "JDBC基础（驱动、连接）",
+            overview = "JDBC是Java数据库连接标准，用于连接和操作数据库。JDBC包括驱动加载、连接建立、语句执行等步骤。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：JDBC连接",
+                    code = """
+                        // 加载驱动
+                        Class.forName("com.mysql.cj.jdbc.Driver");
+                        
+                        // 建立连接
+                        String url = "jdbc:mysql://localhost:3306/mydb";
+                        String user = "root";
+                        String password = "password";
+                        Connection conn = DriverManager.getConnection(url, user, password);
+                        
+                        // 关闭连接
+                        conn.close();
+                    """.trimIndent(),
+                    explanation = "JDBC连接包括驱动加载、连接建立、连接关闭。使用DriverManager.getConnection()建立连接。"
+                )
+            ),
+            useCases = listOf("数据库操作：操作数据库", "数据访问：数据访问", "应用开发：应用开发"),
+            keyPoints = listOf("JDBC是数据库连接标准", "需要加载驱动", "使用DriverManager建立连接", "注意关闭连接"),
+            notes = listOf("注意异常处理", "注意资源释放", "使用try-with-resources", "注意SQL注入"),
+            practiceTips = "建议：使用JDBC连接数据库，注意异常处理和资源释放。使用try-with-resources自动关闭连接。注意SQL注入防护。"
+        ),
+        
+        // 2. JDBC操作（Statement、PreparedStatement、ResultSet）
+        KnowledgeDetail(
+            id = "java_jdbc_ops",
+            title = "JDBC操作（Statement、PreparedStatement、ResultSet）",
+            overview = "JDBC操作包括Statement、PreparedStatement、ResultSet。PreparedStatement性能更好且安全，ResultSet用于处理查询结果。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：JDBC操作",
+                    code = """
+                        // Statement（不推荐，有SQL注入风险）
+                        Statement stmt = conn.createStatement();
+                        ResultSet rs = stmt.executeQuery("SELECT * FROM users");
+                        
+                        // PreparedStatement（推荐）
+                        String sql = "SELECT * FROM users WHERE id = ?";
+                        PreparedStatement pstmt = conn.prepareStatement(sql);
+                        pstmt.setInt(1, 1);
+                        ResultSet rs2 = pstmt.executeQuery();
+                        
+                        // 处理结果
+                        while (rs2.next()) {
+                            int id = rs2.getInt("id");
+                            String name = rs2.getString("name");
+                        }
+                    """.trimIndent(),
+                    explanation = "PreparedStatement性能更好且安全，ResultSet用于处理查询结果。使用PreparedStatement避免SQL注入。"
+                )
+            ),
+            useCases = listOf("数据查询：查询数据", "数据更新：更新数据", "数据插入：插入数据"),
+            keyPoints = listOf("PreparedStatement性能更好", "PreparedStatement避免SQL注入", "ResultSet处理查询结果", "注意资源释放"),
+            notes = listOf("使用PreparedStatement", "注意SQL注入", "注意异常处理", "注意资源释放"),
+            practiceTips = "建议：使用PreparedStatement进行数据库操作，避免SQL注入。注意异常处理和资源释放。"
+        ),
+        
+        // 3. 连接池（HikariCP、C3P0、Druid）
+        KnowledgeDetail(
+            id = "java_connection_pool",
+            title = "连接池（HikariCP、C3P0、Druid）",
+            overview = "连接池管理数据库连接，提高性能。常见的连接池包括HikariCP、C3P0、Druid。连接池复用连接，减少连接创建开销。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：连接池",
+                    code = """
+                        // HikariCP（推荐，性能最好）
+                        HikariConfig config = new HikariConfig();
+                        config.setJdbcUrl("jdbc:mysql://localhost:3306/mydb");
+                        config.setUsername("root");
+                        config.setPassword("password");
+                        HikariDataSource dataSource = new HikariDataSource(config);
+                        Connection conn = dataSource.getConnection();
+                    """.trimIndent(),
+                    explanation = "连接池管理数据库连接，提高性能。HikariCP性能最好，推荐使用。"
+                )
+            ),
+            useCases = listOf("性能优化：提高性能", "连接管理：管理连接", "高并发：高并发场景"),
+            keyPoints = listOf("连接池提高性能", "HikariCP性能最好", "连接池复用连接", "注意连接池配置"),
+            notes = listOf("使用连接池提高性能", "注意连接池配置", "注意连接泄漏", "合理配置连接数"),
+            practiceTips = "建议：使用连接池提高性能，HikariCP性能最好。注意连接池配置，避免连接泄漏。"
+        ),
+        
+        // ========== Java 设计模式 ==========
+        
+        // 1. 创建型模式（单例、工厂、建造者）
+        KnowledgeDetail(
+            id = "java_creational",
+            title = "创建型模式（单例、工厂、建造者）",
+            overview = "创建型模式用于对象的创建，包括单例模式、工厂模式、建造者模式等。创建型模式提供了灵活的对象创建方式。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：单例模式",
+                    code = """
+                        // 懒汉式单例
+                        class Singleton {
+                            private static Singleton instance;
+                            private Singleton() {}
+                            public static synchronized Singleton getInstance() {
+                                if (instance == null) {
+                                    instance = new Singleton();
+                                }
+                                return instance;
+                            }
+                        }
+                        
+                        // 枚举单例（推荐）
+                        enum SingletonEnum {
+                            INSTANCE;
+                        }
+                    """.trimIndent(),
+                    explanation = "单例模式确保一个类只有一个实例。枚举单例是推荐方式，线程安全且简洁。"
+                )
+            ),
+            useCases = listOf("对象创建：灵活创建对象", "代码复用：代码复用", "设计优化：设计优化"),
+            keyPoints = listOf("单例模式确保唯一实例", "工厂模式创建对象", "建造者模式构建复杂对象"),
+            notes = listOf("理解设计模式", "合理使用设计模式", "注意线程安全"),
+            practiceTips = "建议：理解创建型模式，合理使用单例、工厂、建造者模式。注意线程安全和性能。"
+        ),
+        
+        // 2. 结构型模式（适配器、装饰者、代理）
+        KnowledgeDetail(
+            id = "java_structural",
+            title = "结构型模式（适配器、装饰者、代理）",
+            overview = "结构型模式用于组合类和对象，包括适配器模式、装饰者模式、代理模式等。结构型模式提供了灵活的结构设计。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：适配器模式",
+                    code = """
+                        // 适配器模式：将一个接口转换为另一个接口
+                        interface Target {
+                            void request();
+                        }
+                        
+                        class Adaptee {
+                            void specificRequest() { }
+                        }
+                        
+                        class Adapter implements Target {
+                            private Adaptee adaptee;
+                            public void request() {
+                                adaptee.specificRequest();
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "适配器模式将一个接口转换为另一个接口，装饰者模式动态添加功能，代理模式控制访问。"
+                )
+            ),
+            useCases = listOf("接口适配：适配接口", "功能扩展：扩展功能", "访问控制：控制访问"),
+            keyPoints = listOf("适配器模式适配接口", "装饰者模式添加功能", "代理模式控制访问"),
+            notes = listOf("理解结构型模式", "合理使用设计模式", "注意设计原则"),
+            practiceTips = "建议：理解结构型模式，合理使用适配器、装饰者、代理模式。注意设计原则和性能。"
+        ),
+        
+        // 3. 行为型模式（观察者、策略、命令）
+        KnowledgeDetail(
+            id = "java_behavioral",
+            title = "行为型模式（观察者、策略、命令）",
+            overview = "行为型模式用于对象间的通信，包括观察者模式、策略模式、命令模式等。行为型模式提供了灵活的交互方式。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：观察者模式",
+                    code = """
+                        // 观察者模式：定义对象间一对多的依赖关系
+                        interface Observer {
+                            void update(String message);
+                        }
+                        
+                        class Subject {
+                            private List<Observer> observers = new ArrayList<>();
+                            public void addObserver(Observer observer) {
+                                observers.add(observer);
+                            }
+                            public void notifyObservers(String message) {
+                                for (Observer observer : observers) {
+                                    observer.update(message);
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "观察者模式定义对象间一对多的依赖，策略模式封装算法，命令模式封装请求。"
+                )
+            ),
+            useCases = listOf("事件通知：事件通知", "算法封装：封装算法", "请求封装：封装请求"),
+            keyPoints = listOf("观察者模式处理事件", "策略模式封装算法", "命令模式封装请求"),
+            notes = listOf("理解行为型模式", "合理使用设计模式", "注意设计原则"),
+            practiceTips = "建议：理解行为型模式，合理使用观察者、策略、命令模式。注意设计原则和代码质量。"
+        ),
+        
+        // ========== Java 8+ 新特性 ==========
+        
+        // 1. Java 8（Lambda、Stream、Optional、新日期时间API）
+        KnowledgeDetail(
+            id = "java_java8",
+            title = "Java 8（Lambda、Stream、Optional、新日期时间API）",
+            overview = "Java 8引入了Lambda表达式、Stream API、Optional、新日期时间API等特性。这些特性使Java更现代化。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Java 8特性",
+                    code = """
+                        // Lambda表达式
+                        list.stream().filter(s -> s.length() > 5).forEach(System.out::println);
+                        
+                        // Optional
+                        Optional<String> optional = Optional.of("Hello");
+                        optional.ifPresent(System.out::println);
+                        
+                        // 新日期时间API
+                        LocalDate date = LocalDate.now();
+                        LocalDateTime dateTime = LocalDateTime.now();
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                    """.trimIndent(),
+                    explanation = "Java 8引入了Lambda、Stream、Optional、新日期时间API等特性，使Java更现代化。"
+                )
+            ),
+            useCases = listOf("函数式编程：函数式编程", "代码简化：简化代码", "日期处理：日期处理"),
+            keyPoints = listOf("Lambda表达式简化代码", "Stream API处理集合", "Optional处理空值", "新日期时间API"),
+            notes = listOf("Java 8是重要版本", "理解新特性", "合理使用新特性"),
+            practiceTips = "建议：掌握Java 8新特性，合理使用Lambda、Stream、Optional、新日期时间API。这些特性使Java更现代化。"
+        ),
+        
+        // 2. Java 9（模块系统、接口私有方法）
+        KnowledgeDetail(
+            id = "java_java9",
+            title = "Java 9（模块系统、接口私有方法）",
+            overview = "Java 9引入了模块系统和接口私有方法。模块系统提供了更好的模块化支持，接口私有方法提供了代码复用。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Java 9特性",
+                    code = """
+                        // 接口私有方法
+                        interface MyInterface {
+                            default void method1() {
+                                privateMethod();
+                            }
+                            
+                            private void privateMethod() {
+                                // 私有方法
+                            }
+                        }
+                        
+                        // 模块系统（module-info.java）
+                        // module com.example {
+                        //     requires java.base;
+                        //     exports com.example.api;
+                        // }
+                    """.trimIndent(),
+                    explanation = "Java 9引入了模块系统和接口私有方法，提供了更好的模块化支持和代码复用。"
+                )
+            ),
+            useCases = listOf("模块化：模块化开发", "代码复用：代码复用", "接口设计：接口设计"),
+            keyPoints = listOf("模块系统提供模块化", "接口私有方法提供代码复用", "Java 9是重要版本"),
+            notes = listOf("理解模块系统", "合理使用模块系统", "注意模块依赖"),
+            practiceTips = "建议：理解Java 9的模块系统和接口私有方法，合理使用这些特性。模块系统提供了更好的模块化支持。"
+        ),
+        
+        // 3. Java 10+（var关键字、Records、Sealed Classes）
+        KnowledgeDetail(
+            id = "java_java10_plus",
+            title = "Java 10+（var关键字、Records、Sealed Classes）",
+            overview = "Java 10+引入了var关键字、Records、Sealed Classes等特性。这些特性进一步简化了代码。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Java 10+特性",
+                    code = """
+                        // var关键字（局部变量类型推断）
+                        var list = new ArrayList<String>();
+                        var name = "Hello";
+                        
+                        // Records（Java 14+）
+                        record Person(String name, int age) {
+                            // 自动生成构造函数、getter、equals、hashCode、toString
+                        }
+                        
+                        // Sealed Classes（Java 17+）
+                        // sealed class Shape permits Circle, Rectangle {
+                        // }
+                    """.trimIndent(),
+                    explanation = "Java 10+引入了var关键字、Records、Sealed Classes等特性，进一步简化了代码。"
+                )
+            ),
+            useCases = listOf("代码简化：简化代码", "数据类：数据类", "类型安全：类型安全"),
+            keyPoints = listOf("var关键字简化类型声明", "Records简化数据类", "Sealed Classes提供类型安全"),
+            notes = listOf("理解新特性", "合理使用新特性", "注意版本兼容性"),
+            practiceTips = "建议：理解Java 10+的新特性，合理使用var、Records、Sealed Classes。这些特性进一步简化了代码。"
+        ),
+        
+        // ========== Java 9+ 模块系统 ==========
+        
+        // 1. 模块系统基础（module-info.java）
+        KnowledgeDetail(
+            id = "java_modules_basic",
+            title = "模块系统基础（module-info.java）",
+            overview = "Java 9模块系统提供了更好的模块化支持。module-info.java定义模块，包括模块名、依赖、导出等。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：模块定义",
+                    code = """
+                        // module-info.java
+                        module com.example.app {
+                            requires java.base;
+                            requires java.sql;
+                            exports com.example.api;
+                            opens com.example.internal;
+                        }
+                    """.trimIndent(),
+                    explanation = "module-info.java定义模块，requires声明依赖，exports导出包，opens开放反射访问。"
+                )
+            ),
+            useCases = listOf("模块化：模块化开发", "依赖管理：依赖管理", "封装：更好的封装"),
+            keyPoints = listOf("模块系统提供模块化", "module-info.java定义模块", "requires声明依赖", "exports导出包"),
+            notes = listOf("理解模块系统", "合理设计模块", "注意模块依赖"),
+            practiceTips = "建议：理解Java 9模块系统，合理设计模块。module-info.java定义模块，注意模块依赖和导出。"
+        ),
+        
+        // 2. 模块系统实践
+        KnowledgeDetail(
+            id = "java_modules_practice",
+            title = "模块系统实践",
+            overview = "模块系统实践包括模块设计、依赖管理、模块测试等。合理使用模块系统提高代码的可维护性。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：模块实践",
+                    code = """
+                        // 1. 模块设计：合理划分模块
+                        // 2. 依赖管理：管理模块依赖
+                        // 3. 模块测试：测试模块
+                        // 4. 模块打包：打包模块
+                    """.trimIndent(),
+                    explanation = "模块系统实践包括模块设计、依赖管理、模块测试等。合理使用模块系统提高代码质量。"
+                )
+            ),
+            useCases = listOf("模块设计：设计模块", "依赖管理：管理依赖", "代码组织：组织代码"),
+            keyPoints = listOf("合理设计模块", "管理模块依赖", "测试模块", "打包模块"),
+            notes = listOf("理解模块实践", "合理使用模块系统", "注意模块设计"),
+            practiceTips = "建议：理解模块系统实践，合理设计模块，管理模块依赖。模块系统提高了代码的可维护性。"
+        ),
+        
+        // ========== Java与Kotlin互操作 ==========
+        
+        // 1. Kotlin调用Java
+        KnowledgeDetail(
+            id = "java_kotlin_call_java",
+            title = "Kotlin调用Java",
+            overview = "Kotlin可以无缝调用Java代码。Kotlin会自动处理Java的可空性、getter/setter等。理解Kotlin调用Java的机制有助于混合开发。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Kotlin调用Java",
+                    code = """
+                        // Java类
+                        // public class JavaClass {
+                        //     public String getName() { return "Java"; }
+                        // }
+                        
+                        // Kotlin调用
+                        // val javaClass = JavaClass()
+                        // val name = javaClass.name  // 自动调用getName()
+                    """.trimIndent(),
+                    explanation = "Kotlin可以无缝调用Java代码，自动处理getter/setter，支持SAM转换。"
+                )
+            ),
+            useCases = listOf("混合开发：混合开发", "代码复用：代码复用", "迁移：Kotlin迁移"),
+            keyPoints = listOf("Kotlin可以调用Java", "自动处理getter/setter", "支持SAM转换", "注意可空性"),
+            notes = listOf("理解互操作机制", "注意可空性处理", "合理使用互操作"),
+            practiceTips = "建议：理解Kotlin调用Java的机制，注意可空性处理。Kotlin可以无缝调用Java代码。"
+        ),
+        
+        // 2. Java调用Kotlin
+        KnowledgeDetail(
+            id = "java_java_call_kotlin",
+            title = "Java调用Kotlin",
+            overview = "Java可以调用Kotlin代码，但需要注意一些互操作性问题。使用@JvmName、@JvmStatic等注解优化Java调用。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Java调用Kotlin",
+                    code = """
+                        // Kotlin文件
+                        // @file:JvmName("Utils")
+                        // fun topLevelFunction() { }
+                        
+                        // Java调用
+                        // UtilsKt.topLevelFunction();
+                        // 或 Utils.topLevelFunction();（使用@JvmName）
+                    """.trimIndent(),
+                    explanation = "Java可以调用Kotlin代码，使用@JvmName改变生成的类名，使用@JvmStatic提供静态方法。"
+                )
+            ),
+            useCases = listOf("混合开发：混合开发", "代码复用：代码复用", "迁移：Kotlin迁移"),
+            keyPoints = listOf("Java可以调用Kotlin", "使用@JvmName优化", "使用@JvmStatic优化", "注意互操作性问题"),
+            notes = listOf("理解互操作机制", "使用注解优化", "注意互操作性问题"),
+            practiceTips = "建议：理解Java调用Kotlin的机制，使用@JvmName、@JvmStatic等注解优化。注意互操作性问题。"
+        ),
+        
+        // 3. 互操作最佳实践
+        KnowledgeDetail(
+            id = "java_interop_best",
+            title = "互操作最佳实践",
+            overview = "Java和Kotlin互操作的最佳实践包括合理使用注解、处理可空性、优化API设计等。遵循最佳实践提高互操作性。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：最佳实践",
+                    code = """
+                        // 1. 使用@JvmName优化Java调用
+                        // 2. 使用@JvmStatic提供静态方法
+                        // 3. 处理可空性
+                        // 4. 优化API设计
+                        // 5. 注意性能影响
+                    """.trimIndent(),
+                    explanation = "互操作最佳实践包括使用注解优化、处理可空性、优化API设计等。"
+                )
+            ),
+            useCases = listOf("混合开发：混合开发", "代码质量：提高代码质量", "性能优化：性能优化"),
+            keyPoints = listOf("使用注解优化", "处理可空性", "优化API设计", "注意性能影响"),
+            notes = listOf("遵循最佳实践", "注意互操作性问题", "合理使用互操作"),
+            practiceTips = "建议：遵循互操作最佳实践，使用注解优化，处理可空性，优化API设计。注意性能影响。"
+        ),
+        
+        // ========== Java 性能优化和JVM ==========
+        
+        // 1. JVM基础（内存模型、垃圾回收）
+        KnowledgeDetail(
+            id = "java_jvm_basic",
+            title = "JVM基础（内存模型、垃圾回收）",
+            overview = "JVM是Java运行环境，包括内存模型和垃圾回收机制。理解JVM有助于性能优化和问题排查。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：JVM内存模型",
+                    code = """
+                        // JVM内存区域：
+                        // 1. 程序计数器（PC）
+                        // 2. 虚拟机栈（Stack）
+                        // 3. 本地方法栈（Native Stack）
+                        // 4. 堆（Heap）
+                        // 5. 方法区（Method Area）
+                        
+                        // 垃圾回收算法：
+                        // 1. 标记-清除
+                        // 2. 复制
+                        // 3. 标记-整理
+                        // 4. 分代收集
+                    """.trimIndent(),
+                    explanation = "JVM内存包括程序计数器、栈、堆、方法区等。垃圾回收包括标记-清除、复制、标记-整理等算法。"
+                )
+            ),
+            useCases = listOf("性能优化：性能优化", "问题排查：问题排查", "内存管理：内存管理"),
+            keyPoints = listOf("理解JVM内存模型", "理解垃圾回收机制", "理解GC算法", "理解GC调优"),
+            notes = listOf("理解JVM原理", "注意内存管理", "注意GC调优"),
+            practiceTips = "建议：理解JVM内存模型和垃圾回收机制，有助于性能优化和问题排查。注意GC调优。"
+        ),
+        
+        // 2. 性能优化
+        KnowledgeDetail(
+            id = "java_performance_opt",
+            title = "性能优化",
+            overview = "性能优化包括代码优化、JVM调优、并发优化等。理解性能优化技巧有助于提高应用性能。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：性能优化",
+                    code = """
+                        // 1. 代码优化
+                        // - 避免不必要的对象创建
+                        // - 使用StringBuilder代替String拼接
+                        // - 合理使用集合
+                        
+                        // 2. JVM调优
+                        // - 调整堆大小
+                        // - 选择合适的GC算法
+                        // - 监控GC
+                        
+                        // 3. 并发优化
+                        // - 使用线程池
+                        // - 避免锁竞争
+                        // - 使用并发集合
+                    """.trimIndent(),
+                    explanation = "性能优化包括代码优化、JVM调优、并发优化等。理解性能优化技巧提高应用性能。"
+                )
+            ),
+            useCases = listOf("性能提升：提升性能", "资源优化：优化资源", "响应优化：优化响应"),
+            keyPoints = listOf("代码优化", "JVM调优", "并发优化", "监控和分析"),
+            notes = listOf("理解性能优化", "注意性能测试", "注意监控"),
+            practiceTips = "建议：理解性能优化技巧，包括代码优化、JVM调优、并发优化。注意性能测试和监控。"
+        ),
+        
+        // 3. 调试和监控
+        KnowledgeDetail(
+            id = "java_debug_monitor",
+            title = "调试和监控",
+            overview = "调试和监控包括日志、性能监控、内存分析等。使用工具进行调试和监控有助于问题排查和性能优化。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：调试和监控",
+                    code = """
+                        // 1. 日志
+                        // Logger logger = Logger.getLogger("MyClass");
+                        // logger.info("Message");
+                        
+                        // 2. 性能监控
+                        // - JProfiler
+                        // - VisualVM
+                        // - JConsole
+                        
+                        // 3. 内存分析
+                        // - MAT（Memory Analyzer Tool）
+                        // - jmap
+                        // - jstat
+                    """.trimIndent(),
+                    explanation = "调试和监控包括日志、性能监控、内存分析等。使用工具进行调试和监控。"
+                )
+            ),
+            useCases = listOf("问题排查：排查问题", "性能分析：分析性能", "内存分析：分析内存"),
+            keyPoints = listOf("使用日志", "使用性能监控工具", "使用内存分析工具", "理解工具使用"),
+            notes = listOf("理解调试工具", "理解监控工具", "注意工具使用"),
+            practiceTips = "建议：使用日志、性能监控、内存分析工具进行调试和监控。理解工具使用有助于问题排查和性能优化。"
         )
     )
 }
