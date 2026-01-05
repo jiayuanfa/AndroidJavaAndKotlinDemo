@@ -7354,6 +7354,281 @@ object KnowledgeDetailsRepository {
                 "在Android开发中，密封类常用于表示UI状态"
             ),
             practiceTips = "建议：使用密封类表示状态、结果、事件等受限的类层次结构。密封类配合when表达式可以创建类型安全、易于维护的代码。在Android开发中，使用密封类表示UI状态可以简化状态管理。"
+        ),
+        
+        // ========== Kotlin 作用域函数 ==========
+        
+        // 1. let、run、with、apply、also的使用和选择
+        KnowledgeDetail(
+            id = "scope_functions",
+            title = "let、run、with、apply、also的使用和选择",
+            overview = "Kotlin提供了5个作用域函数：let、run、with、apply、also。这些函数在对象的上下文中执行代码块，让代码更简洁。理解每个函数的特点和适用场景是掌握作用域函数的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：let函数",
+                    code = """
+                        // let：将对象作为lambda参数，返回lambda结果
+                        // 使用场景：空安全调用、转换对象
+                        
+                        // 1. 空安全调用
+                        val name: String? = "Hello"
+                        name?.let {
+                            println(it.length)  // it是name
+                            println(it.uppercase())
+                        }
+                        
+                        // 2. 转换对象
+                        val number: Int? = 5
+                        val doubled = number?.let { it * 2 }  // 10
+                        
+                        // 3. 链式调用
+                        val result = "Hello"
+                            .let { it.uppercase() }
+                            .let { it + " World" }
+                            .let { it.length }
+                        println(result)  // 12
+                        
+                        // 4. 避免变量名冲突
+                        val outer = "Outer"
+                        "Inner".let { inner ->
+                            println("${'$'}outer and ${'$'}inner")  // 可以使用outer
+                        }
+                        
+                        // 5. 处理可空值
+                        val nullable: String? = null
+                        nullable?.let {
+                            // 只在不为null时执行
+                            process(it)
+                        }
+                    """.trimIndent(),
+                    explanation = "let函数将对象作为lambda参数（it），返回lambda结果。常用于空安全调用、转换对象、避免变量名冲突等场景。"
+                ),
+                CodeExample(
+                    title = "示例2：run函数",
+                    code = """
+                        // run：在对象上下文中执行代码块，返回lambda结果
+                        // 使用场景：对象配置和计算、执行表达式
+                        
+                        // 1. 扩展函数形式
+                        val result = "Hello".run {
+                            println(this)  // this是"Hello"
+                            this.length * 2
+                        }
+                        println(result)  // 10
+                        
+                        // 2. 非扩展函数形式（在对象上下文中执行）
+                        val person = Person("Alice", 25)
+                        val info = run {
+                            val name = person.name
+                            val age = person.age
+                            "${'$'}name is ${'$'}age years old"
+                        }
+                        println(info)  // "Alice is 25 years old"
+                        
+                        // 3. 对象配置
+                        val person2 = Person("Bob", 30).run {
+                            // 在person2的上下文中执行
+                            println("Name: ${'$'}{this.name}")
+                            this  // 返回person2
+                        }
+                        
+                        // 4. 计算表达式
+                        val sum = run {
+                            val a = 10
+                            val b = 20
+                            a + b
+                        }
+                        println(sum)  // 30
+                    """.trimIndent(),
+                    explanation = "run函数在对象上下文中执行代码块，返回lambda结果。扩展函数形式使用this，非扩展函数形式在对象上下文中执行。常用于对象配置和计算。"
+                ),
+                CodeExample(
+                    title = "示例3：with函数",
+                    code = """
+                        // with：在对象上下文中执行代码块，返回lambda结果
+                        // 使用场景：对同一个对象执行多个操作
+                        
+                        class Person(var name: String, var age: Int)
+                        
+                        val person = Person("Alice", 25)
+                        
+                        // 1. 基本使用
+                        val result = with(person) {
+                            println("Name: ${'$'}name")  // 可以直接访问属性
+                            println("Age: ${'$'}age")
+                            "${'$'}name is ${'$'}age years old"  // 返回结果
+                        }
+                        println(result)  // "Alice is 25 years old"
+                        
+                        // 2. 修改对象
+                        with(person) {
+                            name = "Bob"  // 直接修改
+                            age = 30
+                        }
+                        println(person.name)  // "Bob"
+                        
+                        // 3. 对同一个对象执行多个操作
+                        val stringBuilder = StringBuilder()
+                        with(stringBuilder) {
+                            append("Hello")
+                            append(" ")
+                            append("World")
+                        }
+                        println(stringBuilder.toString())  // "Hello World"
+                        
+                        // 4. 与apply的区别
+                        // with返回lambda结果，apply返回对象本身
+                        val result1 = with(person) { name }  // String
+                        val result2 = person.apply { name = "Charlie" }  // Person
+                    """.trimIndent(),
+                    explanation = "with函数在对象上下文中执行代码块，返回lambda结果。可以直接访问对象的属性和方法。常用于对同一个对象执行多个操作。"
+                ),
+                CodeExample(
+                    title = "示例4：apply函数",
+                    code = """
+                        // apply：在对象上下文中执行代码块，返回对象本身
+                        // 使用场景：对象初始化、配置对象
+                        
+                        class Person(var name: String, var age: Int)
+                        
+                        // 1. 对象初始化
+                        val person = Person("Alice", 25).apply {
+                            name = "Bob"  // 修改属性
+                            age = 30
+                        }
+                        println(person.name)  // "Bob"
+                        
+                        // 2. 配置对象
+                        val textView = TextView(context).apply {
+                            text = "Hello"
+                            textSize = 16f
+                            setTextColor(Color.BLACK)
+                        }
+                        
+                        // 3. 链式调用
+                        val person2 = Person("Charlie", 35)
+                            .apply { name = "David" }
+                            .apply { age = 40 }
+                        
+                        // 4. 创建并配置
+                        val list = mutableListOf<Int>().apply {
+                            add(1)
+                            add(2)
+                            add(3)
+                        }
+                        
+                        // 5. 与also的区别
+                        // apply返回对象本身，also也返回对象本身，但also使用it
+                        val person3 = Person("Eve", 25)
+                            .apply { name = "Frank" }  // this是person3
+                            .also { it.age = 30 }      // it是person3
+                    """.trimIndent(),
+                    explanation = "apply函数在对象上下文中执行代码块，返回对象本身。使用this访问对象。常用于对象初始化、配置对象等场景。"
+                ),
+                CodeExample(
+                    title = "示例5：also函数",
+                    code = """
+                        // also：将对象作为lambda参数，返回对象本身
+                        // 使用场景：执行副作用、调试、链式调用
+                        
+                        // 1. 执行副作用
+                        val numbers = mutableListOf(1, 2, 3)
+                        numbers.also {
+                            println("Adding 4 to list")
+                            it.add(4)
+                        }
+                        println(numbers)  // [1, 2, 3, 4]
+                        
+                        // 2. 调试
+                        val result = "Hello"
+                            .uppercase()
+                            .also { println("After uppercase: ${'$'}it") }  // "HELLO"
+                            .length
+                        
+                        // 3. 链式调用
+                        val person = Person("Alice", 25)
+                            .also { println("Created: ${'$'}{it.name}") }
+                            .also { it.age = 26 }
+                            .also { println("Updated age: ${'$'}{it.age}") }
+                        
+                        // 4. 与apply的区别
+                        // also使用it，apply使用this
+                        val person2 = Person("Bob", 30)
+                            .apply { name = "Charlie" }  // this.name
+                            .also { it.age = 35 }       // it.age
+                        
+                        // 5. 数据验证
+                        val user = createUser()
+                            .also { validateUser(it) }
+                            .also { logUser(it) }
+                    """.trimIndent(),
+                    explanation = "also函数将对象作为lambda参数（it），返回对象本身。常用于执行副作用、调试、链式调用等场景。also使用it，apply使用this。"
+                ),
+                CodeExample(
+                    title = "示例6：作用域函数选择指南",
+                    code = """
+                        // 选择作用域函数的指南
+                        
+                        // 1. let：空安全调用、转换对象
+                        val name: String? = "Hello"
+                        val length = name?.let { it.length } ?: 0
+                        
+                        // 2. run：对象配置和计算
+                        val person = Person("Alice", 25).run {
+                            name = "Bob"
+            age = 30
+            this  // 返回对象
+                        }
+                        
+                        // 3. with：对同一个对象执行多个操作
+                        with(person) {
+                            println(name)
+                            println(age)
+                        }
+                        
+                        // 4. apply：对象初始化、配置对象
+                        val textView = TextView(context).apply {
+                            text = "Hello"
+                            textSize = 16f
+                        }
+                        
+                        // 5. also：执行副作用、调试
+                        val result = processData()
+                            .also { println("Result: ${'$'}it") }
+                            .also { saveToCache(it) }
+                        
+                        // 选择原则：
+                        // - 需要返回对象本身 -> apply或also
+                        // - 需要返回lambda结果 -> let、run或with
+                        // - 需要空安全调用 -> let
+                        // - 需要执行副作用 -> also
+                        // - 对同一对象多个操作 -> with
+                    """.trimIndent(),
+                    explanation = "选择作用域函数的指南：需要返回对象本身用apply或also，需要返回lambda结果用let、run或with，需要空安全调用用let，需要执行副作用用also，对同一对象多个操作用with。"
+                )
+            ),
+            useCases = listOf(
+                "空安全调用：使用let进行空安全调用",
+                "对象配置：使用apply配置对象",
+                "对象转换：使用let或run转换对象",
+                "副作用：使用also执行副作用",
+                "代码简化：使用作用域函数简化代码"
+            ),
+            keyPoints = listOf(
+                "let：将对象作为lambda参数（it），返回lambda结果，常用于空安全调用",
+                "run：在对象上下文中执行（this），返回lambda结果，常用于对象配置",
+                "with：在对象上下文中执行（this），返回lambda结果，常用于多个操作",
+                "apply：在对象上下文中执行（this），返回对象本身，常用于对象初始化",
+                "also：将对象作为lambda参数（it），返回对象本身，常用于副作用"
+            ),
+            notes = listOf(
+                "let和also使用it，run、with、apply使用this",
+                "apply和also返回对象本身，let、run、with返回lambda结果",
+                "let常用于空安全调用和转换对象",
+                "apply常用于对象初始化和配置",
+                "also常用于执行副作用和调试"
+            ),
+            practiceTips = "建议：根据需求选择合适的作用域函数。需要返回对象本身用apply或also，需要返回lambda结果用let、run或with。需要空安全调用用let。合理使用作用域函数可以让代码更简洁，但不要过度使用。"
         )
     )
 }
