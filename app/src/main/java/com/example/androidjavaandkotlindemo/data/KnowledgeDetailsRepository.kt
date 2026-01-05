@@ -6847,6 +6847,513 @@ object KnowledgeDetailsRepository {
                 "合理使用可空类型可以提高代码的健壮性"
             ),
             practiceTips = "建议：优先使用不可空类型，只在确实需要时使用可空类型。处理平台类型时显式声明类型或使用注解。在Android开发中，使用ViewBinding可以避免findViewById的平台类型问题。合理使用安全调用、Elvis操作符、let、when等处理可空值。"
+        ),
+        
+        // ========== Kotlin 数据类和密封类 ==========
+        
+        // 1. 数据类（data class）、解构声明
+        KnowledgeDetail(
+            id = "data_class",
+            title = "数据类（data class）、解构声明",
+            overview = "数据类是Kotlin的特殊类，自动生成equals、hashCode、toString等方法。解构声明可以将对象解构为多个变量。理解数据类和解构声明是掌握Kotlin数据建模的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：数据类基础",
+                    code = """
+                        // 数据类：使用data关键字声明
+                        
+                        data class Person(val name: String, val age: Int)
+                        
+                        // 数据类自动生成：
+                        // 1. equals()和hashCode()
+                        val person1 = Person("Alice", 25)
+                        val person2 = Person("Alice", 25)
+                        println(person1 == person2)  // true
+                        
+                        // 2. toString()
+                        println(person1)  // Person(name=Alice, age=25)
+                        
+                        // 3. copy()方法
+                        val person3 = person1.copy(age = 26)
+                        println(person3)  // Person(name=Alice, age=26)
+                        
+                        // 4. componentN()方法（用于解构）
+                        val (name, age) = person1
+                        println("${'$'}name is ${'$'}age years old")  // "Alice is 25 years old"
+                    """.trimIndent(),
+                    explanation = "数据类使用data关键字声明，自动生成equals、hashCode、toString、copy和componentN方法。数据类主要用于存储数据。"
+                ),
+                CodeExample(
+                    title = "示例2：数据类的限制和要求",
+                    code = """
+                        // 1. 数据类的要求
+                        // - 主构造函数至少有一个参数
+                        // - 主构造函数的参数必须使用val或var
+                        // - 数据类不能是abstract、open、sealed或inner
+                        
+                        // ✅ 正确
+                        data class User(val id: String, val name: String)
+                        
+                        // ❌ 错误：没有参数
+                        // data class Empty()
+                        
+                        // ❌ 错误：参数没有val/var
+                        // data class Bad(name: String)
+                        
+                        // 2. 数据类可以继承其他类
+                        open class Base
+                        data class Derived(val x: Int) : Base()
+                        
+                        // 3. 数据类可以实现接口
+                        interface Serializable
+                        data class Data(val value: String) : Serializable
+                        
+                        // 4. 数据类可以有默认参数
+                        data class Person(
+                            val name: String,
+                            val age: Int = 0,
+                            val email: String = ""
+                        )
+                        
+                        val person = Person("Alice")  // age=0, email=""
+                    """.trimIndent(),
+                    explanation = "数据类有特定要求：主构造函数至少有一个参数，参数必须使用val或var，不能是abstract、open、sealed或inner。数据类可以继承类和实现接口。"
+                ),
+                CodeExample(
+                    title = "示例3：copy方法",
+                    code = """
+                        // copy方法：创建数据类的副本，可以修改部分属性
+                        
+                        data class Person(val name: String, val age: Int, val city: String)
+                        
+                        val person1 = Person("Alice", 25, "Beijing")
+                        
+                        // 1. 完全复制
+                        val person2 = person1.copy()
+                        println(person1 == person2)  // true
+                        
+                        // 2. 修改部分属性
+                        val person3 = person1.copy(age = 26)
+                        println(person3)  // Person(name=Alice, age=26, city=Beijing)
+                        
+                        // 3. 修改多个属性
+                        val person4 = person1.copy(age = 30, city = "Shanghai")
+                        println(person4)  // Person(name=Alice, age=30, city=Shanghai)
+                        
+                        // 4. copy方法的使用场景
+                        // 不可变数据：创建修改后的副本
+                        fun updateAge(person: Person, newAge: Int): Person {
+                            return person.copy(age = newAge)
+                        }
+                        
+                        val updated = updateAge(person1, 26)
+                        println(updated)  // Person(name=Alice, age=26, city=Beijing)
+                    """.trimIndent(),
+                    explanation = "copy方法用于创建数据类的副本，可以修改部分属性。copy方法支持不可变数据模式，创建修改后的新对象而不是修改原对象。"
+                ),
+                CodeExample(
+                    title = "示例4：解构声明",
+                    code = """
+                        // 解构声明：将对象解构为多个变量
+                        
+                        data class Person(val name: String, val age: Int, val city: String)
+                        
+                        val person = Person("Alice", 25, "Beijing")
+                        
+                        // 1. 基本解构
+                        val (name, age, city) = person
+                        println("${'$'}name, ${'$'}age, ${'$'}city")  // "Alice, 25, Beijing"
+                        
+                        // 2. 部分解构（使用_跳过不需要的值）
+                        val (name2, _, city2) = person
+                        println("${'$'}name2 in ${'$'}city2")  // "Alice in Beijing"
+                        
+                        // 3. 在循环中使用解构
+                        val people = listOf(
+                            Person("Alice", 25, "Beijing"),
+                            Person("Bob", 30, "Shanghai")
+                        )
+                        
+                        for ((name, age, city) in people) {
+                            println("${'$'}name (${'$'}age) from ${'$'}city")
+                        }
+                        
+                        // 4. Map的解构
+                        val map = mapOf("name" to "Alice", "age" to 25)
+                        for ((key, value) in map) {
+                            println("${'$'}key: ${'$'}value")
+                        }
+                        
+                        // 5. 函数返回多个值
+                        data class Result(val success: Boolean, val data: String)
+                        
+                        fun process(): Result {
+                            return Result(true, "Data")
+                        }
+                        
+                        val (success, data) = process()
+                        if (success) {
+                            println(data)
+                        }
+                    """.trimIndent(),
+                    explanation = "解构声明可以将对象解构为多个变量。数据类自动生成componentN方法支持解构。可以使用_跳过不需要的值。解构在循环、Map遍历、函数返回多个值等场景中很有用。"
+                ),
+                CodeExample(
+                    title = "示例5：数据类实践",
+                    code = """
+                        // 1. API响应数据类
+                        data class ApiResponse<T>(
+                            val success: Boolean,
+                            val data: T?,
+                            val error: String?
+                        )
+                        
+                        // 2. UI状态数据类
+                        data class UiState(
+                            val isLoading: Boolean = false,
+                            val data: String? = null,
+                            val error: String? = null
+                        )
+                        
+                        // 3. 使用copy更新状态
+                        fun updateState(
+                            currentState: UiState,
+                            isLoading: Boolean? = null,
+                            data: String? = null,
+                            error: String? = null
+                        ): UiState {
+                            return currentState.copy(
+                                isLoading = isLoading ?: currentState.isLoading,
+                                data = data ?: currentState.data,
+                                error = error ?: currentState.error
+                            )
+                        }
+                        
+                        // 4. 数据类与集合
+                        data class User(val id: String, val name: String)
+                        val users = listOf(
+                            User("1", "Alice"),
+                            User("2", "Bob")
+                        )
+                        
+                        // 使用解构
+                        users.forEach { (id, name) ->
+                            println("${'$'}id: ${'$'}name")
+                        }
+                        
+                        // 5. 嵌套数据类
+                        data class Address(val street: String, val city: String)
+                        data class Person(val name: String, val address: Address)
+                        
+                        val person = Person("Alice", Address("Main St", "Beijing"))
+                        val (name, address) = person
+                        val (street, city) = address
+                        println("${'$'}name lives at ${'$'}street, ${'$'}city")
+                    """.trimIndent(),
+                    explanation = "数据类在实际开发中用于API响应、UI状态、数据模型等。使用copy方法更新状态，使用解构简化代码。数据类支持嵌套，可以解构嵌套的数据类。"
+                )
+            ),
+            useCases = listOf(
+                "数据模型：使用数据类表示数据模型",
+                "API响应：使用数据类表示API响应",
+                "UI状态：使用数据类表示UI状态",
+                "不可变数据：使用copy方法创建修改后的副本",
+                "代码简化：使用解构声明简化代码"
+            ),
+            keyPoints = listOf(
+                "数据类使用data关键字声明，自动生成equals、hashCode、toString、copy等方法",
+                "数据类主构造函数至少有一个参数，参数必须使用val或var",
+                "copy方法用于创建数据类的副本，可以修改部分属性",
+                "解构声明可以将对象解构为多个变量",
+                "数据类支持嵌套，可以解构嵌套的数据类"
+            ),
+            notes = listOf(
+                "数据类不能是abstract、open、sealed或inner",
+                "数据类可以继承类和实现接口",
+                "copy方法支持不可变数据模式",
+                "解构声明使用componentN方法",
+                "可以使用_跳过不需要的值"
+            ),
+            practiceTips = "建议：使用数据类表示数据模型、API响应、UI状态等。使用copy方法更新状态，实现不可变数据模式。使用解构声明简化代码，特别是在循环和函数返回多个值时。"
+        ),
+        
+        // 2. 密封类（sealed class）、密封接口
+        KnowledgeDetail(
+            id = "sealed_class",
+            title = "密封类（sealed class）、密封接口",
+            overview = "密封类是受限的类层次结构，所有子类必须在同一文件中声明。密封类用于表示受限的类继承，常用于表示状态、结果等。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：密封类基础",
+                    code = """
+                        // 密封类：使用sealed关键字声明
+                        
+                        sealed class Result<out T> {
+                            data class Success<T>(val data: T) : Result<T>()
+                            data class Error(val message: String) : Result<Nothing>()
+                            object Loading : Result<Nothing>()
+                        }
+                        
+                        // 1. 密封类的特点
+                        // - 所有子类必须在同一文件中声明
+                        // - 密封类本身是抽象的，不能实例化
+                        // - 子类可以是数据类、普通类、对象等
+                        
+                        // 2. 使用when表达式处理密封类
+                        fun handleResult(result: Result<String>) {
+                            when (result) {
+                                is Result.Success -> println("Success: ${'$'}{result.data}")
+                                is Result.Error -> println("Error: ${'$'}{result.message}")
+                                is Result.Loading -> println("Loading...")
+                                // 不需要else，因为所有情况都已覆盖
+                            }
+                        }
+                        
+                        // 3. when作为表达式
+                        val message = when (result) {
+                            is Result.Success -> "Success: ${'$'}{result.data}"
+                            is Result.Error -> "Error: ${'$'}{result.message}"
+                            is Result.Loading -> "Loading..."
+                        }
+                    """.trimIndent(),
+                    explanation = "密封类使用sealed关键字声明，所有子类必须在同一文件中声明。密封类本身是抽象的，不能实例化。使用when表达式处理密封类时，不需要else分支。"
+                ),
+                CodeExample(
+                    title = "示例2：密封类表示状态",
+                    code = """
+                        // 密封类常用于表示状态
+                        
+                        sealed class UiState {
+                            object Idle : UiState()
+                            object Loading : UiState()
+                            data class Success(val data: String) : UiState()
+                            data class Error(val message: String) : UiState()
+                        }
+                        
+                        class ViewModel {
+                            private var state: UiState = UiState.Idle
+                            
+                            fun loadData() {
+                                state = UiState.Loading
+                                // 加载数据
+                                state = UiState.Success("Data loaded")
+                            }
+                            
+                            fun handleState() {
+                                when (state) {
+                                    is UiState.Idle -> showIdle()
+                                    is UiState.Loading -> showLoading()
+                                    is UiState.Success -> showData(state.data)
+                                    is UiState.Error -> showError(state.message)
+                                }
+                            }
+                        }
+                        
+                        // 网络请求状态
+                        sealed class NetworkState {
+                            object Idle : NetworkState()
+                            object Loading : NetworkState()
+                            data class Success<T>(val data: T) : NetworkState()
+                            data class Error(val exception: Throwable) : NetworkState()
+                        }
+                    """.trimIndent(),
+                    explanation = "密封类常用于表示状态，如UI状态、网络请求状态等。使用when表达式处理状态，代码更清晰、更安全。"
+                ),
+                CodeExample(
+                    title = "示例3：密封类表示结果",
+                    code = """
+                        // 密封类用于表示操作结果
+                        
+                        sealed class Result<out T> {
+                            data class Success<T>(val data: T) : Result<T>()
+                            data class Failure(val error: Throwable) : Result<Nothing>()
+                        }
+                        
+                        fun fetchData(): Result<String> {
+                            return try {
+                                val data = apiService.getData()
+                                Result.Success(data)
+                            } catch (e: Exception) {
+                                Result.Failure(e)
+                            }
+                        }
+                        
+                        fun handleResult(result: Result<String>) {
+                            when (result) {
+                                is Result.Success -> {
+                                    println("Data: ${'$'}{result.data}")
+                                }
+                                is Result.Failure -> {
+                                    println("Error: ${'$'}{result.error.message}")
+                                }
+                            }
+                        }
+                        
+                        // 使用
+                        val result = fetchData()
+                        handleResult(result)
+                        
+                        // 扩展函数处理Result
+                        fun <T> Result<T>.onSuccess(action: (T) -> Unit): Result<T> {
+                            if (this is Result.Success) {
+                                action(this.data)
+                            }
+                            return this
+                        }
+                        
+                        fun <T> Result<T>.onFailure(action: (Throwable) -> Unit): Result<T> {
+                            if (this is Result.Failure) {
+                                action(this.error)
+                            }
+                            return this
+                        }
+                        
+                        result.onSuccess { data ->
+                            println("Success: ${'$'}data")
+                        }.onFailure { error ->
+                            println("Error: ${'$'}error")
+                        }
+                    """.trimIndent(),
+                    explanation = "密封类用于表示操作结果，如API请求结果、数据库操作结果等。使用密封类可以避免使用异常或null表示错误，代码更清晰。"
+                ),
+                CodeExample(
+                    title = "示例4：密封接口",
+                    code = """
+                        // 密封接口：Kotlin 1.5+支持
+                        
+                        sealed interface Animal {
+                            val name: String
+                        }
+                        
+                        data class Dog(override val name: String, val breed: String) : Animal
+                        data class Cat(override val name: String, val color: String) : Animal
+                        data class Bird(override val name: String, val canFly: Boolean) : Animal
+                        
+                        fun makeSound(animal: Animal) {
+                            when (animal) {
+                                is Dog -> println("${'$'}{animal.name} barks")
+                                is Cat -> println("${'$'}{animal.name} meows")
+                                is Bird -> println("${'$'}{animal.name} chirps")
+                            }
+                        }
+                        
+                        // 密封接口的优势
+                        // 1. 可以实现多个密封接口
+                        sealed interface Flyable {
+                            fun fly()
+                        }
+                        
+                        sealed interface Swimmable {
+                            fun swim()
+                        }
+                        
+                        data class Duck(
+                            override val name: String
+                        ) : Animal, Flyable, Swimmable {
+                            override fun fly() {
+                                println("${'$'}name is flying")
+                            }
+                            
+                            override fun swim() {
+                                println("${'$'}name is swimming")
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "密封接口类似于密封类，但可以用于接口。密封接口允许实现多个接口，提供更灵活的类层次结构。"
+                ),
+                CodeExample(
+                    title = "示例5：密封类实践",
+                    code = """
+                        // 1. 表达式树
+                        sealed class Expr {
+                            data class Number(val value: Int) : Expr()
+                            data class Sum(val left: Expr, val right: Expr) : Expr()
+                            data class Product(val left: Expr, val right: Expr) : Expr()
+                        }
+                        
+                        fun eval(expr: Expr): Int = when (expr) {
+                            is Expr.Number -> expr.value
+                            is Expr.Sum -> eval(expr.left) + eval(expr.right)
+                            is Expr.Product -> eval(expr.left) * eval(expr.right)
+                        }
+                        
+                        // 2. 命令模式
+                        sealed class Command {
+                            object Start : Command()
+                            object Stop : Command()
+                            data class Update(val value: Int) : Command()
+                        }
+                        
+                        fun execute(command: Command) {
+                            when (command) {
+                                is Command.Start -> start()
+                                is Command.Stop -> stop()
+                                is Command.Update -> update(command.value)
+                            }
+                        }
+                        
+                        // 3. 事件处理
+                        sealed class Event {
+                            data class UserLogin(val userId: String) : Event()
+                            data class UserLogout(val userId: String) : Event()
+                            object AppStart : Event()
+                            object AppStop : Event()
+                        }
+                        
+                        fun handleEvent(event: Event) {
+                            when (event) {
+                                is Event.UserLogin -> onUserLogin(event.userId)
+                                is Event.UserLogout -> onUserLogout(event.userId)
+                                is Event.AppStart -> onAppStart()
+                                is Event.AppStop -> onAppStop()
+                            }
+                        }
+                        
+                        // 4. 在Android中使用
+                        sealed class ViewState {
+                            object Loading : ViewState()
+                            data class Success(val items: List<Item>) : ViewState()
+                            data class Error(val message: String) : ViewState()
+                        }
+                        
+                        // ViewModel中
+                        private val _state = MutableStateFlow<ViewState>(ViewState.Loading)
+                        val state: StateFlow<ViewState> = _state.asStateFlow()
+                        
+                        // UI中
+                        viewModel.state.collect { state ->
+                            when (state) {
+                                is ViewState.Loading -> showLoading()
+                                is ViewState.Success -> showItems(state.items)
+                                is ViewState.Error -> showError(state.message)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "密封类在实际开发中用于表达式树、命令模式、事件处理、UI状态等场景。密封类配合when表达式可以创建类型安全、易于维护的代码。"
+                )
+            ),
+            useCases = listOf(
+                "状态管理：使用密封类表示UI状态、网络状态等",
+                "结果处理：使用密封类表示操作结果，避免使用异常或null",
+                "表达式树：使用密封类表示表达式树等数据结构",
+                "命令模式：使用密封类实现命令模式",
+                "事件处理：使用密封类表示事件类型"
+            ),
+            keyPoints = listOf(
+                "密封类使用sealed关键字声明，所有子类必须在同一文件中声明",
+                "密封类本身是抽象的，不能实例化",
+                "使用when表达式处理密封类时，不需要else分支",
+                "密封类常用于表示状态、结果、表达式等",
+                "密封接口类似于密封类，但可以用于接口"
+            ),
+            notes = listOf(
+                "密封类的所有子类必须在同一文件中声明",
+                "密封类配合when表达式可以创建类型安全的代码",
+                "密封类常用于表示受限的类继承",
+                "密封接口允许实现多个接口",
+                "在Android开发中，密封类常用于表示UI状态"
+            ),
+            practiceTips = "建议：使用密封类表示状态、结果、事件等受限的类层次结构。密封类配合when表达式可以创建类型安全、易于维护的代码。在Android开发中，使用密封类表示UI状态可以简化状态管理。"
         )
     )
 }
