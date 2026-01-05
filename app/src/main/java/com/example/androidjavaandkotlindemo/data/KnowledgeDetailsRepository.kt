@@ -5808,6 +5808,586 @@ object KnowledgeDetailsRepository {
                 "reified让泛型函数更强大、更灵活"
             ),
             practiceTips = "建议：合理使用reified类型参数简化代码，特别是在Android开发中。使用reified可以避免类型擦除的问题，让泛型函数更强大。注意reified只能用于inline函数。"
+        ),
+        
+        // ========== Kotlin 集合操作 ==========
+        
+        // 1. List、Set、Map、可变集合和不可变集合
+        KnowledgeDetail(
+            id = "collection_types",
+            title = "List、Set、Map、可变集合和不可变集合",
+            overview = "Kotlin提供了丰富的集合类型，包括List、Set、Map，以及可变和不可变版本。理解这些集合类型的特点和使用场景是掌握Kotlin集合框架的基础。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：List集合",
+                    code = """
+                        // List：有序集合，可以包含重复元素
+                        
+                        // 不可变List（默认）
+                        val immutableList = listOf(1, 2, 3, 4, 5)
+                        // immutableList.add(6)  // ❌ 错误！不可变
+                        
+                        // 可变List
+                        val mutableList = mutableListOf(1, 2, 3)
+                        mutableList.add(4)  // ✅ 可以
+                        mutableList.remove(2)  // ✅ 可以
+                        
+                        // 空List
+                        val emptyList = emptyList<Int>()
+                        val emptyMutableList = mutableListOf<Int>()
+                        
+                        // List操作
+                        val list = listOf(1, 2, 3, 4, 5)
+                        println(list[0])           // 1
+                        println(list.first())      // 1
+                        println(list.last())       // 5
+                        println(list.size)         // 5
+                        println(list.contains(3))  // true
+                    """.trimIndent(),
+                    explanation = "List是有序集合，可以包含重复元素。listOf创建不可变List，mutableListOf创建可变List。"
+                ),
+                CodeExample(
+                    title = "示例2：Set集合",
+                    code = """
+                        // Set：无序集合，不包含重复元素
+                        
+                        // 不可变Set
+                        val immutableSet = setOf(1, 2, 3, 3, 4)
+                        println(immutableSet)  // [1, 2, 3, 4] (去重)
+                        
+                        // 可变Set
+                        val mutableSet = mutableSetOf(1, 2, 3)
+                        mutableSet.add(4)      // ✅ 可以
+                        mutableSet.add(2)     // 不会添加，已存在
+                        mutableSet.remove(1)   // ✅ 可以
+                        
+                        // Set操作
+                        val set1 = setOf(1, 2, 3)
+                        val set2 = setOf(3, 4, 5)
+                        
+                        println(set1.union(set2))        // [1, 2, 3, 4, 5]
+                        println(set1.intersect(set2))    // [3]
+                        println(set1.subtract(set2))     // [1, 2]
+                        
+                        // LinkedHashSet：保持插入顺序
+                        val linkedSet = linkedSetOf(3, 1, 2)
+                        println(linkedSet)  // [3, 1, 2] (保持顺序)
+                    """.trimIndent(),
+                    explanation = "Set是无序集合，不包含重复元素。setOf创建不可变Set，mutableSetOf创建可变Set。Set支持并集、交集、差集等操作。"
+                ),
+                CodeExample(
+                    title = "示例3：Map集合",
+                    code = """
+                        // Map：键值对集合
+                        
+                        // 不可变Map
+                        val immutableMap = mapOf(
+                            "name" to "Alice",
+                            "age" to 25,
+                            "city" to "Beijing"
+                        )
+                        // immutableMap["email"] = "alice@example.com"  // ❌ 错误！
+                        
+                        // 可变Map
+                        val mutableMap = mutableMapOf(
+                            "name" to "Bob",
+                            "age" to 30
+                        )
+                        mutableMap["city"] = "Shanghai"  // ✅ 可以
+                        mutableMap.remove("age")         // ✅ 可以
+                        
+                        // Map操作
+                        val map = mapOf("a" to 1, "b" to 2, "c" to 3)
+                        println(map["a"])              // 1
+                        println(map.getOrDefault("d", 0))  // 0
+                        println(map.keys)             // [a, b, c]
+                        println(map.values)           // [1, 2, 3]
+                        println(map.entries)          // [a=1, b=2, c=3]
+                        
+                        // 遍历Map
+                        for ((key, value) in map) {
+                            println("${'$'}key -> ${'$'}value")
+                        }
+                    """.trimIndent(),
+                    explanation = "Map是键值对集合。mapOf创建不可变Map，mutableMapOf创建可变Map。Map支持通过键访问值，可以遍历键值对。"
+                ),
+                CodeExample(
+                    title = "示例4：可变集合和不可变集合",
+                    code = """
+                        // 1. 不可变集合（只读）
+                        val immutableList = listOf(1, 2, 3)
+                        // immutableList.add(4)  // ❌ 编译错误
+        
+                        // 2. 可变集合（可读写）
+                        val mutableList = mutableListOf(1, 2, 3)
+                        mutableList.add(4)  // ✅ 可以
+        
+                        // 3. 类型转换
+                        val list = listOf(1, 2, 3)
+                        val mutable = list.toMutableList()  // 转换为可变
+                        mutable.add(4)
+        
+                        val mutable2 = mutableListOf(1, 2, 3)
+                        val immutable = mutable2.toList()  // 转换为不可变
+        
+                        // 4. 协变关系
+                        val stringList: List<String> = listOf("a", "b")
+                        val anyList: List<Any> = stringList  // ✅ 可以（协变）
+        
+                        // val mutableStringList: MutableList<String> = mutableListOf("a")
+                        // val mutableAnyList: MutableList<Any> = mutableStringList  // ❌ 错误！（不变）
+        
+                        // 5. 不可变集合的特点
+                        // - 不能添加、删除、修改元素
+                        // - 是协变的（List<String>是List<Any>的子类型）
+                        // - 线程安全（多个线程可以同时读取）
+                        // - 推荐使用，除非确实需要修改
+                    """.trimIndent(),
+                    explanation = "不可变集合是只读的，不能修改。可变集合可以修改。不可变集合是协变的，可变集合是不变的。推荐优先使用不可变集合。"
+                ),
+                CodeExample(
+                    title = "示例5：集合创建和初始化",
+                    code = """
+                        // 1. 使用工厂函数
+                        val list = listOf(1, 2, 3)
+                        val set = setOf(1, 2, 3)
+                        val map = mapOf("a" to 1, "b" to 2)
+        
+                        // 2. 使用构造函数
+                        val list2 = ArrayList<Int>()
+                        val set2 = HashSet<String>()
+                        val map2 = HashMap<String, Int>()
+        
+                        // 3. 使用构建器
+                        val list3 = buildList {
+                            add(1)
+                            add(2)
+                            add(3)
+                        }
+        
+                        val map3 = buildMap {
+                            put("a", 1)
+                            put("b", 2)
+                        }
+        
+                        // 4. 从其他集合创建
+                        val list4 = listOf(1, 2, 3).toMutableList()
+                        val set4 = listOf(1, 2, 2, 3).toSet()  // 去重
+                        val map4 = listOf("a", "b", "c").associateWith { it.length }
+        
+                        // 5. 空集合
+                        val emptyList = emptyList<Int>()
+                        val emptySet = emptySet<String>()
+                        val emptyMap = emptyMap<String, Int>()
+                    """.trimIndent(),
+                    explanation = "Kotlin提供了多种方式创建集合，包括工厂函数、构造函数、构建器等。可以根据需求选择合适的创建方式。"
+                )
+            ),
+            useCases = listOf(
+                "数据存储：使用List存储有序数据，Set存储唯一数据，Map存储键值对",
+                "不可变数据：使用不可变集合存储不会改变的数据",
+                "数据转换：在可变和不可变集合之间转换",
+                "集合操作：使用集合的并集、交集、差集等操作",
+                "数据去重：使用Set自动去重"
+            ),
+            keyPoints = listOf(
+                "List是有序集合，可以包含重复元素",
+                "Set是无序集合，不包含重复元素",
+                "Map是键值对集合",
+                "不可变集合是只读的，可变集合可以修改",
+                "不可变集合是协变的，可变集合是不变的"
+            ),
+            notes = listOf(
+                "默认创建的集合是不可变的（listOf、setOf、mapOf）",
+                "可变集合使用mutableListOf、mutableSetOf、mutableMapOf",
+                "不可变集合不能添加、删除、修改元素",
+                "推荐优先使用不可变集合，除非确实需要修改",
+                "可以在可变和不可变集合之间转换"
+            ),
+            practiceTips = "建议：优先使用不可变集合（listOf、setOf、mapOf），只有在确实需要修改时才使用可变集合。不可变集合更安全、更易理解，是协变的。"
+        ),
+        
+        // 2. 集合操作符（转换、过滤、聚合、分组、排序）
+        KnowledgeDetail(
+            id = "collection_operators",
+            title = "集合操作符（转换、过滤、聚合、分组、排序）",
+            overview = "Kotlin提供了丰富的集合操作符，包括转换、过滤、聚合、分组、排序等。这些操作符让集合处理变得简洁优雅。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：转换操作符",
+                    code = """
+                        val numbers = listOf(1, 2, 3, 4, 5)
+        
+                        // 1. map：转换每个元素
+                        val doubled = numbers.map { it * 2 }  // [2, 4, 6, 8, 10]
+                        val strings = numbers.map { it.toString() }  // ["1", "2", "3", "4", "5"]
+        
+                        // 2. mapIndexed：同时访问索引和元素
+                        val indexed = numbers.mapIndexed { index, value ->
+                            "Index ${'$'}index: ${'$'}value"
+                        }
+        
+                        // 3. mapNotNull：转换并过滤null
+                        val nullable = listOf(1, 2, null, 4, null)
+                        val nonNull = nullable.mapNotNull { it?.times(2) }  // [2, 4, 8]
+        
+                        // 4. flatMap：展平嵌套集合
+                        val nested = listOf(listOf(1, 2), listOf(3, 4))
+                        val flattened = nested.flatMap { it }  // [1, 2, 3, 4]
+        
+                        // 5. associate：转换为Map
+                        val map = numbers.associateWith { it * it }  // {1=1, 2=4, 3=9, 4=16, 5=25}
+                        val map2 = numbers.associateBy { "key${'$'}it" }  // {"key1"=1, "key2"=2, ...}
+                    """.trimIndent(),
+                    explanation = "转换操作符用于将集合元素转换为另一种形式。map用于转换，flatMap用于展平，associate用于转换为Map。"
+                ),
+                CodeExample(
+                    title = "示例2：过滤操作符",
+                    code = """
+                        val numbers = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+        
+                        // 1. filter：根据条件过滤
+                        val evens = numbers.filter { it % 2 == 0 }  // [2, 4, 6, 8, 10]
+                        val large = numbers.filter { it > 5 }  // [6, 7, 8, 9, 10]
+        
+                        // 2. filterIndexed：同时使用索引和元素
+                        val filtered = numbers.filterIndexed { index, value ->
+                            index % 2 == 0 && value > 3
+                        }
+        
+                        // 3. filterNot：过滤不满足条件的元素
+                        val odds = numbers.filterNot { it % 2 == 0 }  // [1, 3, 5, 7, 9]
+        
+                        // 4. filterNotNull：过滤null值
+                        val nullable = listOf(1, null, 2, null, 3)
+                        val nonNull = nullable.filterNotNull()  // [1, 2, 3]
+        
+                        // 5. take和drop：取前N个或跳过前N个
+                        val first3 = numbers.take(3)      // [1, 2, 3]
+                        val skip3 = numbers.drop(3)       // [4, 5, 6, 7, 8, 9, 10]
+                        val takeWhile = numbers.takeWhile { it < 5 }  // [1, 2, 3, 4]
+                    """.trimIndent(),
+                    explanation = "过滤操作符用于根据条件过滤集合元素。filter用于过滤，filterNot用于反向过滤，take和drop用于取或跳过元素。"
+                ),
+                CodeExample(
+                    title = "示例3：聚合操作符",
+                    code = """
+                        val numbers = listOf(1, 2, 3, 4, 5)
+        
+                        // 1. reduce：累积为单个值
+                        val sum = numbers.reduce { acc, n -> acc + n }  // 15
+                        val product = numbers.reduce { acc, n -> acc * n }  // 120
+        
+                        // 2. fold：类似reduce，但可以指定初始值
+                        val sumWithInit = numbers.fold(10) { acc, n -> acc + n }  // 25
+                        val productWithInit = numbers.fold(1) { acc, n -> acc * n }  // 120
+        
+                        // 3. 其他聚合函数
+                        val max = numbers.maxOrNull()  // 5
+                        val min = numbers.minOrNull()  // 1
+                        val average = numbers.average()  // 3.0
+                        val count = numbers.count()  // 5
+                        val sum2 = numbers.sum()  // 15
+        
+                        // 4. reduceRight和foldRight：从右到左累积
+                        val rightSum = numbers.reduceRight { n, acc -> acc + n }  // 15
+        
+                        // 5. 字符串聚合
+                        val words = listOf("Hello", "World", "Kotlin")
+                        val sentence = words.reduce { acc, word -> "${'$'}acc ${'$'}word" }  // "Hello World Kotlin"
+                    """.trimIndent(),
+                    explanation = "聚合操作符用于将集合元素累积为单个值。reduce从第一个元素开始，fold可以指定初始值。还有max、min、sum、average等聚合函数。"
+                ),
+                CodeExample(
+                    title = "示例4：分组操作符",
+                    code = """
+                        val words = listOf("apple", "banana", "apricot", "blueberry", "cherry")
+        
+                        // 1. groupBy：根据键分组
+                        val byFirstChar = words.groupBy { it.first() }
+                        // {a=[apple, apricot], b=[banana, blueberry], c=[cherry]}
+        
+                        // 2. 按长度分组
+                        val byLength = words.groupBy { it.length }
+                        // {5=[apple], 6=[banana, cherry], 7=[apricot], 9=[blueberry]}
+        
+                        // 3. groupBy + mapValues：分组后转换值
+                        val byFirstCharCount = words.groupBy({ it.first() }, { it.length })
+                        // {a=[5, 7], b=[6, 9], c=[6]}
+        
+                        // 4. partition：分为两部分
+                        val numbers = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+                        val (evens, odds) = numbers.partition { it % 2 == 0 }
+                        // evens = [2, 4, 6, 8, 10], odds = [1, 3, 5, 7, 9]
+        
+                        // 5. chunked：分块
+                        val chunks = numbers.chunked(3)
+                        // [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]]
+                    """.trimIndent(),
+                    explanation = "分组操作符用于对集合进行分组。groupBy根据键分组，partition分为两部分，chunked分块。"
+                ),
+                CodeExample(
+                    title = "示例5：排序操作符",
+                    code = """
+                        val numbers = listOf(3, 1, 4, 1, 5, 9, 2, 6)
+        
+                        // 1. sorted：升序排序
+                        val sorted = numbers.sorted()  // [1, 1, 2, 3, 4, 5, 6, 9]
+        
+                        // 2. sortedDescending：降序排序
+                        val sortedDesc = numbers.sortedDescending()  // [9, 6, 5, 4, 3, 2, 1, 1]
+        
+                        // 3. sortedBy：根据转换函数排序
+                        val words = listOf("apple", "banana", "apricot")
+                        val sortedByLength = words.sortedBy { it.length }  // [apple, banana, apricot]
+        
+                        // 4. sortedByDescending：降序
+                        val sortedByLengthDesc = words.sortedByDescending { it.length }
+        
+                        // 5. sortedWith：使用比较器排序
+                        val sortedWith = words.sortedWith(compareBy { it.length })
+        
+                        // 6. reversed：反转顺序
+                        val reversed = numbers.reversed()  // [6, 2, 9, 5, 1, 4, 1, 3]
+        
+                        // 7. distinct：去重
+                        val distinct = numbers.distinct()  // [3, 1, 4, 5, 9, 2, 6, 9]
+                    """.trimIndent(),
+                    explanation = "排序操作符用于对集合进行排序。sorted用于升序，sortedDescending用于降序，sortedBy根据转换函数排序，distinct用于去重。"
+                )
+            ),
+            useCases = listOf(
+                "数据转换：使用map转换集合元素",
+                "数据过滤：使用filter过滤集合元素",
+                "数据聚合：使用reduce/fold计算聚合值",
+                "数据分组：使用groupBy对数据进行分组",
+                "数据排序：使用sorted对数据进行排序"
+            ),
+            keyPoints = listOf(
+                "map用于转换元素，flatMap用于展平嵌套集合",
+                "filter用于过滤元素，filterNot用于反向过滤",
+                "reduce/fold用于聚合，可以指定初始值",
+                "groupBy用于分组，partition用于分为两部分",
+                "sorted用于排序，distinct用于去重"
+            ),
+            notes = listOf(
+                "集合操作符返回新集合，不修改原集合",
+                "可以链式调用多个操作符",
+                "操作符是延迟计算的（Sequence），可以提高性能",
+                "reduce从第一个元素开始，fold可以指定初始值",
+                "sorted返回新集合，不修改原集合"
+            ),
+            practiceTips = "建议：优先使用集合操作符而不是手动编写循环，代码更简洁易读。对于大数据集，使用Sequence进行延迟计算可以提高性能。合理组合多个操作符，但要注意可读性。"
+        ),
+        
+        // 3. 序列（Sequence）的延迟计算
+        KnowledgeDetail(
+            id = "sequence",
+            title = "序列（Sequence）的延迟计算",
+            overview = "Sequence是Kotlin的延迟计算集合，类似于Java 8的Stream。Sequence只在需要时才计算，可以提高性能，特别是对于大数据集。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Sequence基础",
+                    code = """
+                        // Sequence：延迟计算的集合
+        
+                        // 1. 创建Sequence
+                        val sequence = sequenceOf(1, 2, 3, 4, 5)
+        
+                        // 2. 从集合创建Sequence
+                        val list = listOf(1, 2, 3, 4, 5)
+                        val seq = list.asSequence()
+        
+                        // 3. 使用generateSequence创建无限序列
+                        val infinite = generateSequence(1) { it + 1 }
+                        val first10 = infinite.take(10).toList()  // [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        
+                        // 4. 使用sequence函数创建
+                        val seq2 = sequence {
+                            yield(1)
+                            yield(2)
+                            yield(3)
+                        }
+        
+                        // 5. Sequence是延迟计算的
+                        val seq3 = sequenceOf(1, 2, 3)
+                            .map { println("Map: ${'$'}it"); it * 2 }
+                            .filter { println("Filter: ${'$'}it"); it > 2 }
+                        // 此时还没有执行
+        
+                        val result = seq3.toList()
+                        // 现在才执行，输出：
+                        // Map: 1
+                        // Filter: 2
+                        // Map: 2
+                        // Filter: 4
+                        // Map: 3
+                        // Filter: 6
+                    """.trimIndent(),
+                    explanation = "Sequence是延迟计算的集合，只在需要时才计算。可以使用sequenceOf、asSequence、generateSequence等创建Sequence。"
+                ),
+                CodeExample(
+                    title = "示例2：Sequence vs List",
+                    code = """
+                        val numbers = (1..1_000_000).toList()
+        
+                        // List：立即计算，创建中间集合
+                        val listResult = numbers
+                            .map { it * 2 }        // 创建新List
+                            .filter { it > 1000 }  // 创建新List
+                            .take(10)              // 创建新List
+                            .toList()
+                        // 创建了3个中间集合，处理了100万个元素
+        
+                        // Sequence：延迟计算，不创建中间集合
+                        val seqResult = numbers.asSequence()
+                            .map { it * 2 }        // 不创建集合
+                            .filter { it > 1000 }  // 不创建集合
+                            .take(10)              // 只处理前10个满足条件的元素
+                            .toList()
+                        // 不创建中间集合，只处理必要的元素
+        
+                        // Sequence的优势：
+                        // 1. 不创建中间集合，节省内存
+                        // 2. 延迟计算，只处理必要的元素
+                        // 3. 可以处理无限序列
+                    """.trimIndent(),
+                    explanation = "Sequence延迟计算，不创建中间集合，只处理必要的元素。对于大数据集，Sequence可以显著提高性能。"
+                ),
+                CodeExample(
+                    title = "示例3：Sequence操作符",
+                    code = """
+                        val sequence = (1..10).asSequence()
+        
+                        // 1. 转换操作符（延迟计算）
+                        val mapped = sequence.map { it * 2 }
+                        val flatMapped = sequence.flatMap { listOf(it, it * 2) }
+        
+                        // 2. 过滤操作符（延迟计算）
+                        val filtered = sequence.filter { it % 2 == 0 }
+                        val taken = sequence.take(5)
+                        val dropped = sequence.drop(5)
+        
+                        // 3. 聚合操作符（终端操作，立即计算）
+                        val sum = sequence.sum()
+                        val max = sequence.maxOrNull()
+                        val count = sequence.count()
+        
+                        // 4. 终端操作（触发计算）
+                        val list = sequence.toList()
+                        val set = sequence.toSet()
+                        val first = sequence.first()
+                        val last = sequence.last()
+        
+                        // 5. 链式操作
+                        val result = (1..100).asSequence()
+                            .map { it * it }
+                            .filter { it > 50 }
+                            .take(10)
+                            .toList()
+                        // 只处理必要的元素，不创建中间集合
+                    """.trimIndent(),
+                    explanation = "Sequence支持与List相同的操作符，但延迟计算。终端操作（如toList、sum）会触发计算。"
+                ),
+                CodeExample(
+                    title = "示例4：无限序列",
+                    code = """
+                        // 1. 生成无限序列
+                        val infinite = generateSequence(1) { it + 1 }
+                        val first10 = infinite.take(10).toList()  // [1, 2, 3, ..., 10]
+        
+                        // 2. 斐波那契数列
+                        val fibonacci = generateSequence(Pair(0, 1)) { 
+                            Pair(it.second, it.first + it.second) 
+                        }.map { it.first }
+                        val first10Fib = fibonacci.take(10).toList()
+                        // [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+        
+                        // 3. 文件读取（逐行读取，不加载整个文件）
+                        // val lines = File("large.txt")
+                        //     .useLines { it.asSequence() }
+                        //     .filter { it.startsWith("ERROR") }
+                        //     .take(10)
+                        //     .toList()
+        
+                        // 4. 条件终止
+                        val sequence = generateSequence(1) { 
+                            if (it < 100) it * 2 else null  // null终止序列
+                        }
+                        val result = sequence.toList()  // [1, 2, 4, 8, 16, 32, 64]
+                    """.trimIndent(),
+                    explanation = "Sequence可以处理无限序列，使用generateSequence创建。可以用于生成数列、逐行读取文件等场景。"
+                ),
+                CodeExample(
+                    title = "示例5：Sequence实践",
+                    code = """
+                        // 1. 大数据集处理
+                        val largeList = (1..10_000_000).toList()
+                        val result = largeList.asSequence()
+                            .filter { it % 2 == 0 }
+                            .map { it * it }
+                            .take(100)
+                            .toList()
+                        // 只处理必要的元素，不创建中间集合
+        
+                        // 2. 文件处理
+                        // val errors = File("log.txt")
+                        //     .useLines { it.asSequence() }
+                        //     .filter { it.contains("ERROR") }
+                        //     .map { it.substringAfter("ERROR: ") }
+                        //     .take(10)
+                        //     .toList()
+        
+                        // 3. 数据库查询（模拟）
+                        // val users = database.users.asSequence()
+                        //     .filter { it.age > 18 }
+                        //     .map { it.name }
+                        //     .take(100)
+                        //     .toList()
+        
+                        // 4. 性能对比
+                        val numbers = (1..1_000_000).toList()
+        
+                        // List：处理所有元素
+                        val listTime = measureTimeMillis {
+                            numbers.map { it * 2 }.filter { it > 1000 }.take(10).toList()
+                        }
+        
+                        // Sequence：只处理必要的元素
+                        val seqTime = measureTimeMillis {
+                            numbers.asSequence()
+                                .map { it * 2 }
+                                .filter { it > 1000 }
+                                .take(10)
+                                .toList()
+                        }
+                        // Sequence通常更快，特别是当只需要少量结果时
+                    """.trimIndent(),
+                    explanation = "Sequence在实际开发中用于处理大数据集、文件、数据库查询等场景。Sequence延迟计算，只处理必要的元素，可以提高性能。"
+                )
+            ),
+            useCases = listOf(
+                "大数据集处理：使用Sequence处理大数据集，不创建中间集合",
+                "文件处理：逐行处理文件，不加载整个文件到内存",
+                "数据库查询：延迟处理查询结果",
+                "无限序列：生成和处理无限序列",
+                "性能优化：对于只需要少量结果的操作，使用Sequence提高性能"
+            ),
+            keyPoints = listOf(
+                "Sequence是延迟计算的集合，只在需要时才计算",
+                "Sequence不创建中间集合，节省内存",
+                "Sequence只处理必要的元素，可以提高性能",
+                "终端操作（如toList、sum）会触发计算",
+                "Sequence可以处理无限序列"
+            ),
+            notes = listOf(
+                "Sequence操作符延迟计算，终端操作触发计算",
+                "对于小数据集，List可能更快（没有Sequence的开销）",
+                "对于大数据集或只需要少量结果，Sequence更快",
+                "Sequence可以处理无限序列",
+                "使用asSequence将集合转换为Sequence"
+            ),
+            practiceTips = "建议：对于大数据集或只需要少量结果的操作，使用Sequence提高性能。对于小数据集，List可能更快。使用Sequence处理文件、数据库查询等场景。注意Sequence是延迟计算的，终端操作才会触发计算。"
         )
     )
 }
