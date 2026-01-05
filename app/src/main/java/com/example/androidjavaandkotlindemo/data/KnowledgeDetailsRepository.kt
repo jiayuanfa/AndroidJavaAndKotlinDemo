@@ -7923,6 +7923,2676 @@ object KnowledgeDetailsRepository {
                 "操作符重载常用于数学运算、容器操作、DSL等场景"
             ),
             practiceTips = "建议：合理使用操作符重载提高代码可读性，但不要过度使用。中缀函数可以让代码更自然，特别是在DSL和测试框架中。注意操作符重载的语义应该清晰明确。"
+        ),
+        
+        // ========== Kotlin 内联函数 ==========
+        
+        // 1. inline关键字、noinline和crossinline、reified类型参数
+        KnowledgeDetail(
+            id = "inline_functions",
+            title = "inline关键字、noinline和crossinline、reified类型参数",
+            overview = "内联函数使用inline关键字，函数体在调用处展开，避免函数调用的开销。noinline和crossinline用于控制Lambda的内联行为。reified类型参数允许在运行时访问类型信息。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：inline关键字基础",
+                    code = """
+                        // inline函数：函数体在调用处展开，避免函数调用开销
+                        
+                        // 1. 基本使用
+                        inline fun <T> measureTime(block: () -> T): T {
+                            val start = System.currentTimeMillis()
+                            val result = block()
+                            val end = System.currentTimeMillis()
+                            println("Time: ${'$'}{end - start}ms")
+                            return result
+                        }
+                        
+                        // 调用时，函数体会展开
+                        val result = measureTime {
+                            // 执行一些操作
+                            Thread.sleep(100)
+                            "Done"
+                        }
+                        // 编译后相当于：
+                        // val start = System.currentTimeMillis()
+                        // val result = "Done"
+                        // val end = System.currentTimeMillis()
+                        // println("Time: ${'$'}{end - start}ms")
+                        
+                        // 2. inline的优势
+                        // - 避免函数调用开销（特别是高阶函数）
+                        // - 允许非局部返回
+                        // - 支持reified类型参数
+                        
+                        // 3. inline的限制
+                        // - 函数体不能太大（会增加代码体积）
+                        // - 不能用于递归函数
+                        // - 不能用于函数引用
+                    """.trimIndent(),
+                    explanation = "inline函数使用inline关键字，函数体在调用处展开，避免函数调用开销。inline函数特别适合高阶函数，可以减少Lambda对象的创建。"
+                ),
+                CodeExample(
+                    title = "示例2：非局部返回",
+                    code = """
+                        // inline函数支持非局部返回
+                        
+                        // 1. 普通函数（不能非局部返回）
+                        fun normalFunction(block: () -> Unit) {
+                            block()
+                        }
+                        
+                        fun test1() {
+                            normalFunction {
+                                return  // ❌ 错误！不能从test1返回
+                                // 只能使用return@normalFunction
+                            }
+                        }
+                        
+                        // 2. inline函数（支持非局部返回）
+                        inline fun inlineFunction(block: () -> Unit) {
+                            block()
+                        }
+                        
+                        fun test2() {
+                            inlineFunction {
+                                return  // ✅ 可以！从test2返回
+                            }
+                            println("This won't execute")
+                        }
+                        
+                        // 3. 实际应用
+                        inline fun <T> List<T>.forEach(action: (T) -> Unit) {
+                            for (element in this) {
+                                action(element)
+                            }
+                        
+                        fun findFirst(list: List<Int>, predicate: (Int) -> Boolean): Int? {
+                            var result: Int? = null
+                            list.forEach {
+                                if (predicate(it)) {
+                                    result = it
+                                    return  // 从findFirst返回
+                                }
+                            }
+                            return result
+                        }
+                    """.trimIndent(),
+                    explanation = "inline函数支持非局部返回，Lambda中的return可以从外层函数返回。普通函数不支持非局部返回，只能使用return@label。"
+                ),
+                CodeExample(
+                    title = "示例3：noinline",
+                    code = """
+                        // noinline：禁止特定Lambda参数的内联
+                        
+                        // 1. 基本使用
+                        inline fun process(
+                            action1: () -> Unit,
+                            noinline action2: () -> Unit  // 不内联
+                        ) {
+                            action1()  // 内联
+                            action2()  // 不内联，可以作为参数传递
+                            // 可以将action2传递给其他函数
+                            executeLater(action2)
+                        }
+                        
+                        fun executeLater(action: () -> Unit) {
+                            // 需要函数类型参数，不能是内联的
+                        }
+                        
+                        // 2. 为什么需要noinline
+                        // - 需要将Lambda作为参数传递给其他函数
+                        // - 需要将Lambda存储在变量中
+                        // - 需要从非inline函数返回Lambda
+                        
+                        inline fun <T> processData(
+                            data: T,
+                            transform: (T) -> T,
+                            noinline validator: (T) -> Boolean  // 不内联
+                        ) {
+                            val transformed = transform(data)
+                            if (validator(transformed)) {
+                                // validator可以传递给其他函数
+                                validateAndSave(transformed, validator)
+                            }
+                        }
+                        
+                        fun validateAndSave(data: Any, validator: (Any) -> Boolean) {
+                            if (validator(data)) {
+                                save(data)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "noinline用于禁止特定Lambda参数的内联。当需要将Lambda作为参数传递、存储在变量中或从非inline函数返回时，需要使用noinline。"
+                ),
+                CodeExample(
+                    title = "示例4：crossinline",
+                    code = """
+                        // crossinline：禁止非局部返回，但允许内联
+                        
+                        // 1. 问题场景
+                        inline fun execute(block: () -> Unit) {
+                            // 在另一个上下文中执行block
+                            runOnBackgroundThread {
+                                block()  // ❌ 错误！block可能包含非局部返回
+                            }
+                        }
+                        
+                        // 2. 使用crossinline解决
+                        inline fun execute(crossinline block: () -> Unit) {
+                            runOnBackgroundThread {
+                                block()  // ✅ 可以，但不能非局部返回
+                            }
+                        }
+                        
+                        fun runOnBackgroundThread(action: () -> Unit) {
+                            // 在后台线程执行
+                            action()
+                        }
+                        
+                        // 3. crossinline的特点
+                        // - Lambda会被内联（性能优势）
+                        // - 但不能使用非局部返回（return）
+                        // - 可以使用return@label
+                        
+                        inline fun measureTime(crossinline block: () -> Unit) {
+                            val start = System.currentTimeMillis()
+                            try {
+                                block()
+                            } finally {
+                                val end = System.currentTimeMillis()
+                                println("Time: ${'$'}{end - start}ms")
+                            }
+                        }
+                        
+                        fun test() {
+                            measureTime {
+                                // return  // ❌ 错误！不能非局部返回
+                                return@measureTime  // ✅ 可以
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "crossinline用于禁止非局部返回，但允许内联。当Lambda在另一个上下文中执行时（如另一个Lambda、局部对象等），需要使用crossinline。"
+                ),
+                CodeExample(
+                    title = "示例5：reified类型参数",
+                    code = """
+                        // reified：使类型参数在运行时可用
+                        // 只能用于inline函数
+                        
+                        // 1. 基本使用
+                        inline fun <reified T> getTypeName(): String {
+                            return T::class.simpleName ?: "Unknown"
+                        }
+                        
+                        println(getTypeName<Int>())      // "Int"
+                        println(getTypeName<String>())    // "String"
+                        
+                        // 2. 类型检查
+                        inline fun <reified T> isInstance(value: Any): Boolean {
+                            return value is T
+                        }
+                        
+                        println(isInstance<String>("Hello"))  // true
+                        println(isInstance<Int>("Hello"))     // false
+                        
+                        // 3. 创建实例
+                        inline fun <reified T> createInstance(): T? {
+                            return try {
+                                T::class.java.getDeclaredConstructor().newInstance()
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                        
+                        val string = createInstance<String>()  // ""
+                        val list = createInstance<ArrayList<String>>()  // ArrayList()
+                        
+                        // 4. 在Android中的应用
+                        // inline fun <reified T : Activity> Context.startActivity() {
+                        //     startActivity(Intent(this, T::class.java))
+                        // }
+                        // 
+                        // // 使用
+                        // startActivity<MainActivity>()
+                        
+                        // 5. 过滤类型
+                        inline fun <reified T> List<*>.filterIsInstance(): List<T> {
+                            return this.filterIsInstance<T>()
+                        }
+                        
+                        val mixed = listOf(1, "Hello", 2, "World")
+                        val strings = mixed.filterIsInstance<String>()  // ["Hello", "World"]
+                    """.trimIndent(),
+                    explanation = "reified类型参数只能在inline函数中使用，允许在运行时访问类型信息。reified避免了类型擦除的问题，可以用于类型检查、创建实例等场景。"
+                ),
+                CodeExample(
+                    title = "示例6：内联函数实践",
+                    code = """
+                        // 1. 性能优化
+                        inline fun <T> List<T>.filterInline(predicate: (T) -> Boolean): List<T> {
+                            val result = mutableListOf<T>()
+                            for (item in this) {
+                                if (predicate(item)) {
+                                    result.add(item)
+                                }
+                            }
+                            return result
+                        }
+                        // 内联后避免创建Lambda对象
+                        
+                        // 2. 工具函数
+                        inline fun <T> T.applyIf(condition: Boolean, block: T.() -> Unit): T {
+                            if (condition) {
+                                block()
+                            }
+                            return this
+                        }
+                        
+                        val person = Person("Alice", 25)
+                            .applyIf(true) { age = 26 }
+                        
+                        // 3. 测量性能
+                        inline fun <T> measureTimeMillis(block: () -> T): Pair<T, Long> {
+                            val start = System.currentTimeMillis()
+                            val result = block()
+                            val end = System.currentTimeMillis()
+                            return Pair(result, end - start)
+                        }
+                        
+                        val (result, time) = measureTimeMillis {
+                            // 执行操作
+                            Thread.sleep(100)
+                            "Done"
+                        }
+                        
+                        // 4. 条件执行
+                        inline fun <T> T.takeIfInline(predicate: (T) -> Boolean): T? {
+                            return if (predicate(this)) this else null
+                        }
+                        
+                        // 5. 注意事项
+                        // - 不要过度使用inline
+                        // - 大函数不要内联（会增加代码体积）
+                        // - 递归函数不能内联
+                        // - 函数引用不能内联
+                    """.trimIndent(),
+                    explanation = "内联函数在实际开发中用于性能优化、工具函数、测量性能等场景。合理使用内联函数可以提高性能，但要注意不要过度使用，大函数不要内联。"
+                )
+            ),
+            useCases = listOf(
+                "性能优化：使用inline减少高阶函数的开销",
+                "非局部返回：使用inline支持非局部返回",
+                "类型信息：使用reified在运行时访问类型信息",
+                "工具函数：创建内联工具函数提高性能",
+                "DSL构建：使用inline构建DSL"
+            ),
+            keyPoints = listOf(
+                "inline函数使用inline关键字，函数体在调用处展开",
+                "inline函数支持非局部返回，Lambda中的return可以从外层函数返回",
+                "noinline禁止特定Lambda参数的内联",
+                "crossinline禁止非局部返回，但允许内联",
+                "reified类型参数只能在inline函数中使用，允许在运行时访问类型信息"
+            ),
+            notes = listOf(
+                "inline函数避免函数调用开销，特别适合高阶函数",
+                "大函数不要内联，会增加代码体积",
+                "递归函数不能内联",
+                "函数引用不能内联",
+                "reified避免了类型擦除的问题"
+            ),
+            practiceTips = "建议：合理使用inline函数提高性能，特别是对于高阶函数。使用reified在需要运行时类型信息时。注意不要过度使用inline，大函数不要内联。在Android开发中，inline函数特别有用，可以减少Lambda对象的创建。"
+        ),
+        
+        // ========== Kotlin 反射（Reflection） ==========
+        
+        // 1. 反射基础、KClass、KFunction、KProperty
+        KnowledgeDetail(
+            id = "reflection_basic",
+            title = "反射基础、KClass、KFunction、KProperty",
+            overview = "Kotlin反射允许在运行时检查和操作类、函数、属性等。KClass表示类，KFunction表示函数，KProperty表示属性。反射提供了动态访问和操作代码的能力。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：KClass基础",
+                    code = """
+                        import kotlin.reflect.full.*
+                        
+                        // 1. 获取KClass
+                        class Person(val name: String, var age: Int)
+                        
+                        val kClass = Person::class
+                        println(kClass.simpleName)  // "Person"
+                        println(kClass.qualifiedName)  // "com.example.Person"
+                        
+                        // 2. 获取类的成员
+                        val properties = kClass.memberProperties
+                        properties.forEach { prop ->
+                            println("${'$'}{prop.name}: ${'$'}{prop.returnType}")
+                        }
+                        
+                        // 3. 检查类信息
+                        println(kClass.isAbstract)  // false
+                        println(kClass.isData)  // false
+                        println(kClass.isSealed)  // false
+                        println(kClass.isCompanion)  // false
+                        
+                        // 4. 获取构造函数
+                        val constructors = kClass.constructors
+                        constructors.forEach { constructor ->
+                            println("Constructor: ${'$'}{constructor.parameters}")
+                        }
+                        
+                        // 5. 创建实例
+                        val instance = kClass.createInstance()  // 需要无参构造函数
+                        // 或使用带参数的构造函数
+                        val constructor = kClass.primaryConstructor
+                        val person = constructor?.call("Alice", 25)
+                    """.trimIndent(),
+                    explanation = "KClass表示类的反射信息，可以获取类名、属性、构造函数等信息，并可以创建实例。"
+                ),
+                CodeExample(
+                    title = "示例2：KFunction",
+                    code = """
+                        import kotlin.reflect.full.*
+                        
+                        class Calculator {
+                            fun add(a: Int, b: Int): Int = a + b
+                            fun multiply(a: Int, b: Int): Int = a * b
+                        }
+                        
+                        // 1. 获取函数引用
+                        val addFunction = Calculator::add
+                        println(addFunction.name)  // "add"
+                        println(addFunction.returnType)  // kotlin.Int
+                        
+                        // 2. 调用函数
+                        val calculator = Calculator()
+                        val result = addFunction.call(calculator, 3, 5)  // 8
+                        
+                        // 3. 获取函数参数
+                        val parameters = addFunction.parameters
+                        parameters.forEach { param ->
+                            println("${'$'}{param.name}: ${'$'}{param.type}")
+                        }
+                        
+                        // 4. 检查函数特性
+                        println(addFunction.isInline)  // false
+                        println(addFunction.isSuspend)  // false
+                        
+                        // 5. 获取类的所有函数
+                        val functions = Calculator::class.memberFunctions
+                        functions.forEach { func ->
+                            println("Function: ${'$'}{func.name}")
+                        }
+                    """.trimIndent(),
+                    explanation = "KFunction表示函数的反射信息，可以获取函数名、参数、返回类型等信息，并可以动态调用函数。"
+                ),
+                CodeExample(
+                    title = "示例3：KProperty",
+                    code = """
+                        import kotlin.reflect.full.*
+                        
+                        class Person(val name: String, var age: Int) {
+                            var email: String = ""
+                            private var salary: Double = 0.0
+                        }
+                        
+                        // 1. 获取属性引用
+                        val nameProperty = Person::name
+                        println(nameProperty.name)  // "name"
+                        println(nameProperty.returnType)  // kotlin.String
+                        println(nameProperty.isConst)  // false
+                        println(nameProperty.isLateinit)  // false
+                        
+                        // 2. 读取属性值
+                        val person = Person("Alice", 25)
+                        val nameValue = nameProperty.get(person)  // "Alice"
+                        
+                        // 3. 写入属性值（可变属性）
+                        val ageProperty = Person::age
+                        ageProperty.setter.call(person, 26)
+                        println(person.age)  // 26
+                        
+                        // 4. 获取所有属性
+                        val properties = Person::class.memberProperties
+                        properties.forEach { prop ->
+                            println("${'$'}{prop.name}: ${'$'}{prop.returnType}")
+                            if (prop is KMutableProperty<*>) {
+                                println("  Mutable")
+                            }
+                        }
+                        
+                        // 5. 检查属性可见性
+                        val salaryProperty = Person::class.memberProperties
+                            .find { it.name == "salary" }
+                        println(salaryProperty?.visibility)  // PRIVATE
+                    """.trimIndent(),
+                    explanation = "KProperty表示属性的反射信息，可以获取属性名、类型等信息，并可以读取和写入属性值。"
+                ),
+                CodeExample(
+                    title = "示例4：反射实践",
+                    code = """
+                        import kotlin.reflect.full.*
+                        
+                        // 1. 动态创建对象
+                        fun <T : Any> createInstance(clazz: KClass<T>): T? {
+                            return clazz.createInstance()
+                        }
+                        
+                        val person = createInstance(Person::class)
+                        
+                        // 2. 动态调用方法
+                        fun callMethod(instance: Any, methodName: String, vararg args: Any?): Any? {
+                            val method = instance::class.memberFunctions
+                                .find { it.name == methodName }
+                            return method?.call(instance, *args)
+                        }
+                        
+                        val calculator = Calculator()
+                        val result = callMethod(calculator, "add", 3, 5)
+                        
+                        // 3. 动态访问属性
+                        fun getPropertyValue(instance: Any, propertyName: String): Any? {
+                            val property = instance::class.memberProperties
+                                .find { it.name == propertyName }
+                            return property?.get(instance)
+                        }
+                        
+                        val person = Person("Alice", 25)
+                        val name = getPropertyValue(person, "name")
+                        
+                        // 4. 序列化/反序列化
+                        fun toMap(instance: Any): Map<String, Any?> {
+                            return instance::class.memberProperties.associate { prop ->
+                                prop.name to prop.get(instance)
+                            }
+                        }
+                        
+                        val person = Person("Alice", 25)
+                        val map = toMap(person)  // {"name": "Alice", "age": 25}
+                    """.trimIndent(),
+                    explanation = "反射在实际开发中用于动态创建对象、调用方法、访问属性、序列化等场景。"
+                )
+            ),
+            useCases = listOf(
+                "动态创建对象：使用反射创建类的实例",
+                "动态调用方法：根据方法名动态调用方法",
+                "动态访问属性：获取和设置对象属性",
+                "序列化/反序列化：将对象转换为Map或JSON",
+                "框架开发：构建依赖注入、ORM等框架"
+            ),
+            keyPoints = listOf(
+                "KClass表示类的反射信息，可以获取类名、属性、构造函数等",
+                "KFunction表示函数的反射信息，可以动态调用函数",
+                "KProperty表示属性的反射信息，可以读取和写入属性值",
+                "反射提供了动态访问和操作代码的能力",
+                "反射性能较低，应谨慎使用"
+            ),
+            notes = listOf(
+                "反射需要导入kotlin-reflect库",
+                "反射性能较低，应避免在性能关键路径使用",
+                "反射可以访问private成员，但需要权限",
+                "KClass、KFunction、KProperty是反射的核心类型",
+                "反射常用于框架开发、序列化、测试等场景"
+            ),
+            practiceTips = "建议：反射功能强大但性能较低，应谨慎使用。在需要动态访问代码的场景（如框架开发、序列化）中使用反射。注意反射可以访问private成员，需要谨慎处理。"
+        ),
+        
+        // 2. 反射的应用场景
+        KnowledgeDetail(
+            id = "reflection_practice",
+            title = "反射的应用场景",
+            overview = "反射在实际开发中有多种应用场景，包括依赖注入、ORM框架、序列化、测试框架、插件系统等。合理使用反射可以提高代码的灵活性和可扩展性。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：依赖注入框架",
+                    code = """
+                        import kotlin.reflect.full.*
+                        
+                        // 简单的依赖注入实现
+                        class DIContainer {
+                            private val instances = mutableMapOf<KClass<*>, Any>()
+                            
+                            fun <T : Any> register(clazz: KClass<T>, instance: T) {
+                                instances[clazz] = instance
+                            }
+                            
+                            fun <T : Any> get(clazz: KClass<T>): T {
+                                return instances[clazz] as? T
+                    ?: throw IllegalStateException("No instance registered for ${'$'}{clazz.simpleName}")
+                            }
+                            
+                            fun <T : Any> create(clazz: KClass<T>): T {
+                                val constructor = clazz.primaryConstructor
+                    ?: throw IllegalStateException("No primary constructor for ${'$'}{clazz.simpleName}")
+                                
+                                val parameters = constructor.parameters.map { param ->
+                                    get(param.type.classifier as KClass<*>)
+                                }
+                                
+                                return constructor.call(*parameters.toTypedArray())
+                            }
+                        }
+                        
+                        // 使用
+                        class UserService(private val userRepository: UserRepository)
+                        class UserRepository
+                        
+                        val container = DIContainer()
+                        container.register(UserRepository::class, UserRepository())
+                        val userService = container.create(UserService::class)
+                    """.trimIndent(),
+                    explanation = "反射可以用于实现依赖注入框架，自动解析构造函数参数并注入依赖。"
+                ),
+                CodeExample(
+                    title = "示例2：ORM框架",
+                    code = """
+                        import kotlin.reflect.full.*
+                        
+                        // 简单的ORM映射
+                        annotation class Table(val name: String)
+                        annotation class Column(val name: String)
+                        
+                        @Table("users")
+                        class User(
+                            @Column("id") val id: Int,
+                            @Column("name") val name: String,
+                            @Column("email") val email: String
+                        )
+                        
+                        fun <T : Any> toInsertSQL(instance: T): String {
+                            val kClass = instance::class
+                            val tableName = kClass.findAnnotation<Table>()?.name
+                    ?: kClass.simpleName?.lowercase() ?: "unknown"
+                            
+                            val columns = kClass.memberProperties
+                                .filter { it.findAnnotation<Column>() != null }
+                                .map { it.findAnnotation<Column>()!!.name }
+                            
+                            val values = kClass.memberProperties
+                                .filter { it.findAnnotation<Column>() != null }
+                                .map { prop ->
+                                    val value = prop.get(instance)
+                                    if (value is String) "'${'$'}value'" else value
+                                }
+                            
+                            return "INSERT INTO ${'$'}tableName (${'$'}{columns.joinToString()}) VALUES (${'$'}{values.joinToString()})"
+                        }
+                        
+                        val user = User(1, "Alice", "alice@example.com")
+                        val sql = toInsertSQL(user)
+                        // INSERT INTO users (id, name, email) VALUES (1, 'Alice', 'alice@example.com')
+                    """.trimIndent(),
+                    explanation = "反射可以用于ORM框架，根据注解自动生成SQL语句。"
+                ),
+                CodeExample(
+                    title = "示例3：JSON序列化",
+                    code = """
+                        import kotlin.reflect.full.*
+                        
+                        // 简单的JSON序列化
+                        fun toJSON(instance: Any): String {
+                            val kClass = instance::class
+                            val properties = kClass.memberProperties
+                            
+                            val jsonPairs = properties.map { prop ->
+                                val name = prop.name
+                                val value = prop.get(instance)
+                                val jsonValue = when (value) {
+                                    is String -> "\"${'$'}value\""
+                                    is Number, is Boolean -> value.toString()
+                                    null -> "null"
+                                    else -> toJSON(value)
+                                }
+                                "\"${'$'}name\": ${'$'}jsonValue"
+                            }
+                            
+                            return "{${'$'}{jsonPairs.joinToString(", ")}}"
+                        }
+                        
+                        class Person(val name: String, val age: Int, val email: String?)
+                        val person = Person("Alice", 25, "alice@example.com")
+                        val json = toJSON(person)
+                        // {"name": "Alice", "age": 25, "email": "alice@example.com"}
+                    """.trimIndent(),
+                    explanation = "反射可以用于JSON序列化，自动将对象转换为JSON字符串。"
+                ),
+                CodeExample(
+                    title = "示例4：测试框架",
+                    code = """
+                        import kotlin.reflect.full.*
+                        
+                        // 简单的测试框架
+                        annotation class Test
+                        annotation class BeforeEach
+                        
+                        class TestRunner {
+                            fun runTests(testClass: KClass<*>) {
+                                val instance = testClass.createInstance()
+                                
+                                // 运行@BeforeEach方法
+                                testClass.memberFunctions
+                                    .filter { it.findAnnotation<BeforeEach>() != null }
+                                    .forEach { it.call(instance) }
+                                
+                                // 运行@Test方法
+                                testClass.memberFunctions
+                                    .filter { it.findAnnotation<Test>() != null }
+                                    .forEach { method ->
+                                        try {
+                                            method.call(instance)
+                                            println("✓ ${'$'}{method.name}")
+                                        } catch (e: Exception) {
+                                            println("✗ ${'$'}{method.name}: ${'$'}{e.message}")
+                                        }
+                                    }
+                            }
+                        }
+                        
+                        class CalculatorTest {
+                            @BeforeEach
+                            fun setup() {
+                                println("Setup")
+                            }
+                            
+                            @Test
+                            fun testAdd() {
+                                val calc = Calculator()
+                                assert(calc.add(2, 3) == 5)
+                            }
+                        }
+                        
+                        TestRunner().runTests(CalculatorTest::class)
+                    """.trimIndent(),
+                    explanation = "反射可以用于测试框架，自动发现和运行测试方法。"
+                )
+            ),
+            useCases = listOf(
+                "依赖注入：自动解析和注入依赖",
+                "ORM框架：根据注解生成SQL语句",
+                "序列化：将对象转换为JSON或其他格式",
+                "测试框架：自动发现和运行测试",
+                "插件系统：动态加载和调用插件"
+            ),
+            keyPoints = listOf(
+                "反射常用于框架开发，提供灵活性和可扩展性",
+                "依赖注入框架使用反射解析构造函数参数",
+                "ORM框架使用反射和注解生成SQL",
+                "序列化框架使用反射访问对象属性",
+                "测试框架使用反射发现和运行测试方法"
+            ),
+            notes = listOf(
+                "反射性能较低，应避免在性能关键路径使用",
+                "反射可以访问private成员，需要谨慎处理",
+                "反射常用于框架开发，而不是业务代码",
+                "现代框架（如KSP）可以生成代码替代反射",
+                "合理使用反射可以提高代码的灵活性和可扩展性"
+            ),
+            practiceTips = "建议：反射主要用于框架开发，而不是业务代码。在需要动态访问代码的场景中使用反射，但要注意性能影响。现代框架（如KSP）可以生成代码替代反射，性能更好。"
+        ),
+        
+        // ========== Kotlin 注解处理 ==========
+        
+        // 1. 注解声明和使用、元注解、注解处理器（KAPT、KSP）
+        KnowledgeDetail(
+            id = "annotations",
+            title = "注解声明和使用、元注解、注解处理器（KAPT、KSP）",
+            overview = "Kotlin注解用于为代码添加元数据。可以声明注解、使用元注解控制注解行为，使用KAPT或KSP处理注解生成代码。注解处理器在编译时生成代码，提高运行时性能。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：注解声明",
+                    code = """
+                        // 1. 基本注解声明
+                        annotation class Api(val version: String)
+                        annotation class Deprecated(val message: String)
+                        
+                        // 2. 带参数的注解
+                        annotation class Author(val name: String, val date: String)
+                        
+                        // 3. 注解参数类型限制
+                        // - 基本类型（Int、String等）
+                        // - 枚举
+                        // - 类引用（KClass）
+                        // - 其他注解
+                        // - 上述类型的数组
+                        
+                        annotation class Test(
+                            val timeout: Int = 1000,
+                            val enabled: Boolean = true
+                        )
+                        
+                        // 4. 使用注解
+                        @Api("v1")
+                        class UserController
+                        
+                        @Author(name = "Alice", date = "2024-01-01")
+                        fun processData() {}
+                        
+                        @Test(timeout = 2000, enabled = false)
+                        fun testMethod() {}
+                    """.trimIndent(),
+                    explanation = "注解使用annotation class声明，可以带参数。注解参数类型有限制，只能是基本类型、枚举、类引用、其他注解或这些类型的数组。"
+                ),
+                CodeExample(
+                    title = "示例2：元注解",
+                    code = """
+                        // 1. @Target：指定注解可以应用的位置
+                        @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+                        annotation class MyAnnotation
+                        
+                        // AnnotationTarget包括：
+                        // - CLASS：类
+                        // - FUNCTION：函数
+                        // - PROPERTY：属性
+                        // - FIELD：字段
+                        // - VALUE_PARAMETER：参数
+                        // - CONSTRUCTOR：构造函数
+                        // - TYPE：类型
+                        // - 等等
+                        
+                        // 2. @Retention：指定注解保留策略
+                        @Retention(AnnotationRetention.SOURCE)  // 仅源码
+                        annotation class SourceOnly
+                        
+                        @Retention(AnnotationRetention.BINARY)  // 编译后
+                        annotation class BinaryOnly
+                        
+                        @Retention(AnnotationRetention.RUNTIME)  // 运行时（默认）
+                        annotation class RuntimeAvailable
+                        
+                        // 3. @Repeatable：允许重复使用
+                        @Repeatable
+                        annotation class Tag(val value: String)
+                        
+                        @Tag("important")
+                        @Tag("urgent")
+                        class Task
+                        
+                        // 4. @MustBeDocumented：包含在文档中
+                        @MustBeDocumented
+                        annotation class Documented
+                        
+                        // 5. 组合使用
+                        @Target(AnnotationTarget.FUNCTION)
+                        @Retention(AnnotationRetention.RUNTIME)
+                        @MustBeDocumented
+                        annotation class ApiEndpoint(val path: String, val method: String)
+                    """.trimIndent(),
+                    explanation = "元注解用于控制注解的行为，包括@Target（应用位置）、@Retention（保留策略）、@Repeatable（可重复）、@MustBeDocumented（文档化）等。"
+                ),
+                CodeExample(
+                    title = "示例3：注解使用",
+                    code = """
+                        // 1. 类注解
+                        @Deprecated("Use NewClass instead")
+                        class OldClass
+                        
+                        // 2. 函数注解
+                        @JvmStatic
+                        fun staticMethod() {}
+                        
+                        // 3. 属性注解
+                        class Person {
+                            @SerializedName("full_name")
+                            val name: String = ""
+                        }
+                        
+                        // 4. 参数注解
+                        fun process(@NotNull data: String) {}
+                        
+                        // 5. 构造函数注解
+                        class User @Inject constructor(val name: String)
+                        
+                        // 6. 表达式注解
+                        val result = @Suppress("UNUSED") 42
+                        
+                        // 7. 文件级注解
+                        @file:JvmName("Utils")
+                        package com.example
+                        
+                        // 8. 注解参数
+                        @ApiEndpoint(path = "/users", method = "GET")
+                        fun getUsers() {}
+                    """.trimIndent(),
+                    explanation = "注解可以应用在类、函数、属性、参数、构造函数、表达式等位置。注解参数可以使用命名参数或位置参数。"
+                ),
+                CodeExample(
+                    title = "示例4：KAPT（Kotlin Annotation Processing Tool）",
+                    code = """
+                        // build.gradle.kts
+                        plugins {
+                            kotlin("kapt")
+                        }
+                        
+                        dependencies {
+                            kapt("com.google.dagger:dagger-compiler:2.48")
+                        }
+                        
+                        // KAPT使用示例（Dagger）
+                        @Component
+                        interface AppComponent {
+                            fun inject(app: MyApplication)
+                        }
+                        
+                        @Module
+                        class AppModule {
+                            @Provides
+                            fun provideRepository(): UserRepository {
+                                return UserRepository()
+                            }
+                        }
+                        
+                        // KAPT会在编译时生成代码
+                        // 生成的代码在build/generated/source/kapt/目录下
+                        
+                        // KAPT的优缺点：
+                        // 优点：
+                        // - 支持Java注解处理器
+                        // - 成熟稳定
+                        // 缺点：
+                        // - 编译速度慢
+                        // - 需要生成Java存根
+                        // - 不支持增量编译
+                    """.trimIndent(),
+                    explanation = "KAPT是Kotlin的注解处理工具，支持Java注解处理器。KAPT会在编译时生成代码，但编译速度较慢。"
+                ),
+                CodeExample(
+                    title = "示例5：KSP（Kotlin Symbol Processing）",
+                    code = """
+                        // build.gradle.kts
+                        plugins {
+                            id("com.google.devtools.ksp") version "1.9.0-1.0.13"
+                        }
+                        
+                        dependencies {
+                            ksp("com.google.dagger:dagger-compiler:2.48")
+                        }
+                        
+                        // KSP使用示例
+                        @Component
+                        interface AppComponent {
+                            fun inject(app: MyApplication)
+                        }
+                        
+                        // KSP的优势：
+                        // - 编译速度快（比KAPT快2倍以上）
+                        // - 支持增量编译
+                        // - 直接处理Kotlin代码，不需要Java存根
+                        // - 更好的IDE支持
+                        // - 支持多平台
+                        
+                        // KSP vs KAPT：
+                        // - KSP是Kotlin原生的，KAPT基于Java
+                        // - KSP性能更好，KAPT更成熟
+                        // - 新项目推荐使用KSP
+                    """.trimIndent(),
+                    explanation = "KSP是Kotlin的符号处理工具，是KAPT的替代方案。KSP编译速度更快，支持增量编译，是Kotlin原生的注解处理工具。"
+                ),
+                CodeExample(
+                    title = "示例6：自定义注解处理器",
+                    code = """
+                        // 1. 定义注解
+                        @Target(AnnotationTarget.CLASS)
+                        @Retention(AnnotationRetention.SOURCE)
+                        annotation class Builder
+                        
+                        // 2. 使用注解
+                        @Builder
+                        class Person(val name: String, val age: Int)
+                        
+                        // 3. 注解处理器（KSP示例）
+                        // class BuilderProcessor : SymbolProcessor {
+                        //     override fun process(resolver: Resolver): List<KSAnnotated> {
+                        //         val symbols = resolver.getSymbolsWithAnnotation(Builder::class.qualifiedName!!)
+                        //         symbols.forEach { symbol ->
+                        //             if (symbol is KSClassDeclaration) {
+                        //                 generateBuilder(symbol)
+                        //             }
+                        //         }
+                        //         return emptyList()
+                        //     }
+                        //     
+                        //     private fun generateBuilder(classDeclaration: KSClassDeclaration) {
+                        //         // 生成Builder代码
+                        //     }
+                        // }
+                        
+                        // 4. 生成的代码
+                        // class PersonBuilder {
+                        //     private var name: String = ""
+                        //     private var age: Int = 0
+                        //     
+                        //     fun name(name: String) = apply { this.name = name }
+                        //     fun age(age: Int) = apply { this.age = age }
+                        //     fun build() = Person(name, age)
+                        // }
+                    """.trimIndent(),
+                    explanation = "可以自定义注解处理器，在编译时根据注解生成代码。KSP提供了更好的API来编写Kotlin注解处理器。"
+                )
+            ),
+            useCases = listOf(
+                "依赖注入：使用注解标记需要注入的类和方法",
+                "序列化：使用注解控制序列化行为",
+                "路由框架：使用注解定义路由",
+                "代码生成：使用注解生成样板代码",
+                "测试框架：使用注解标记测试方法"
+            ),
+            keyPoints = listOf(
+                "注解使用annotation class声明，可以带参数",
+                "元注解控制注解的行为（@Target、@Retention等）",
+                "KAPT支持Java注解处理器，但编译速度慢",
+                "KSP是Kotlin原生的注解处理工具，性能更好",
+                "注解处理器在编译时生成代码，提高运行时性能"
+            ),
+            notes = listOf(
+                "注解参数类型有限制，只能是基本类型、枚举、类引用等",
+                "@Retention指定注解保留策略（SOURCE、BINARY、RUNTIME）",
+                "@Target指定注解可以应用的位置",
+                "KSP比KAPT快2倍以上，推荐新项目使用KSP",
+                "注解处理器在编译时运行，不影响运行时性能"
+            ),
+            practiceTips = "建议：合理使用注解提高代码的可读性和可维护性。新项目推荐使用KSP而不是KAPT，性能更好。注解处理器可以生成样板代码，减少重复代码。注意注解的保留策略，SOURCE级别的注解在运行时不可用。"
+        ),
+        
+        // ========== Kotlin与Java互操作 ==========
+        
+        // 1. Java调用Kotlin、@JvmName、@JvmStatic、@JvmOverloads
+        KnowledgeDetail(
+            id = "java_call_kotlin",
+            title = "Java调用Kotlin、@JvmName、@JvmStatic、@JvmOverloads",
+            overview = "Kotlin代码可以被Java调用，但需要注意一些互操作性问题。@JvmName可以改变生成的Java方法名，@JvmStatic可以将函数编译为静态方法，@JvmOverloads可以为默认参数生成重载方法。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Java调用Kotlin基础",
+                    code = """
+                        // Kotlin文件：Utils.kt
+                        package com.example
+                        
+                        // 1. 顶层函数
+                        fun topLevelFunction(name: String): String {
+                            return "Hello, ${'$'}name"
+                        }
+                        
+                        // Java调用：
+                        // String result = UtilsKt.topLevelFunction("Alice");
+                        
+                        // 2. 顶层属性
+                        var topLevelProperty: String = "Default"
+                        
+                        // Java调用：
+                        // UtilsKt.setTopLevelProperty("New Value");
+                        // String value = UtilsKt.getTopLevelProperty();
+                        
+                        // 3. 类成员
+                        class Person(val name: String) {
+                            fun greet(): String = "Hello, ${'$'}name"
+                        }
+                        
+                        // Java调用：
+                        // Person person = new Person("Alice");
+                        // String greeting = person.greet();
+                    """.trimIndent(),
+                    explanation = "Kotlin的顶层函数和属性会被编译为静态方法，类成员函数会编译为实例方法。Java可以正常调用这些函数。"
+                ),
+                CodeExample(
+                    title = "示例2：@JvmName",
+                    code = """
+                        // 1. 改变生成的Java方法名
+                        @JvmName("createUser")
+                        fun create(name: String): User {
+                            return User(name)
+                        }
+                        
+                        // Java调用：
+                        // User user = UtilsKt.createUser("Alice");
+                        // 而不是 UtilsKt.create("Alice")
+                        
+                        // 2. 解决类型擦除问题
+                        @JvmName("filterStrings")
+                        fun List<String>.filter(predicate: (String) -> Boolean): List<String> {
+                            return this.filter(predicate)
+                        }
+                        
+                        @JvmName("filterInts")
+                        fun List<Int>.filter(predicate: (Int) -> Boolean): List<Int> {
+                            return this.filter(predicate)
+                        }
+                        
+                        // 3. 文件级@JvmName
+                        @file:JvmName("StringUtils")
+                        package com.example
+                        
+                        fun capitalize(str: String): String {
+                            return str.capitalize()
+                        }
+                        
+                        // Java调用：
+                        // StringUtils.capitalize("hello");
+                        // 而不是 StringUtilsKt.capitalize("hello")
+                    """.trimIndent(),
+                    explanation = "@JvmName可以改变生成的Java方法名，解决类型擦除问题，或提供更友好的Java API。"
+                ),
+                CodeExample(
+                    title = "示例3：@JvmStatic",
+                    code = """
+                        class Calculator {
+                            companion object {
+                                // 1. 不使用@JvmStatic
+                                fun add(a: Int, b: Int): Int = a + b
+                                
+                                // Java调用：
+                                // Calculator.Companion.add(3, 5);
+                            }
+                            
+                            companion object {
+                                // 2. 使用@JvmStatic
+                                @JvmStatic
+                                fun multiply(a: Int, b: Int): Int = a * b
+                                
+                                // Java调用：
+                                // Calculator.multiply(3, 5);  // 更简洁
+                            }
+                            
+                            // 3. 对象声明
+                            object Constants {
+                                @JvmStatic
+                                val PI = 3.14159
+                                
+                                @JvmStatic
+                                fun getVersion(): String = "1.0"
+                            }
+                            
+                            // Java调用：
+                            // double pi = Calculator.Constants.getPI();
+                            // String version = Calculator.Constants.getVersion();
+                        }
+                    """.trimIndent(),
+                    explanation = "@JvmStatic可以将companion object或object中的函数编译为静态方法，Java可以直接通过类名调用，而不需要通过Companion。"
+                ),
+                CodeExample(
+                    title = "示例4：@JvmOverloads",
+                    code = """
+                        // 1. 默认参数问题
+                        class View {
+                            fun setPadding(
+                                left: Int,
+                                top: Int,
+                                right: Int,
+                                bottom: Int = 0  // 默认参数
+                            ) {}
+                        }
+                        
+                        // Java调用时，必须提供所有参数：
+                        // view.setPadding(10, 20, 30, 0);  // 必须提供bottom
+                        
+                        // 2. 使用@JvmOverloads
+                        class View {
+                            @JvmOverloads
+                            fun setPadding(
+                                left: Int,
+                                top: Int,
+                                right: Int,
+                                bottom: Int = 0
+                            ) {}
+                        }
+                        
+                        // Java调用时，可以省略默认参数：
+                        // view.setPadding(10, 20, 30);  // bottom使用默认值0
+                        // view.setPadding(10, 20, 30, 40);  // 也可以提供所有参数
+                        
+                        // 3. 构造函数
+                        class Person @JvmOverloads constructor(
+                            val name: String,
+                            val age: Int = 0,
+                            val email: String = ""
+                        )
+                        
+                        // Java调用：
+                        // Person person1 = new Person("Alice");
+                        // Person person2 = new Person("Alice", 25);
+                        // Person person3 = new Person("Alice", 25, "alice@example.com");
+                    """.trimIndent(),
+                    explanation = "@JvmOverloads可以为带默认参数的函数生成重载方法，Java可以像调用重载方法一样调用，而不需要提供所有参数。"
+                ),
+                CodeExample(
+                    title = "示例5：其他互操作注解",
+                    code = """
+                        // 1. @JvmField：暴露属性为Java字段
+                        class Person {
+                            @JvmField
+                            val name: String = "Alice"
+                            
+                            // Java调用：
+                            // String name = person.name;  // 直接访问字段
+                            // 而不是 person.getName()
+                        }
+                        
+                        // 2. @JvmSynthetic：隐藏对Java的可见性
+                        @JvmSynthetic
+                        fun internalFunction() {
+                            // Java无法调用此函数
+                        }
+                        
+                        // 3. @Throws：声明异常
+                        @Throws(IOException::class)
+                        fun readFile(path: String): String {
+                            // Java调用时，需要处理IOException
+                        }
+                        
+                        // 4. @JvmWildcard：使用通配符
+                        fun process(list: List<@JvmWildcard String>) {
+                            // Java中会生成 List<? extends String>
+                        }
+                        
+                        // 5. @JvmSuppressWildcards：抑制通配符
+                        fun process(list: List<@JvmSuppressWildcards String>) {
+                            // Java中会生成 List<String>
+                        }
+                    """.trimIndent(),
+                    explanation = "还有其他互操作注解，如@JvmField（暴露字段）、@JvmSynthetic（隐藏）、@Throws（声明异常）等，用于优化Java互操作。"
+                )
+            ),
+            useCases = listOf(
+                "API设计：使用@JvmName提供更友好的Java API",
+                "静态方法：使用@JvmStatic将函数编译为静态方法",
+                "默认参数：使用@JvmOverloads为Java生成重载方法",
+                "字段访问：使用@JvmField暴露属性为Java字段",
+                "异常处理：使用@Throws声明异常"
+            ),
+            keyPoints = listOf(
+                "Kotlin代码可以被Java调用，但需要注意互操作性问题",
+                "@JvmName可以改变生成的Java方法名",
+                "@JvmStatic可以将函数编译为静态方法",
+                "@JvmOverloads可以为默认参数生成重载方法",
+                "还有其他互操作注解用于优化Java互操作"
+            ),
+            notes = listOf(
+                "顶层函数会被编译为静态方法，类名是文件名+Kt",
+                "@JvmName可以解决类型擦除问题",
+                "@JvmStatic让Java可以直接通过类名调用",
+                "@JvmOverloads为每个默认参数生成一个重载方法",
+                "合理使用互操作注解可以提高Java互操作性"
+            ),
+            practiceTips = "建议：在需要Java互操作时，合理使用@JvmName、@JvmStatic、@JvmOverloads等注解，提供更友好的Java API。注意Kotlin的默认参数在Java中不可用，需要使用@JvmOverloads。"
+        ),
+        
+        // 2. Kotlin调用Java、平台类型、SAM转换
+        KnowledgeDetail(
+            id = "kotlin_call_java",
+            title = "Kotlin调用Java、平台类型、SAM转换",
+            overview = "Kotlin可以无缝调用Java代码，但需要注意平台类型和SAM转换。平台类型是Kotlin对Java类型的表示，可能为null。SAM转换允许将Lambda表达式转换为Java的单一抽象方法接口。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Kotlin调用Java基础",
+                    code = """
+                        // Java类
+                        // public class Calculator {
+                        //     public int add(int a, int b) {
+                        //         return a + b;
+                        //     }
+                        //     
+                        //     public static int multiply(int a, int b) {
+                        //         return a * b;
+                        //     }
+                        // }
+                        
+                        // Kotlin调用
+                        val calculator = Calculator()
+                        val result = calculator.add(3, 5)  // 8
+                        
+                        val product = Calculator.multiply(3, 5)  // 15
+                        
+                        // 1. Getter/Setter
+                        // Java: public String getName() { return name; }
+                        // Kotlin: person.name  // 自动调用getName()
+                        
+                        // 2. Boolean属性
+                        // Java: public boolean isActive() { return active; }
+                        // Kotlin: person.isActive  // 自动调用isActive()
+                        
+                        // 3. 可变属性
+                        // Java: public void setName(String name) { this.name = name; }
+                        // Kotlin: person.name = "Alice"  // 自动调用setName()
+                    """.trimIndent(),
+                    explanation = "Kotlin可以无缝调用Java代码，Java的getter/setter会被映射为Kotlin属性，静态方法可以直接调用。"
+                ),
+                CodeExample(
+                    title = "示例2：平台类型",
+                    code = """
+                        // 1. 平台类型
+                        // Java方法返回String（可能为null）
+                        // public String getName() { return name; }
+                        
+                        val name: String = javaObject.getName()  // 平台类型String!
+                        // String!表示可能为null，但Kotlin不强制检查
+                        
+                        // 2. 处理平台类型
+                        val name1: String? = javaObject.getName()  // 明确声明为可空
+                        val name2: String = javaObject.getName() ?: ""  // 提供默认值
+                        
+                        // 3. 平台类型的问题
+                        val list: List<String> = javaObject.getList()  // List<String>!
+                        // list可能为null，但Kotlin不强制检查
+                        val size = list.size  // 可能NPE
+                        
+                        // 4. 安全处理
+                        val list2: List<String>? = javaObject.getList()
+                        val size2 = list2?.size ?: 0
+                        
+                        // 5. 类型映射
+                        // Java类型 -> Kotlin类型
+                        // int -> Int
+                        // Integer -> Int?
+                        // String -> String!
+                        // List<String> -> (Mutable)List<String>!
+                    """.trimIndent(),
+                    explanation = "平台类型是Kotlin对Java类型的表示，使用!标记（如String!），可能为null但Kotlin不强制检查。需要明确声明为可空类型或提供默认值。"
+                ),
+                CodeExample(
+                    title = "示例3：SAM转换",
+                    code = """
+                        // 1. Java接口（单一抽象方法）
+                        // public interface OnClickListener {
+                        //     void onClick(View v);
+                        // }
+                        
+                        // 2. 传统方式（匿名内部类）
+                        button.setOnClickListener(object : OnClickListener {
+                            override fun onClick(v: View) {
+                                println("Clicked")
+                            }
+                        })
+                        
+                        // 3. SAM转换（Lambda）
+                        button.setOnClickListener { v ->
+                            println("Clicked")
+                        }
+                        
+                        // 4. 多个参数
+                        // public interface OnItemClickListener {
+                        //     void onItemClick(View view, int position, long id);
+                        // }
+                        
+                        listView.setOnItemClickListener { view, position, id ->
+                            println("Item ${'$'}position clicked")
+                        }
+                        
+                        // 5. 无参数
+                        // public interface Runnable {
+                        //     void run();
+                        // }
+                        
+                        val runnable = Runnable {
+                            println("Running")
+                        }
+                        
+                        // 6. 返回值
+                        // public interface Callback<T> {
+                        //     T call();
+                        // }
+                        
+                        val callback = Callback<String> {
+                            "Result"
+                        }
+                    """.trimIndent(),
+                    explanation = "SAM转换允许将Lambda表达式转换为Java的单一抽象方法接口，简化代码。Kotlin会自动将Lambda转换为接口实现。"
+                ),
+                CodeExample(
+                    title = "示例4：Java泛型",
+                    code = """
+                        // 1. Java泛型
+                        // public class Box<T> {
+                        //     private T value;
+                        //     public T getValue() { return value; }
+                        //     public void setValue(T value) { this.value = value; }
+                        // }
+                        
+                        val box = Box<String>()
+                        box.setValue("Hello")
+                        val value: String = box.getValue()
+                        
+                        // 2. 通配符
+                        // public void process(List<? extends Number> numbers) {}
+                        
+                        val numbers: List<Number> = listOf(1, 2, 3)
+                        javaObject.process(numbers)  // 可以传递
+                        
+                        // 3. 原始类型
+                        // public void processRaw(List list) {}
+                        
+                        val list: List<String> = listOf("a", "b")
+                        javaObject.processRaw(list)  // 可以传递，但失去类型安全
+                    """.trimIndent(),
+                    explanation = "Kotlin可以调用Java泛型代码，Java的通配符和原始类型在Kotlin中也可以使用，但需要注意类型安全。"
+                ),
+                CodeExample(
+                    title = "示例5：Java数组",
+                    code = """
+                        // 1. Java数组
+                        // public void processArray(int[] array) {}
+                        
+                        val array = intArrayOf(1, 2, 3)
+                        javaObject.processArray(array)
+                        
+                        // 2. 对象数组
+                        // public void processStringArray(String[] array) {}
+                        
+                        val stringArray = arrayOf("a", "b", "c")
+                        javaObject.processStringArray(stringArray)
+                        
+                        // 3. 可变参数
+                        // public void processVarargs(String... args) {}
+                        
+                        javaObject.processVarargs("a", "b", "c")
+                        javaObject.processVarargs(*arrayOf("a", "b", "c"))  // 使用spread操作符
+                    """.trimIndent(),
+                    explanation = "Kotlin可以传递数组给Java方法，使用intArrayOf、arrayOf等创建数组，使用spread操作符传递可变参数。"
+                )
+            ),
+            useCases = listOf(
+                "调用Java库：在Kotlin中调用Java第三方库",
+                "混合开发：在Kotlin和Java混合项目中互操作",
+                "SAM转换：使用Lambda简化Java接口调用",
+                "平台类型处理：安全处理Java可能为null的返回值",
+                "泛型互操作：在Kotlin中使用Java泛型"
+            ),
+            keyPoints = listOf(
+                "Kotlin可以无缝调用Java代码",
+                "平台类型使用!标记，可能为null但Kotlin不强制检查",
+                "SAM转换允许将Lambda转换为Java单一抽象方法接口",
+                "Java的getter/setter会被映射为Kotlin属性",
+                "需要注意Java可能为null的返回值"
+            ),
+            notes = listOf(
+                "平台类型可能为null，需要明确处理",
+                "SAM转换只适用于单一抽象方法接口",
+                "Java的原始类型在Kotlin中失去类型安全",
+                "合理使用SAM转换可以简化代码",
+                "注意Java和Kotlin的类型映射差异"
+            ),
+            practiceTips = "建议：在Kotlin中调用Java代码时，注意平台类型可能为null，需要明确处理。使用SAM转换简化Java接口调用。注意Java和Kotlin的类型映射差异，特别是可空性。"
+        ),
+        
+        // 3. 互操作最佳实践
+        KnowledgeDetail(
+            id = "interop_best",
+            title = "互操作最佳实践",
+            overview = "Kotlin与Java互操作的最佳实践包括：合理使用互操作注解、处理平台类型、优化SAM转换、处理泛型差异、处理异常等。遵循最佳实践可以提高互操作性和代码质量。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：API设计最佳实践",
+                    code = """
+                        // 1. 使用@JvmName提供友好的Java API
+                        @JvmName("createUser")
+                        fun create(name: String): User {
+                            return User(name)
+                        }
+                        
+                        // 2. 使用@JvmStatic提供静态方法
+                        class Utils {
+                            companion object {
+                                @JvmStatic
+                                fun process(data: String): String {
+                                    return data.uppercase()
+                                }
+                            }
+                        }
+                        
+                        // 3. 使用@JvmOverloads支持默认参数
+                        class View {
+                            @JvmOverloads
+                            fun setPadding(
+                                left: Int,
+                                top: Int,
+                                right: Int,
+                                bottom: Int = 0
+                            ) {}
+                        }
+                        
+                        // 4. 使用@JvmField暴露常量
+                        class Constants {
+                            companion object {
+                                @JvmField
+                                val API_VERSION = "1.0"
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "合理使用互操作注解，提供友好的Java API，让Java代码更容易使用Kotlin代码。"
+                ),
+                CodeExample(
+                    title = "示例2：平台类型处理",
+                    code = """
+                        // 1. 明确处理平台类型
+                        // ❌ 不好的做法
+                        val name = javaObject.getName()  // String!
+                        val length = name.length  // 可能NPE
+                        
+                        // ✅ 好的做法
+                        val name: String? = javaObject.getName()
+                        val length = name?.length ?: 0
+                        
+                        // 2. 使用扩展函数处理平台类型
+                        fun <T> T?.orDefault(default: T): T {
+                            return this ?: default
+                        }
+                        
+                        val name = javaObject.getName().orDefault("Unknown")
+                        
+                        // 3. 使用Elvis操作符
+                        val list = javaObject.getList() ?: emptyList()
+                        val size = list.size
+                        
+                        // 4. 使用let处理可空
+                        javaObject.getName()?.let { name ->
+                            println("Name: ${'$'}name")
+                        }
+                    """.trimIndent(),
+                    explanation = "明确处理平台类型，使用可空类型、Elvis操作符、let等安全处理可能为null的值。"
+                ),
+                CodeExample(
+                    title = "示例3：SAM转换优化",
+                    code = """
+                        // 1. 使用Lambda简化代码
+                        // ❌ 不好的做法
+                        button.setOnClickListener(object : OnClickListener {
+                            override fun onClick(v: View) {
+                                handleClick(v)
+                            }
+                        })
+                        
+                        // ✅ 好的做法
+                        button.setOnClickListener { v ->
+                            handleClick(v)
+                        }
+                        
+                        // 2. 方法引用
+                        button.setOnClickListener(::handleClick)
+                        
+                        // 3. 多个SAM参数
+                        // 如果方法有多个SAM参数，只有最后一个可以使用Lambda
+                        // public void setCallbacks(
+                        //     OnSuccess onSuccess,
+                        //     OnError onError
+                        // )
+                        
+                        api.setCallbacks(
+                            OnSuccess { result -> handleSuccess(result) },
+                            OnError { error -> handleError(error) }
+                        )
+                    """.trimIndent(),
+                    explanation = "使用Lambda和方法引用简化SAM转换，提高代码可读性。注意多个SAM参数时，只有最后一个可以使用Lambda。"
+                ),
+                CodeExample(
+                    title = "示例4：异常处理",
+                    code = """
+                        // 1. 使用@Throws声明异常
+                        @Throws(IOException::class)
+                        fun readFile(path: String): String {
+                            return File(path).readText()
+                        }
+                        
+                        // Java调用时，需要处理异常：
+                        // try {
+                        //     String content = UtilsKt.readFile("file.txt");
+                        // } catch (IOException e) {
+                        //     // 处理异常
+                        // }
+                        
+                        // 2. Kotlin调用Java异常
+                        // Java方法可能抛出异常
+                        // public void process() throws IOException {}
+                        
+                        // Kotlin调用
+                        try {
+                            javaObject.process()
+                        } catch (e: IOException) {
+                            // 处理异常
+                        }
+                        
+                        // 3. 运行时异常
+                        // Java可能抛出运行时异常，Kotlin不强制处理
+                        val result = javaObject.process()  // 可能抛出RuntimeException
+                    """.trimIndent(),
+                    explanation = "使用@Throws声明检查异常，让Java代码可以正确处理。Kotlin调用Java时，需要处理可能抛出的异常。"
+                ),
+                CodeExample(
+                    title = "示例5：泛型互操作",
+                    code = """
+                        // 1. 通配符处理
+                        // Java: public void process(List<? extends Number> numbers) {}
+                        
+                        val numbers: List<Number> = listOf(1, 2, 3)
+                        javaObject.process(numbers)
+                        
+                        // 2. 原始类型
+                        // 避免使用原始类型，保持类型安全
+                        // ❌ 不好的做法
+                        val rawList: List = javaObject.getRawList()
+                        
+                        // ✅ 好的做法
+                        val typedList: List<String> = javaObject.getTypedList()
+                        
+                        // 3. 类型投影
+                        fun processList(list: List<out Number>) {
+                            // 只读访问
+                        }
+                        
+                        fun modifyList(list: MutableList<in Number>) {
+                            // 可写访问
+                        }
+                    """.trimIndent(),
+                    explanation = "合理处理Java泛型，避免使用原始类型，保持类型安全。使用类型投影处理通配符。"
+                ),
+                CodeExample(
+                    title = "示例6：性能优化",
+                    code = """
+                        // 1. 避免频繁的Java-Kotlin转换
+                        // ❌ 不好的做法
+                        for (i in 0..1000) {
+                            val result = javaObject.process(i)  // 每次调用都有开销
+                        }
+                        
+                        // ✅ 好的做法
+                        val results = (0..1000).map { i ->
+                            javaObject.process(i)
+                        }
+                        
+                        // 2. 使用内联函数减少开销
+                        inline fun <T> measureTime(block: () -> T): T {
+                            val start = System.currentTimeMillis()
+                            val result = block()
+                            val end = System.currentTimeMillis()
+                            println("Time: ${'$'}{end - start}ms")
+                            return result
+                        }
+                        
+                        // 3. 缓存Java对象
+                        private val cachedJavaObject = JavaObject()
+                        
+                        fun process() {
+                            cachedJavaObject.process()  // 复用对象
+                        }
+                    """.trimIndent(),
+                    explanation = "优化Java-Kotlin互操作性能，避免频繁转换，使用内联函数，缓存Java对象等。"
+                )
+            ),
+            useCases = listOf(
+                "API设计：使用互操作注解提供友好的Java API",
+                "类型安全：正确处理平台类型和泛型",
+                "代码简化：使用SAM转换和方法引用",
+                "异常处理：正确处理Java异常",
+                "性能优化：优化互操作性能"
+            ),
+            keyPoints = listOf(
+                "合理使用互操作注解，提供友好的Java API",
+                "明确处理平台类型，避免NPE",
+                "使用SAM转换和方法引用简化代码",
+                "正确处理Java异常",
+                "优化互操作性能"
+            ),
+            notes = listOf(
+                "平台类型需要明确处理，避免NPE",
+                "SAM转换只适用于单一抽象方法接口",
+                "使用@Throws声明检查异常",
+                "避免使用原始类型，保持类型安全",
+                "合理优化互操作性能"
+            ),
+            practiceTips = "建议：遵循互操作最佳实践，合理使用互操作注解，明确处理平台类型，使用SAM转换简化代码，正确处理异常，优化性能。在混合项目中，注意Kotlin和Java的类型差异，特别是可空性。"
+        ),
+        
+        // ========== Kotlin DSL构建 ==========
+        
+        // 1. DSL基础、带接收者的Lambda、Gradle Kotlin DSL
+        KnowledgeDetail(
+            id = "dsl_basic",
+            title = "DSL基础、带接收者的Lambda、Gradle Kotlin DSL",
+            overview = "DSL（领域特定语言）使用Kotlin的语法特性构建领域特定的API。带接收者的Lambda是构建DSL的核心，允许在Lambda内部使用接收者对象的成员。Gradle Kotlin DSL是DSL的实际应用。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：DSL基础",
+                    code = """
+                        // 1. 什么是DSL
+                        // DSL是领域特定语言，用于特定领域的API设计
+                        // 例如：HTML构建器、SQL构建器、路由配置等
+                        
+                        // 2. 传统方式
+                        val person = Person()
+                        person.name = "Alice"
+                        person.age = 25
+                        person.email = "alice@example.com"
+                        
+                        // 3. DSL方式
+                        val person = person {
+                            name = "Alice"
+                            age = 25
+                            email = "alice@example.com"
+                        }
+                        
+                        // 4. DSL的优势
+                        // - 更接近自然语言
+                        // - 结构清晰
+                        // - 类型安全
+                        // - IDE支持好
+                    """.trimIndent(),
+                    explanation = "DSL是领域特定语言，使用Kotlin语法特性构建领域特定的API，提供更接近自然语言的代码。"
+                ),
+                CodeExample(
+                    title = "示例2：带接收者的Lambda",
+                    code = """
+                        // 1. 带接收者的函数类型
+                        class Person {
+                            var name: String = ""
+                            var age: Int = 0
+                        }
+                        
+                        // 普通Lambda
+                        fun createPerson(block: (Person) -> Unit): Person {
+                            val person = Person()
+                            block(person)
+                            return person
+                        }
+                        
+                        // 使用
+                        val person = createPerson { p ->
+                            p.name = "Alice"
+                            p.age = 25
+                        }
+                        
+                        // 2. 带接收者的Lambda
+                        fun createPerson(block: Person.() -> Unit): Person {
+                            val person = Person()
+                            person.block()  // 在接收者上调用
+                            return person
+                        }
+                        
+                        // 使用（更简洁）
+                        val person = createPerson {
+                            name = "Alice"  // 直接访问，不需要p.
+                            age = 25
+                        }
+                        
+                        // 3. 带接收者的扩展函数
+                        fun Person.configure(block: Person.() -> Unit): Person {
+                            block()
+                            return this
+                        }
+                        
+                        val person = Person().configure {
+                            name = "Alice"
+                            age = 25
+                        }
+                    """.trimIndent(),
+                    explanation = "带接收者的Lambda（T.() -> Unit）是构建DSL的核心，允许在Lambda内部直接访问接收者对象的成员，不需要显式引用。"
+                ),
+                CodeExample(
+                    title = "示例3：HTML构建器",
+                    code = """
+                        // 1. HTML元素类
+                        class HTML {
+                            fun body(init: Body.() -> Unit) {
+                                val body = Body()
+                                body.init()
+                            }
+                        }
+                        
+                        class Body {
+                            fun div(init: Div.() -> Unit) {
+                                val div = Div()
+                                div.init()
+                            }
+                        }
+                        
+                        class Div {
+                            var text: String = ""
+                            fun p(init: P.() -> Unit) {
+                                val p = P()
+                                p.init()
+                            }
+                        }
+                        
+                        class P {
+                            var text: String = ""
+                        }
+                        
+                        // 2. 使用DSL
+                        val html = HTML()
+                        html.body {
+                            div {
+                                text = "Container"
+                                p {
+                                    text = "Hello, World"
+                                }
+                            }
+                        }
+                        
+                        // 3. 更完整的实现
+                        interface Element {
+                            fun render(builder: StringBuilder, indent: String)
+                        }
+                        
+                        class HTML : Element {
+                            private val children = mutableListOf<Element>()
+                            
+                            fun body(init: Body.() -> Unit) {
+                                val body = Body()
+                                body.init()
+                                children.add(body)
+                            }
+                            
+                            override fun render(builder: StringBuilder, indent: String) {
+                                builder.append("<html>\\n")
+                                children.forEach { it.render(builder, indent + "  ") }
+                                builder.append("</html>\\n")
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "HTML构建器是DSL的典型应用，使用带接收者的Lambda构建HTML结构，代码更清晰易读。"
+                ),
+                CodeExample(
+                    title = "示例4：Gradle Kotlin DSL",
+                    code = """
+                        // build.gradle.kts
+                        plugins {
+                            id("com.android.application") version "8.1.0"
+                            kotlin("android") version "1.9.0"
+                        }
+                        
+                        android {
+                            namespace = "com.example.app"
+                            compileSdk = 34
+                            
+                            defaultConfig {
+                                applicationId = "com.example.app"
+                                minSdk = 24
+                                targetSdk = 34
+                                versionCode = 1
+                                versionName = "1.0"
+                            }
+                            
+                            buildTypes {
+                                getByName("release") {
+                                    isMinifyEnabled = true
+                                    proguardFiles(
+                                        getDefaultProguardFile("proguard-android-optimize.txt"),
+                                        "proguard-rules.pro"
+                                    )
+                                }
+                            }
+                        }
+                        
+                        dependencies {
+                            implementation("androidx.core:core-ktx:1.12.0")
+                            implementation("androidx.appcompat:appcompat:1.6.1")
+                        }
+                        
+                        // Gradle Kotlin DSL的优势：
+                        // - 类型安全
+                        // - IDE自动补全
+                        // - 重构支持
+                        // - 更好的错误提示
+                    """.trimIndent(),
+                    explanation = "Gradle Kotlin DSL是DSL的实际应用，使用Kotlin语法配置Gradle构建，提供类型安全、IDE支持等优势。"
+                ),
+                CodeExample(
+                    title = "示例5：路由DSL",
+                    code = """
+                        // 1. 路由DSL
+                        class Router {
+                            private val routes = mutableListOf<Route>()
+                            
+                            fun route(path: String, init: Route.() -> Unit) {
+                                val route = Route(path)
+                                route.init()
+                                routes.add(route)
+                            }
+                        }
+                        
+                        class Route(val path: String) {
+                            var handler: (() -> Unit)? = null
+                            var method: String = "GET"
+                            
+                            fun handler(block: () -> Unit) {
+                                handler = block
+                            }
+                        }
+                        
+                        // 2. 使用DSL
+                        val router = Router()
+                        router.route("/users") {
+                            method = "GET"
+                            handler {
+                                println("Get users")
+                            }
+                        }
+                        
+                        router.route("/users/:id") {
+                            method = "GET"
+                            handler {
+                                println("Get user by id")
+                            }
+                        }
+                        
+                        // 3. 更复杂的DSL
+                        router {
+                            route("/api") {
+                                get("/users") { /* ... */ }
+                                post("/users") { /* ... */ }
+                                put("/users/:id") { /* ... */ }
+                                delete("/users/:id") { /* ... */ }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "路由DSL是DSL的另一个应用，使用带接收者的Lambda构建路由配置，代码更清晰易读。"
+                )
+            ),
+            useCases = listOf(
+                "HTML构建器：使用DSL构建HTML结构",
+                "Gradle配置：使用Gradle Kotlin DSL配置构建",
+                "路由配置：使用DSL配置路由",
+                "SQL构建器：使用DSL构建SQL查询",
+                "测试框架：使用DSL编写测试"
+            ),
+            keyPoints = listOf(
+                "DSL是领域特定语言，使用Kotlin语法特性构建",
+                "带接收者的Lambda（T.() -> Unit）是构建DSL的核心",
+                "Gradle Kotlin DSL是DSL的实际应用",
+                "DSL提供更接近自然语言的代码",
+                "DSL具有类型安全和IDE支持的优势"
+            ),
+            notes = listOf(
+                "带接收者的Lambda允许直接访问接收者对象的成员",
+                "DSL常用于配置、构建器、测试框架等场景",
+                "Gradle Kotlin DSL提供类型安全和IDE支持",
+                "合理使用DSL可以提高代码可读性",
+                "DSL设计需要考虑API的易用性和灵活性"
+            ),
+            practiceTips = "建议：合理使用DSL提高代码可读性，特别是在配置、构建器等场景。使用带接收者的Lambda构建DSL，提供类型安全和IDE支持。注意DSL设计要平衡易用性和灵活性。"
+        ),
+        
+        // 2. 自定义DSL设计
+        KnowledgeDetail(
+            id = "dsl_practice",
+            title = "自定义DSL设计",
+            overview = "自定义DSL设计需要考虑API设计、作用域控制、类型安全、错误处理等方面。合理设计DSL可以提高代码的可读性和可维护性。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：配置DSL",
+                    code = """
+                        // 1. 配置类
+                        class DatabaseConfig {
+                            var host: String = "localhost"
+                            var port: Int = 3306
+                            var username: String = ""
+                            var password: String = ""
+                            var database: String = ""
+                            
+                            fun connection(init: ConnectionConfig.() -> Unit) {
+                                val config = ConnectionConfig()
+                                config.init()
+                                this.host = config.host
+                                this.port = config.port
+                            }
+                        }
+                        
+                        class ConnectionConfig {
+                            var host: String = "localhost"
+                            var port: Int = 3306
+                        }
+                        
+                        // 2. DSL函数
+                        fun database(init: DatabaseConfig.() -> Unit): DatabaseConfig {
+                            val config = DatabaseConfig()
+                            config.init()
+                            return config
+                        }
+                        
+                        // 3. 使用
+                        val config = database {
+                            connection {
+                                host = "192.168.1.1"
+                                port = 5432
+                            }
+                            username = "admin"
+                            password = "secret"
+                            database = "mydb"
+                        }
+                    """.trimIndent(),
+                    explanation = "配置DSL使用带接收者的Lambda构建配置对象，提供清晰的配置结构。"
+                ),
+                CodeExample(
+                    title = "示例2：作用域控制",
+                    code = """
+                        // 1. 使用@DslMarker控制作用域
+                        @DslMarker
+                        annotation class HtmlDsl
+                        
+                        @HtmlDsl
+                        class HTML {
+                            fun body(init: Body.() -> Unit) {
+                                val body = Body()
+                                body.init()
+                            }
+                        }
+                        
+                        @HtmlDsl
+                        class Body {
+                            fun div(init: Div.() -> Unit) {
+                                val div = Div()
+                                div.init()
+                            }
+                        }
+                        
+                        @HtmlDsl
+                        class Div {
+                            fun p(init: P.() -> Unit) {
+                                val p = P()
+                                p.init()
+                            }
+                        }
+                        
+                        // 2. 使用@DslMarker后，不能直接访问外层作用域
+                        html {
+                            body {
+                                div {
+                                    // p { }  // ✅ 可以
+                                    // body { }  // ❌ 错误！不能直接访问外层body
+                                }
+                            }
+                        }
+                        
+                        // 3. 显式访问外层作用域
+                        html {
+                            val outerBody = body {
+                                div {
+                                    outerBody.div { }  // ✅ 可以，显式引用
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "@DslMarker用于控制DSL作用域，防止意外访问外层作用域，提高DSL的类型安全性。"
+                ),
+                CodeExample(
+                    title = "示例3：类型安全",
+                    code = """
+                        // 1. 使用泛型提供类型安全
+                        class QueryBuilder<T> {
+                            private val conditions = mutableListOf<String>()
+                            
+                            fun where(condition: String) {
+                                conditions.add(condition)
+                            }
+                            
+                            fun build(): String {
+                                return "SELECT * FROM ${'$'}T WHERE ${'$'}{conditions.joinToString(" AND ")}"
+                            }
+                        }
+                        
+                        // 2. 类型安全的查询
+                        fun <T> select(init: QueryBuilder<T>.() -> Unit): String {
+                            val builder = QueryBuilder<T>()
+                            builder.init()
+                            return builder.build()
+                        }
+                        
+                        // 使用
+                        val query = select<User> {
+                            where("age > 18")
+                            where("active = true")
+                        }
+                        
+                        // 3. 使用sealed class提供类型安全
+                        sealed class SQLOperator {
+                            object Equals : SQLOperator()
+                            object NotEquals : SQLOperator()
+                            object GreaterThan : SQLOperator()
+                            object LessThan : SQLOperator()
+                        }
+                        
+                        class ConditionBuilder {
+                            fun condition(column: String, operator: SQLOperator, value: Any) {
+                                // 构建条件
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "使用泛型和sealed class提供类型安全，防止DSL使用错误，提高代码的可靠性。"
+                ),
+                CodeExample(
+                    title = "示例4：链式调用",
+                    code = """
+                        // 1. 链式DSL
+                        class RequestBuilder {
+                            private var url: String = ""
+                            private var method: String = "GET"
+                            private val headers = mutableMapOf<String, String>()
+                            
+                            fun url(url: String): RequestBuilder {
+                                this.url = url
+                                return this
+                            }
+                            
+                            fun method(method: String): RequestBuilder {
+                                this.method = method
+                                return this
+                            }
+                            
+                            fun header(name: String, value: String): RequestBuilder {
+                                headers[name] = value
+                                return this
+                            }
+                            
+                            fun build(): Request {
+                                return Request(url, method, headers)
+                            }
+                        }
+                        
+                        // 2. 使用链式调用
+                        val request = RequestBuilder()
+                            .url("https://api.example.com/users")
+                            .method("POST")
+                            .header("Content-Type", "application/json")
+                            .header("Authorization", "Bearer token")
+                            .build()
+                        
+                        // 3. 结合Lambda
+                        fun request(init: RequestBuilder.() -> Unit): Request {
+                            val builder = RequestBuilder()
+                            builder.init()
+                            return builder.build()
+                        }
+                        
+                        val request2 = request {
+                            url = "https://api.example.com/users"
+                            method = "POST"
+                            header("Content-Type", "application/json")
+                            header("Authorization", "Bearer token")
+                        }
+                    """.trimIndent(),
+                    explanation = "链式调用是DSL的另一种形式，提供流畅的API，可以结合Lambda使用。"
+                ),
+                CodeExample(
+                    title = "示例5：错误处理",
+                    code = """
+                        // 1. 验证DSL
+                        class FormBuilder {
+                            private val fields = mutableListOf<Field>()
+                            
+                            fun field(name: String, init: Field.() -> Unit) {
+                                val field = Field(name)
+                                field.init()
+                                fields.add(field)
+                            }
+                            
+                            fun build(): Form {
+                                // 验证
+                                fields.forEach { field ->
+                                    if (field.required && field.value.isBlank()) {
+                                        throw IllegalArgumentException("Field ${'$'}{field.name} is required")
+                                    }
+                                }
+                                return Form(fields)
+                            }
+                        }
+                        
+                        class Field(val name: String) {
+                            var value: String = ""
+                            var required: Boolean = false
+                            var minLength: Int = 0
+                            var maxLength: Int = Int.MAX_VALUE
+                        }
+                        
+                        // 2. 使用
+                        val form = form {
+                            field("name") {
+                                value = "Alice"
+                                required = true
+                                minLength = 3
+                                maxLength = 50
+                            }
+                            field("email") {
+                                value = "alice@example.com"
+                                required = true
+                            }
+                        }.build()
+                        
+                        // 3. 延迟验证
+                        class ValidatedFormBuilder {
+                            private val validators = mutableListOf<() -> Unit>()
+                            
+                            fun validate(block: () -> Unit) {
+                                validators.add(block)
+                            }
+                            
+                            fun build() {
+                                validators.forEach { it() }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "DSL中可以包含验证逻辑，在构建时或使用时进行验证，提供更好的错误处理。"
+                )
+            ),
+            useCases = listOf(
+                "配置管理：使用DSL管理配置",
+                "API构建：使用DSL构建API请求",
+                "表单构建：使用DSL构建表单",
+                "查询构建：使用DSL构建查询",
+                "测试DSL：使用DSL编写测试"
+            ),
+            keyPoints = listOf(
+                "DSL设计需要考虑API的易用性和灵活性",
+                "使用@DslMarker控制作用域，提高类型安全",
+                "使用泛型和sealed class提供类型安全",
+                "链式调用提供流畅的API",
+                "合理处理错误和验证"
+            ),
+            notes = listOf(
+                "@DslMarker防止意外访问外层作用域",
+                "类型安全是DSL设计的重要考虑",
+                "链式调用和Lambda可以结合使用",
+                "错误处理应该在DSL中考虑",
+                "DSL设计要平衡易用性和灵活性"
+            ),
+            practiceTips = "建议：设计DSL时，考虑API的易用性和灵活性，使用@DslMarker控制作用域，提供类型安全，合理处理错误。DSL应该接近自然语言，提供良好的IDE支持。"
+        ),
+        
+        // ========== Kotlin多平台开发（KMM） ==========
+        
+        // 1. KMM基础、共享代码模块、平台特定实现
+        KnowledgeDetail(
+            id = "kmm_basic",
+            title = "KMM基础、共享代码模块、平台特定实现",
+            overview = "Kotlin Multiplatform Mobile（KMM）允许在Android和iOS之间共享代码。共享代码模块包含业务逻辑，平台特定实现处理UI和平台API。KMM提高了代码复用率，减少了维护成本。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：KMM项目结构",
+                    code = """
+                        // 项目结构：
+                        // commonMain/
+                        //   - 共享业务逻辑
+                        //   - 数据模型
+                        //   - 网络请求
+                        // androidMain/
+                        //   - Android特定实现
+                        //   - Android UI
+                        // iosMain/
+                        //   - iOS特定实现
+                        //   - iOS UI
+                        
+                        // build.gradle.kts (commonMain)
+                        kotlin {
+                            android()
+                            ios()
+                            
+                            sourceSets {
+                                val commonMain by getting {
+                                    dependencies {
+                                        // 共享依赖
+                                    }
+                                }
+                                
+                                val androidMain by getting {
+                                    dependencies {
+                                        // Android特定依赖
+                                    }
+                                }
+                                
+                                val iosMain by getting {
+                                    dependencies {
+                                        // iOS特定依赖
+                                    }
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "KMM项目结构包括commonMain（共享代码）、androidMain（Android实现）、iosMain（iOS实现）。"
+                ),
+                CodeExample(
+                    title = "示例2：共享代码模块",
+                    code = """
+                        // commonMain/kotlin/User.kt
+                        data class User(
+                            val id: Int,
+                            val name: String,
+                            val email: String
+                        )
+                        
+                        // commonMain/kotlin/UserRepository.kt
+                        interface UserRepository {
+                            suspend fun getUser(id: Int): User?
+                            suspend fun getUsers(): List<User>
+                            suspend fun saveUser(user: User)
+                        }
+                        
+                        // commonMain/kotlin/UserUseCase.kt
+                        class UserUseCase(private val repository: UserRepository) {
+                            suspend fun getUserById(id: Int): User? {
+                                return repository.getUser(id)
+                            }
+                            
+                            suspend fun getAllUsers(): List<User> {
+                                return repository.getUsers()
+                            }
+                        }
+                        
+                        // commonMain/kotlin/NetworkService.kt
+                        interface NetworkService {
+                            suspend fun fetchData(url: String): String
+                        }
+                    """.trimIndent(),
+                    explanation = "共享代码模块包含数据模型、业务逻辑、接口定义等，可以在Android和iOS之间共享。"
+                ),
+                CodeExample(
+                    title = "示例3：平台特定实现",
+                    code = """
+                        // 1. expect/actual机制
+                        // commonMain/kotlin/Platform.kt
+                        expect class Platform() {
+                            val name: String
+                        }
+                        
+                        // androidMain/kotlin/Platform.android.kt
+                        actual class Platform {
+                            actual val name: String = "Android"
+                        }
+                        
+                        // iosMain/kotlin/Platform.ios.kt
+                        actual class Platform {
+                            actual val name: String = "iOS"
+                        }
+                        
+                        // 2. 使用
+                        // commonMain
+                        fun getPlatformName(): String {
+                            return Platform().name
+                        }
+                        
+                        // 3. 平台特定API
+                        // commonMain/kotlin/FileManager.kt
+                        expect class FileManager {
+                            fun readFile(path: String): String
+                            fun writeFile(path: String, content: String)
+                        }
+                        
+                        // androidMain/kotlin/FileManager.android.kt
+                        import java.io.File
+                        actual class FileManager {
+                            actual fun readFile(path: String): String {
+                                return File(path).readText()
+                            }
+                            
+                            actual fun writeFile(path: String, content: String) {
+                                File(path).writeText(content)
+                            }
+                        }
+                        
+                        // iosMain/kotlin/FileManager.ios.kt
+                        // iOS实现使用iOS API
+                        actual class FileManager {
+                            actual fun readFile(path: String): String {
+                                // iOS实现
+                            }
+                            
+                            actual fun writeFile(path: String, content: String) {
+                                // iOS实现
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "expect/actual机制用于定义平台特定的实现，commonMain定义expect，各平台提供actual实现。"
+                ),
+                CodeExample(
+                    title = "示例4：网络请求",
+                    code = """
+                        // commonMain/kotlin/ApiService.kt
+                        interface ApiService {
+                            suspend fun getUser(id: Int): User
+                        }
+                        
+                        // 使用Ktor（支持KMM）
+                        // commonMain/kotlin/ApiClient.kt
+                        import io.ktor.client.*
+                        import io.ktor.client.call.*
+                        import io.ktor.client.request.*
+                        
+                        class ApiClient {
+                            private val client = HttpClient()
+                            
+                            suspend fun getUser(id: Int): User {
+                                return client.get("https://api.example.com/users/${'$'}id").body()
+                            }
+                        }
+                        
+                        // Ktor支持KMM，可以在commonMain中使用
+                        // 网络引擎由各平台提供：
+                        // - Android: OkHttp
+                        // - iOS: NSURLSession
+                    """.trimIndent(),
+                    explanation = "KMM可以使用Ktor等支持多平台的库进行网络请求，网络引擎由各平台提供。"
+                ),
+                CodeExample(
+                    title = "示例5：数据存储",
+                    code = """
+                        // 1. 使用expect/actual
+                        // commonMain/kotlin/Storage.kt
+                        expect class Storage {
+                            fun save(key: String, value: String)
+                            fun get(key: String): String?
+                        }
+                        
+                        // androidMain/kotlin/Storage.android.kt
+                        import android.content.SharedPreferences
+                        actual class Storage {
+                            private val prefs: SharedPreferences = // ...
+                            
+                            actual fun save(key: String, value: String) {
+                                prefs.edit().putString(key, value).apply()
+                            }
+                            
+                            actual fun get(key: String): String? {
+                                return prefs.getString(key, null)
+                            }
+                        }
+                        
+                        // iosMain/kotlin/Storage.ios.kt
+                        // 使用UserDefaults
+                        actual class Storage {
+                            actual fun save(key: String, value: String) {
+                                // iOS实现
+                            }
+                            
+                            actual fun get(key: String): String? {
+                                // iOS实现
+                            }
+                        }
+                        
+                        // 2. 使用支持KMM的库
+                        // 例如：Multiplatform Settings
+                        // commonMain
+                        val settings = Settings()
+                        settings.putString("key", "value")
+                        val value = settings.getStringOrNull("key")
+                    """.trimIndent(),
+                    explanation = "数据存储可以使用expect/actual机制，或使用支持KMM的库（如Multiplatform Settings）。"
+                )
+            ),
+            useCases = listOf(
+                "业务逻辑共享：在Android和iOS之间共享业务逻辑",
+                "数据模型共享：共享数据模型和API接口",
+                "网络请求：使用Ktor等库共享网络请求代码",
+                "数据存储：使用expect/actual或支持KMM的库",
+                "工具类共享：共享工具类和工具函数"
+            ),
+            keyPoints = listOf(
+                "KMM允许在Android和iOS之间共享代码",
+                "commonMain包含共享业务逻辑",
+                "expect/actual机制用于平台特定实现",
+                "Ktor等库支持KMM，可以在commonMain中使用",
+                "UI和平台API需要在各平台单独实现"
+            ),
+            notes = listOf(
+                "KMM提高了代码复用率，减少了维护成本",
+                "expect/actual是KMM的核心机制",
+                "共享代码不能直接使用平台API",
+                "Ktor、Serialization等库支持KMM",
+                "UI需要在各平台单独实现"
+            ),
+            practiceTips = "建议：使用KMM共享业务逻辑和数据模型，减少重复代码。使用expect/actual机制处理平台特定实现。注意共享代码不能直接使用平台API，需要使用expect/actual或支持KMM的库。UI需要在各平台单独实现。"
+        ),
+        
+        // 2. KMM实践、Compose Multiplatform
+        KnowledgeDetail(
+            id = "kmm_practice",
+            title = "KMM实践、Compose Multiplatform",
+            overview = "KMM实践包括项目结构设计、依赖管理、测试策略等。Compose Multiplatform允许在Android和iOS之间共享UI代码，进一步提高了代码复用率。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：项目结构设计",
+                    code = """
+                        // 推荐的项目结构：
+                        // shared/
+                        //   commonMain/
+                        //     kotlin/
+                        //       data/
+                        //         model/
+                        //         repository/
+                        //       domain/
+                        //         usecase/
+                        //       presentation/
+                        //         viewmodel/
+                        //   androidMain/
+                        //     kotlin/
+                        //       di/
+                        //       platform/
+                        //   iosMain/
+                        //     kotlin/
+                        //       di/
+                        //       platform/
+                        // androidApp/
+                        //   - Android应用
+                        // iosApp/
+                        //   - iOS应用
+                        
+                        // 分层架构：
+                        // - data层：数据模型、Repository实现
+                        // - domain层：业务逻辑、UseCase
+                        // - presentation层：ViewModel（共享状态管理）
+                    """.trimIndent(),
+                    explanation = "KMM项目应该采用清晰的分层架构，将共享代码和平台特定代码分离。"
+                ),
+                CodeExample(
+                    title = "示例2：依赖注入",
+                    code = """
+                        // commonMain/kotlin/DI.kt
+                        // 使用接口定义依赖
+                        interface AppContainer {
+                            val userRepository: UserRepository
+                            val userUseCase: UserUseCase
+                        }
+                        
+                        // androidMain/kotlin/AppContainer.android.kt
+                        class AndroidAppContainer : AppContainer {
+                            override val userRepository: UserRepository = 
+                                AndroidUserRepository()
+                            override val userUseCase: UserUseCase = 
+                                UserUseCase(userRepository)
+                        }
+                        
+                        // iosMain/kotlin/AppContainer.ios.kt
+                        class IOSAppContainer : AppContainer {
+                            override val userRepository: UserRepository = 
+                                IOSUserRepository()
+                            override val userUseCase: UserUseCase = 
+                                UserUseCase(userRepository)
+                        }
+                        
+                        // 使用
+                        // commonMain
+                        class App {
+                            lateinit var container: AppContainer
+                        }
+                        
+                        // androidMain
+                        val app = App()
+                        app.container = AndroidAppContainer()
+                        
+                        // iosMain
+                        val app = App()
+                        app.container = IOSAppContainer()
+                    """.trimIndent(),
+                    explanation = "依赖注入在KMM中通过接口定义，各平台提供具体实现。"
+                ),
+                CodeExample(
+                    title = "示例3：Compose Multiplatform",
+                    code = """
+                        // 1. 添加依赖
+                        // build.gradle.kts
+                        kotlin {
+                            android()
+                            ios()
+                            
+                            sourceSets {
+                                val commonMain by getting {
+                                    dependencies {
+                                        implementation("org.jetbrains.compose.ui:ui:1.5.0")
+                                        implementation("org.jetbrains.compose.runtime:runtime:1.5.0")
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 2. 共享UI组件
+                        // commonMain/kotlin/UserScreen.kt
+                        @Composable
+                        fun UserScreen(user: User) {
+                            Column {
+                                Text("Name: ${'$'}{user.name}")
+                                Text("Email: ${'$'}{user.email}")
+                            }
+                        }
+                        
+                        // 3. 平台特定UI
+                        // commonMain
+                        @Composable
+                        expect fun PlatformButton(
+                            text: String,
+                            onClick: () -> Unit
+                        )
+                        
+                        // androidMain
+                        @Composable
+                        actual fun PlatformButton(
+                            text: String,
+                            onClick: () -> Unit
+                        ) {
+                            Button(onClick = onClick) {
+                                Text(text)
+                            }
+                        }
+                        
+                        // iosMain
+                        @Composable
+                        actual fun PlatformButton(
+                            text: String,
+                            onClick: () -> Unit
+                        ) {
+                            // iOS实现
+                        }
+                        
+                        // 4. 使用
+                        @Composable
+                        fun App() {
+                            UserScreen(user = User(1, "Alice", "alice@example.com"))
+                        }
+                    """.trimIndent(),
+                    explanation = "Compose Multiplatform允许在Android和iOS之间共享UI代码，使用expect/actual处理平台特定UI。"
+                ),
+                CodeExample(
+                    title = "示例4：状态管理",
+                    code = """
+                        // commonMain/kotlin/UserViewModel.kt
+                        class UserViewModel(
+                            private val userUseCase: UserUseCase
+                        ) {
+                            private val _users = MutableStateFlow<List<User>>(emptyList())
+                            val users: StateFlow<List<User>> = _users.asStateFlow()
+                            
+                            private val _loading = MutableStateFlow(false)
+                            val loading: StateFlow<Boolean> = _loading.asStateFlow()
+                            
+                            fun loadUsers() {
+                                viewModelScope.launch {
+                                    _loading.value = true
+                                    try {
+                                        val users = userUseCase.getAllUsers()
+                                        _users.value = users
+                                    } finally {
+                                        _loading.value = false
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 在Compose中使用
+                        @Composable
+                        fun UserListScreen(viewModel: UserViewModel) {
+                            val users by viewModel.users.collectAsState()
+                            val loading by viewModel.loading.collectAsState()
+                            
+                            if (loading) {
+                                CircularProgressIndicator()
+                            } else {
+                                LazyColumn {
+                                    items(users) { user ->
+                                        UserItem(user = user)
+                                    }
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "状态管理可以在commonMain中共享，使用StateFlow等响应式API，在Compose中通过collectAsState使用。"
+                ),
+                CodeExample(
+                    title = "示例5：测试策略",
+                    code = """
+                        // 1. 共享测试
+                        // commonTest/kotlin/UserUseCaseTest.kt
+                        class UserUseCaseTest {
+                            @Test
+                            fun testGetUser() {
+                                val repository = MockUserRepository()
+                                val useCase = UserUseCase(repository)
+                                
+                                runTest {
+                                    val user = useCase.getUserById(1)
+                                    assertNotNull(user)
+                                }
+                            }
+                        }
+                        
+                        // 2. 平台特定测试
+                        // androidTest/kotlin/AndroidUserRepositoryTest.kt
+                        class AndroidUserRepositoryTest {
+                            @Test
+                            fun testSaveUser() {
+                                // Android特定测试
+                            }
+                        }
+                        
+                        // 3. 使用Mock
+                        class MockUserRepository : UserRepository {
+                            private val users = mutableMapOf<Int, User>()
+                            
+                            override suspend fun getUser(id: Int): User? {
+                                return users[id]
+                            }
+                            
+                            override suspend fun saveUser(user: User) {
+                                users[user.id] = user
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "KMM测试策略包括共享测试（commonTest）和平台特定测试，使用Mock进行单元测试。"
+                )
+            ),
+            useCases = listOf(
+                "UI共享：使用Compose Multiplatform共享UI代码",
+                "状态管理：共享ViewModel和状态管理逻辑",
+                "业务逻辑：共享业务逻辑和UseCase",
+                "数据层：共享数据模型和Repository接口",
+                "测试：共享测试代码，减少重复"
+            ),
+            keyPoints = listOf(
+                "KMM项目应该采用清晰的分层架构",
+                "依赖注入通过接口定义，各平台提供实现",
+                "Compose Multiplatform允许共享UI代码",
+                "状态管理可以在commonMain中共享",
+                "测试策略包括共享测试和平台特定测试"
+            ),
+            notes = listOf(
+                "Compose Multiplatform进一步提高了代码复用率",
+                "UI共享需要处理平台差异",
+                "状态管理使用StateFlow等响应式API",
+                "测试可以使用Mock进行单元测试",
+                "合理设计项目结构可以提高可维护性"
+            ),
+            practiceTips = "建议：使用KMM共享业务逻辑和UI代码，采用清晰的分层架构。使用Compose Multiplatform共享UI，注意处理平台差异。合理设计依赖注入和测试策略，提高代码的可维护性。"
         )
     )
 }
