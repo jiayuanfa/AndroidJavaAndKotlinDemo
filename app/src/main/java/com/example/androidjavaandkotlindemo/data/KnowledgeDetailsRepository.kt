@@ -6388,6 +6388,465 @@ object KnowledgeDetailsRepository {
                 "使用asSequence将集合转换为Sequence"
             ),
             practiceTips = "建议：对于大数据集或只需要少量结果的操作，使用Sequence提高性能。对于小数据集，List可能更快。使用Sequence处理文件、数据库查询等场景。注意Sequence是延迟计算的，终端操作才会触发计算。"
+        ),
+        
+        // ========== Kotlin 空安全（Null Safety） ==========
+        
+        // 1. 可空类型声明、安全调用操作符、Elvis操作符
+        KnowledgeDetail(
+            id = "nullable_types",
+            title = "可空类型声明、安全调用操作符、Elvis操作符",
+            overview = "Kotlin的空安全机制是编译时的空指针保护。理解可空类型、安全调用操作符、Elvis操作符等是掌握Kotlin空安全的关键。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：可空类型声明",
+                    code = """
+                        // Kotlin中类型默认是非空的
+                        
+                        // 1. 非空类型（默认）
+                        var name: String = "Hello"
+                        // name = null  // ❌ 编译错误！非空类型不能为null
+                        
+                        // 2. 可空类型（使用?）
+                        var nullableName: String? = "Hello"
+                        nullableName = null  // ✅ 可以
+                        
+                        // 3. 可空类型必须显式声明
+                        var age: Int? = null
+                        var price: Double? = null
+                        var isActive: Boolean? = null
+                        
+                        // 4. 可空类型的使用限制
+                        var text: String? = "Hello"
+                        // val length = text.length  // ❌ 错误！可空类型不能直接调用方法
+                        
+                        // 5. 类型推断
+                        val inferred = null  // 推断为Nothing?
+                        val inferred2: String? = null  // 显式声明为String?
+                    """.trimIndent(),
+                    explanation = "Kotlin中类型默认是非空的，不能为null。使用?声明可空类型，可空类型可以赋值为null。可空类型不能直接调用方法。"
+                ),
+                CodeExample(
+                    title = "示例2：安全调用操作符（?.）",
+                    code = """
+                        // 安全调用操作符：如果对象为null，返回null而不是抛出异常
+                        
+                        var name: String? = "Hello"
+                        
+                        // 1. 安全调用
+                        val length = name?.length  // Int?类型
+                        println(length)  // 5
+                        
+                        name = null
+                        val length2 = name?.length  // null，不会抛出异常
+                        println(length2)  // null
+                        
+                        // 2. 安全调用链
+                        class Address(val street: String?)
+                        class Person(val address: Address?)
+                        
+                        val person: Person? = Person(Address("Main St"))
+                        val street = person?.address?.street  // String?
+                        println(street)  // "Main St"
+                        
+                        val person2: Person? = null
+                        val street2 = person2?.address?.street  // null，不会抛出异常
+                        
+                        // 3. 安全调用与let
+                        name?.let {
+                            println("Name is ${'$'}it")  // 只在name不为null时执行
+                        }
+                        
+                        // 4. 安全调用与also
+                        name?.also {
+                            println("Processing: ${'$'}it")
+                        }
+                    """.trimIndent(),
+                    explanation = "安全调用操作符?.在对象为null时返回null而不是抛出异常。可以链式调用，形成安全调用链。可以与let、also等作用域函数结合使用。"
+                ),
+                CodeExample(
+                    title = "示例3：Elvis操作符（?:）",
+                    code = """
+                        // Elvis操作符：如果左侧为null，返回右侧的值
+                        
+                        // 1. 基本用法
+                        val name: String? = null
+                        val displayName = name ?: "Unknown"  // "Unknown"
+                        
+                        val name2: String? = "Alice"
+                        val displayName2 = name2 ?: "Unknown"  // "Alice"
+                        
+                        // 2. 链式使用
+                        val person: Person? = null
+                        val street = person?.address?.street ?: "No address"
+                        
+                        // 3. 抛出异常
+                        val name3: String? = null
+                        val required = name3 ?: throw IllegalArgumentException("Name is required")
+                        
+                        // 4. 返回
+                        fun getName(): String {
+                            val name: String? = getNullableName()
+                            return name ?: return "Default"
+                        }
+                        
+                        // 5. 复杂表达式
+                        val result = nullableValue?.process() ?: defaultValue
+                        val length = text?.length ?: 0
+                    """.trimIndent(),
+                    explanation = "Elvis操作符?:在左侧为null时返回右侧的值。可以用于提供默认值、抛出异常、返回等场景。"
+                ),
+                CodeExample(
+                    title = "示例4：非空断言操作符（!!）",
+                    code = """
+                        // 非空断言：强制认为值不为null，如果为null会抛出异常
+                        
+                        // 1. 基本用法
+                        val name: String? = "Hello"
+                        val length = name!!.length  // ✅ 可以，name不为null
+                        
+                        val name2: String? = null
+                        // val length2 = name2!!.length  // ❌ 运行时抛出KotlinNullPointerException
+                        
+                        // 2. 使用场景（谨慎使用）
+                        // 只有在确定值不为null时才使用!!
+                        fun processName(name: String?) {
+                            if (name != null) {
+                                val length = name!!.length  // 可以使用，但不推荐
+                                // 更好的方式：使用智能转换
+                                val length2 = name.length  // 智能转换，不需要!!
+                            }
+                        }
+                        
+                        // 3. 智能转换
+                        fun processName2(name: String?) {
+                            if (name != null) {
+                                // 在if块内，name自动转换为非空类型
+                                val length = name.length  // ✅ 不需要!!
+                            }
+                        }
+                        
+                        // 4. 避免使用!!
+                        // 优先使用安全调用和Elvis操作符
+                        val length = name?.length ?: 0  // ✅ 推荐
+                        // val length = name!!.length  // ❌ 不推荐
+                    """.trimIndent(),
+                    explanation = "非空断言操作符!!强制认为值不为null，如果为null会抛出异常。应该谨慎使用，优先使用安全调用和Elvis操作符。Kotlin的智能转换可以自动转换类型。"
+                ),
+                CodeExample(
+                    title = "示例5：空安全操作符组合",
+                    code = """
+                        // 1. 安全调用 + Elvis
+                        val person: Person? = null
+                        val street = person?.address?.street ?: "Unknown"
+                        
+                        // 2. 安全调用 + let
+                        val name: String? = "Alice"
+                        name?.let {
+                            println("Name: ${'$'}it")
+                            processName(it)  // it是非空的
+                        }
+                        
+                        // 3. 多个可空值处理
+                        val name: String? = "Alice"
+                        val age: Int? = 25
+                        
+                        if (name != null && age != null) {
+                            // 在if块内，name和age都是非空的
+                            println("${'$'}name is ${'$'}age years old")
+                        }
+                        
+                        // 4. 使用when处理可空值
+                        val value: String? = getValue()
+                        when (value) {
+                            null -> println("Value is null")
+                            else -> println("Value is ${'$'}value")
+                        }
+                        
+                        // 5. 可空类型与集合
+                        val list: List<String?> = listOf("a", null, "b", null, "c")
+                        val nonNull = list.filterNotNull()  // [a, b, c]
+                        val lengths = list.mapNotNull { it?.length }  // [1, 1, 1]
+                    """.trimIndent(),
+                    explanation = "可以组合使用安全调用、Elvis操作符、let等处理可空值。Kotlin的智能转换可以在条件检查后自动转换类型。集合操作符可以处理可空类型。"
+                )
+            ),
+            useCases = listOf(
+                "API响应处理：使用可空类型处理可能缺失的数据字段",
+                "默认值：使用Elvis操作符提供默认值",
+                "条件执行：使用安全调用和let在值不为null时执行代码",
+                "数据验证：使用可空类型表示可选或未初始化的数据",
+                "链式调用：使用安全调用链处理嵌套的可空对象"
+            ),
+            keyPoints = listOf(
+                "Kotlin中类型默认是非空的，使用?声明可空类型",
+                "安全调用操作符?.在对象为null时返回null",
+                "Elvis操作符?:在左侧为null时返回右侧的值",
+                "非空断言!!强制认为值不为null，应该谨慎使用",
+                "Kotlin的智能转换可以自动转换类型"
+            ),
+            notes = listOf(
+                "可空类型不能直接调用方法，需要使用安全调用",
+                "安全调用可以链式调用，形成安全调用链",
+                "Elvis操作符可以用于提供默认值、抛出异常等",
+                "非空断言!!如果值为null会抛出异常",
+                "优先使用安全调用和Elvis操作符，避免使用非空断言"
+            ),
+            practiceTips = "建议：优先使用安全调用操作符和Elvis操作符处理可空值，避免使用非空断言。利用Kotlin的智能转换自动转换类型。在API响应处理中，使用可空类型表示可能缺失的字段。"
+        ),
+        
+        // 2. 空安全实践、平台类型处理
+        KnowledgeDetail(
+            id = "null_safety_practice",
+            title = "空安全实践、平台类型处理",
+            overview = "在实际开发中，正确处理可空类型和平台类型是编写健壮代码的关键。理解空安全的最佳实践和平台类型处理有助于编写更安全的代码。",
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：空安全最佳实践",
+                    code = """
+                        // 1. 优先使用不可空类型
+                        fun processName(name: String) {  // 非空类型
+                            println(name.length)
+                        }
+                        
+                        // 2. 只在确实需要时才使用可空类型
+                        fun findUser(id: String): User? {  // 可能找不到，返回可空
+                            return users.find { it.id == id }
+                        }
+                        
+                        // 3. 使用安全调用和Elvis操作符
+                        val user = findUser("123")
+                        val name = user?.name ?: "Unknown"
+                        
+                        // 4. 使用let处理可空值
+                        user?.let {
+                            println("User: ${'$'}{it.name}")
+                            processUser(it)
+                        }
+                        
+                        // 5. 使用when处理可空值
+                        when (val user = findUser("123")) {
+                            null -> println("User not found")
+                            else -> println("User: ${'$'}{user.name}")
+                        }
+                        
+                        // 6. 避免使用非空断言
+                        // val name = user!!.name  // ❌ 不推荐
+                        val name = user?.name ?: "Unknown"  // ✅ 推荐
+                    """.trimIndent(),
+                    explanation = "空安全最佳实践包括：优先使用不可空类型、使用安全调用和Elvis操作符、使用let和when处理可空值、避免使用非空断言。"
+                ),
+                CodeExample(
+                    title = "示例2：平台类型（Platform Types）",
+                    code = """
+                        // 平台类型：从Java代码返回的类型，Kotlin不知道是否可空
+                        
+                        // 1. Java方法返回平台类型
+                        // Java代码：
+                        // public String getName() { return name; }
+                        // 
+                        // Kotlin中调用：
+                        // val name = javaObject.getName()  // 平台类型String!
+                        // name.length  // ⚠️ 可能抛出NullPointerException
+                        
+                        // 2. 处理平台类型
+                        // 方式1：显式声明类型
+                        // val name: String? = javaObject.getName()  // 声明为可空
+                        // val length = name?.length ?: 0
+                        
+                        // 方式2：使用Elvis操作符
+                        // val name = javaObject.getName() ?: "Default"
+                        
+                        // 方式3：使用非空断言（如果确定不为null）
+                        // val name = javaObject.getName()!!
+                        
+                        // 3. Android中的平台类型
+                        // findViewById返回平台类型
+                        // val textView = findViewById<TextView>(R.id.textView)  // TextView!
+                        // textView?.text = "Hello"  // 使用安全调用
+                        
+                        // 4. 注解平台类型
+                        // 在Java代码中使用@Nullable和@NonNull注解
+                        // @Nullable
+                        // public String getName() { ... }
+                        // 
+                        // Kotlin会识别注解：
+                        // val name: String? = javaObject.getName()  // 自动识别为可空
+                        
+                        // @NonNull
+                        // public String getRequiredName() { ... }
+                        // 
+                        // val name: String = javaObject.getRequiredName()  // 自动识别为非空
+                    """.trimIndent(),
+                    explanation = "平台类型是从Java代码返回的类型，Kotlin不知道是否可空。应该显式声明类型或使用注解。Android的findViewById返回平台类型，需要使用安全调用。"
+                ),
+                CodeExample(
+                    title = "示例3：空安全在Android中的应用",
+                    code = """
+                        // 1. View的findViewById
+                        // val textView = findViewById<TextView>(R.id.textView)  // TextView!
+                        // textView?.text = "Hello"  // 使用安全调用
+                        // 
+                        // 或者使用ViewBinding
+                        // binding.textView.text = "Hello"  // 非空类型
+                        
+                        // 2. 数据类中的可空字段
+                        data class User(
+                            val id: String,
+                            val name: String,
+                            val email: String?  // 可空，可能没有邮箱
+                        )
+                        
+                        val user = User("1", "Alice", null)
+                        val displayEmail = user.email ?: "No email"
+                        
+                        // 3. API响应处理
+                        data class ApiResponse(
+                            val success: Boolean,
+                            val data: UserData?,
+                            val error: String?
+                        )
+                        
+                        fun handleResponse(response: ApiResponse) {
+                            when {
+                                response.success && response.data != null -> {
+                                    processData(response.data)
+                                }
+                                response.error != null -> {
+                                    showError(response.error)
+                                }
+                                else -> {
+                                    showError("Unknown error")
+                                }
+                            }
+                        }
+                        
+                        // 4. 数据库查询
+                        // @Query("SELECT * FROM users WHERE id = :id")
+                        // suspend fun getUserById(id: String): User?  // 可能找不到
+                        
+                        // val user = getUserById("123")
+                        // user?.let {
+                        //     displayUser(it)
+                        // } ?: showNotFound()
+                    """.trimIndent(),
+                    explanation = "在Android开发中，空安全用于处理findViewById、数据类字段、API响应、数据库查询等场景。合理使用可空类型可以提高代码的健壮性。"
+                ),
+                CodeExample(
+                    title = "示例4：空安全工具函数",
+                    code = """
+                        // 1. 扩展函数处理可空值
+                        fun String?.orEmpty(): String {
+                            return this ?: ""
+                        }
+                        
+                        val nullable: String? = null
+                        val result = nullable.orEmpty()  // ""
+                        
+                        // 2. 扩展函数检查可空
+                        fun String?.isNullOrBlank(): Boolean {
+                            return this == null || this.isBlank()
+                        }
+                        
+                        val text: String? = null
+                        if (text.isNullOrBlank()) {
+                            println("Text is null or blank")
+                        }
+                        
+                        // 3. 安全转换
+                        fun <T> safeCast(value: Any?): T? {
+                            return value as? T
+                        }
+                        
+                        val obj: Any? = "Hello"
+                        val str: String? = safeCast<String>(obj)
+                        
+                        // 4. 可空集合处理
+                        fun <T> List<T?>.filterNotNull(): List<T> {
+                            return this.filterNotNull()
+                        }
+                        
+                        val list = listOf(1, null, 2, null, 3)
+                        val nonNull = list.filterNotNull()  // [1, 2, 3]
+                        
+                        // 5. 可空值验证
+                        fun <T> T?.requireNotNull(): T {
+                            return this ?: throw IllegalArgumentException("Value is null")
+                        }
+                        
+                        val value: String? = "Hello"
+                        val nonNullValue = value.requireNotNull()  // "Hello"
+                    """.trimIndent(),
+                    explanation = "可以创建扩展函数和工具函数处理可空值，如orEmpty、isNullOrBlank、safeCast等。这些函数可以简化可空值的处理。"
+                ),
+                CodeExample(
+                    title = "示例5：空安全实践总结",
+                    code = """
+                        // 1. 设计API时考虑空安全
+                        // 返回可空类型表示可能不存在
+                        fun findUser(id: String): User? {
+                            return users.find { it.id == id }
+                        }
+                        
+                        // 返回非空类型表示一定存在
+                        fun getUser(id: String): User {
+                            return users.find { it.id == id } 
+                                ?: throw IllegalArgumentException("User not found")
+                        }
+                        
+                        // 2. 处理集合中的可空值
+                        val list: List<String?> = listOf("a", null, "b")
+                        val nonNull = list.filterNotNull()  // [a, b]
+                        val lengths = list.mapNotNull { it?.length }  // [1, 1]
+                        
+                        // 3. 链式安全调用
+                        val person: Person? = null
+                        val street = person?.address?.street?.uppercase() ?: "Unknown"
+                        
+                        // 4. 使用let简化代码
+                        person?.let {
+                            println("Name: ${'$'}{it.name}")
+                            println("Age: ${'$'}{it.age}")
+                        }
+                        
+                        // 5. 使用when处理可空值
+                        when (val user = findUser("123")) {
+                            null -> handleNotFound()
+                            else -> handleUser(user)
+                        }
+                        
+                        // 6. 避免常见的空安全错误
+                        // ❌ 错误：使用非空断言
+                        // val name = user!!.name
+                        
+                        // ✅ 正确：使用安全调用和Elvis
+                        // val name = user?.name ?: "Unknown"
+                    """.trimIndent(),
+                    explanation = "空安全实践总结：设计API时考虑空安全、处理集合中的可空值、使用链式安全调用、使用let和when简化代码、避免使用非空断言。"
+                )
+            ),
+            useCases = listOf(
+                "API设计：使用可空类型表示可能不存在的数据",
+                "Android开发：处理findViewById、数据绑定等平台类型",
+                "数据验证：使用可空类型表示可选或未初始化的数据",
+                "错误处理：使用可空类型和Elvis操作符处理错误情况",
+                "代码简化：使用let、when等简化可空值处理"
+            ),
+            keyPoints = listOf(
+                "优先使用不可空类型，只在确实需要时使用可空类型",
+                "平台类型是从Java返回的类型，需要显式处理",
+                "使用安全调用和Elvis操作符处理可空值",
+                "使用let、when等简化可空值处理",
+                "避免使用非空断言，优先使用安全的方式"
+            ),
+            notes = listOf(
+                "平台类型在Kotlin中显示为String!，需要显式处理",
+                "可以使用@Nullable和@NonNull注解帮助Kotlin识别类型",
+                "Android的findViewById返回平台类型，需要使用安全调用",
+                "集合操作符可以处理可空类型（filterNotNull、mapNotNull）",
+                "合理使用可空类型可以提高代码的健壮性"
+            ),
+            practiceTips = "建议：优先使用不可空类型，只在确实需要时使用可空类型。处理平台类型时显式声明类型或使用注解。在Android开发中，使用ViewBinding可以避免findViewById的平台类型问题。合理使用安全调用、Elvis操作符、let、when等处理可空值。"
         )
     )
 }
