@@ -6809,6 +6809,870 @@ object AndroidDetailRepository {
                 "ViewModel、LiveData等都是生命周期感知的组件"
             ),
             practiceTips = "建议使用生命周期感知组件管理资源，在合适的生命周期阶段自动执行操作。在Fragment中使用viewLifecycleOwner，它的生命周期与Fragment视图绑定。创建生命周期感知的自定义组件，自动管理资源。注意生命周期状态和事件的区别，状态是持续的状态，事件是瞬间的事件。"
+        ),
+        
+        // ========== 权限管理 ==========
+        
+        KnowledgeDetail(
+            id = "permission_system",
+            title = "权限系统（普通权限、危险权限）",
+            overview = "Android权限系统用于保护用户隐私和设备安全。理解权限的类型和申请机制是Android开发的基础。Android 6.0+引入了运行时权限，需要动态申请危险权限。",
+            keyPoints = listOf(
+                "普通权限：系统自动授予，无需用户确认，如INTERNET、ACCESS_NETWORK_STATE",
+                "危险权限：需要用户确认，如CAMERA、READ_EXTERNAL_STORAGE、ACCESS_FINE_LOCATION",
+                "权限组：危险权限按组分类，申请组内任一权限，组内其他权限自动授予",
+                "权限声明：在AndroidManifest.xml中声明权限",
+                "运行时权限：Android 6.0+需要运行时申请危险权限",
+                "权限状态：检查权限是否已授予，处理权限被拒绝的情况"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：权限类型和声明",
+                    code = """
+                        // AndroidManifest.xml
+                        <manifest>
+                            <!-- 普通权限：系统自动授予 -->
+                            <uses-permission android:name="android.permission.INTERNET" />
+                            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+                            <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+                            
+                            <!-- 危险权限：需要运行时申请 -->
+                            <uses-permission android:name="android.permission.CAMERA" />
+                            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+                            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+                            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+                            <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+                            <uses-permission android:name="android.permission.RECORD_AUDIO" />
+                            <uses-permission android:name="android.permission.READ_CONTACTS" />
+                            <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+                            
+                            <!-- Android 13+ 细粒度媒体权限 -->
+                            <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+                            <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+                            <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+                        </manifest>
+                        
+                        // 权限组说明：
+                        // - CALENDAR: READ_CALENDAR, WRITE_CALENDAR
+                        // - CAMERA: CAMERA
+                        // - CONTACTS: READ_CONTACTS, WRITE_CONTACTS, GET_ACCOUNTS
+                        // - LOCATION: ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION
+                        // - MICROPHONE: RECORD_AUDIO
+                        // - PHONE: READ_PHONE_STATE, CALL_PHONE, etc.
+                        // - SENSORS: BODY_SENSORS (Android 6.0+)
+                        // - SMS: SEND_SMS, RECEIVE_SMS, etc.
+                        // - STORAGE: READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE (Android 12及以下)
+                    """.trimIndent(),
+                    explanation = "普通权限系统自动授予，危险权限需要运行时申请。权限在AndroidManifest.xml中声明，危险权限按组分类，申请组内任一权限，组内其他权限自动授予。"
+                ),
+                CodeExample(
+                    title = "示例2：检查权限状态",
+                    code = """
+                        class PermissionChecker(private val context: Context) {
+                            
+                            // 检查单个权限
+                            fun isPermissionGranted(permission: String): Boolean {
+                                return ContextCompat.checkSelfPermission(
+                                    context,
+                                    permission
+                                ) == PackageManager.PERMISSION_GRANTED
+                            }
+                            
+                            // 检查多个权限
+                            fun checkPermissions(permissions: Array<String>): Map<String, Boolean> {
+                                return permissions.associateWith { permission ->
+                                    isPermissionGranted(permission)
+                                }
+                            }
+                            
+                            // 检查权限组
+                            fun checkPermissionGroup(permissions: Array<String>): Boolean {
+                                return permissions.all { isPermissionGranted(it) }
+                            }
+                            
+                            // 检查是否应该显示权限说明
+                            fun shouldShowRequestPermissionRationale(
+                                activity: Activity,
+                                permission: String
+                            ): Boolean {
+                                return ActivityCompat.shouldShowRequestPermissionRationale(
+                                    activity,
+                                    permission
+                                )
+                            }
+                        }
+                        
+                        // 使用示例
+                        class MainActivity : AppCompatActivity() {
+                            private val permissionChecker = PermissionChecker(this)
+                            
+                            fun checkCameraPermission() {
+                                val hasPermission = permissionChecker.isPermissionGranted(
+                                    Manifest.permission.CAMERA
+                                )
+                                
+                                if (hasPermission) {
+                                    // 权限已授予，可以使用相机
+                                    openCamera()
+                                } else {
+                                    // 权限未授予，需要申请
+                                    requestCameraPermission()
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "使用ContextCompat.checkSelfPermission检查权限是否已授予。使用shouldShowRequestPermissionRationale检查是否应该显示权限说明（用户之前拒绝过）。"
+                ),
+                CodeExample(
+                    title = "示例3：权限组和自动授予",
+                    code = """
+                        // 权限组说明
+                        // 当用户授予组内任一权限时，组内其他权限也会自动授予
+                        
+                        class PermissionGroupExample {
+                            
+                            // 位置权限组
+                            val locationPermissions = arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                            
+                            // 存储权限组（Android 12及以下）
+                            val storagePermissions = arrayOf(
+                                Manifest.permission.READ_EXTERNAL_STORAGE,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                            )
+                            
+                            // 相机权限组（只有一个权限）
+                            val cameraPermission = arrayOf(
+                                Manifest.permission.CAMERA
+                            )
+                            
+                            // 申请位置权限
+                            fun requestLocationPermission(activity: Activity) {
+                                // 只需要申请组内任一权限
+                                ActivityCompat.requestPermissions(
+                                    activity,
+                                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                                    REQUEST_CODE_LOCATION
+                                )
+                                // 如果用户授予ACCESS_FINE_LOCATION，
+                                // ACCESS_COARSE_LOCATION也会自动授予
+                            }
+                        }
+                        
+                        // 注意：Android 13+ 存储权限变化
+                        // - READ_EXTERNAL_STORAGE 被细粒度权限替代
+                        // - READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_AUDIO
+                    """.trimIndent(),
+                    explanation = "危险权限按组分类，申请组内任一权限，组内其他权限会自动授予。Android 13+对存储权限进行了细分，使用细粒度媒体权限。"
+                )
+            ),
+            useCases = listOf(
+                "功能访问：申请权限访问设备功能（相机、位置、存储等）",
+                "隐私保护：保护用户隐私，只在需要时申请权限",
+                "权限检查：检查权限状态，根据状态执行相应操作",
+                "用户体验：合理申请权限，提供权限说明，提升用户体验",
+                "兼容性：处理不同Android版本的权限差异"
+            ),
+            notes = listOf(
+                "普通权限系统自动授予，无需用户确认",
+                "危险权限需要运行时申请，用户可以选择授予或拒绝",
+                "权限按组分类，申请组内任一权限，组内其他权限自动授予",
+                "Android 6.0+需要运行时申请危险权限",
+                "Android 13+对存储权限进行了细分，使用细粒度媒体权限",
+                "权限在AndroidManifest.xml中声明，但声明不等于授予",
+                "使用shouldShowRequestPermissionRationale检查是否应该显示权限说明"
+            ),
+            practiceTips = "建议只在需要时申请权限，不要一次性申请所有权限。提供权限说明，解释为什么需要权限。检查权限状态，根据状态执行相应操作。处理权限被拒绝的情况，提供替代方案。注意不同Android版本的权限差异，特别是Android 13+的存储权限变化。"
+        ),
+        
+        KnowledgeDetail(
+            id = "permission_request",
+            title = "权限请求（运行时权限）",
+            overview = "运行时权限是Android 6.0+引入的权限机制，需要在运行时动态申请危险权限。理解权限请求的流程和最佳实践是Android开发的重要技能。",
+            keyPoints = listOf(
+                "权限请求流程：检查权限 -> 申请权限 -> 处理结果",
+                "Activity权限请求：在Activity中使用requestPermissions申请权限",
+                "Fragment权限请求：在Fragment中使用requestPermissions申请权限",
+                "权限结果处理：在onRequestPermissionsResult中处理权限结果",
+                "权限说明：使用shouldShowRequestPermissionRationale显示权限说明",
+                "权限库：使用权限请求库简化权限处理"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Activity权限请求",
+                    code = """
+                        class MainActivity : AppCompatActivity() {
+                            
+                            companion object {
+                                private const val REQUEST_CODE_CAMERA = 1001
+                                private const val REQUEST_CODE_LOCATION = 1002
+                            }
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                // 检查并申请相机权限
+                                checkAndRequestCameraPermission()
+                            }
+                            
+                            private fun checkAndRequestCameraPermission() {
+                                when {
+                                    ContextCompat.checkSelfPermission(
+                                        this,
+                                        Manifest.permission.CAMERA
+                                    ) == PackageManager.PERMISSION_GRANTED -> {
+                                        // 权限已授予
+                                        openCamera()
+                                    }
+                                    
+                                    ActivityCompat.shouldShowRequestPermissionRationale(
+                                        this,
+                                        Manifest.permission.CAMERA
+                                    ) -> {
+                                        // 用户之前拒绝过，显示说明
+                                        showPermissionRationale(
+                                            "需要相机权限来拍照",
+                                            { requestCameraPermission() }
+                                        )
+                                    }
+                                    
+                                    else -> {
+                                        // 首次申请或用户选择了"不再询问"
+                                        requestCameraPermission()
+                                    }
+                                }
+                            }
+                            
+                            private fun requestCameraPermission() {
+                                ActivityCompat.requestPermissions(
+                                    this,
+                                    arrayOf(Manifest.permission.CAMERA),
+                                    REQUEST_CODE_CAMERA
+                                )
+                            }
+                            
+                            override fun onRequestPermissionsResult(
+                                requestCode: Int,
+                                permissions: Array<out String>,
+                                grantResults: IntArray
+                            ) {
+                                super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+                                
+                                when (requestCode) {
+                                    REQUEST_CODE_CAMERA -> {
+                                        if (grantResults.isNotEmpty() &&
+                                            grantResults[0] == PackageManager.PERMISSION_GRANTED
+                                        ) {
+                                            // 权限已授予
+                                            openCamera()
+                                        } else {
+                                            // 权限被拒绝
+                                            handlePermissionDenied()
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            private fun openCamera() {
+                                // 打开相机
+                            }
+                            
+                            private fun handlePermissionDenied() {
+                                // 处理权限被拒绝的情况
+                                Toast.makeText(
+                                    this,
+                                    "需要相机权限才能使用此功能",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            
+                            private fun showPermissionRationale(
+                                message: String,
+                                onConfirm: () -> Unit
+                            ) {
+                                AlertDialog.Builder(this)
+                                    .setTitle("需要权限")
+                                    .setMessage(message)
+                                    .setPositiveButton("确定") { _, _ -> onConfirm() }
+                                    .setNegativeButton("取消", null)
+                                    .show()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "在Activity中申请权限的流程：检查权限状态 -> 显示权限说明（如果需要） -> 申请权限 -> 在onRequestPermissionsResult中处理结果。"
+                ),
+                CodeExample(
+                    title = "示例2：Fragment权限请求",
+                    code = """
+                        class MyFragment : Fragment() {
+                            
+                            companion object {
+                                private const val REQUEST_CODE_STORAGE = 1001
+                            }
+                            
+                            override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+                                super.onViewCreated(view, savedInstanceState)
+                                
+                                button.setOnClickListener {
+                                    checkAndRequestStoragePermission()
+                                }
+                            }
+                            
+                            private fun checkAndRequestStoragePermission() {
+                                val permissions = arrayOf(
+                                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                                )
+                                
+                                when {
+                                    permissions.all { permission ->
+                                        ContextCompat.checkSelfPermission(
+                                            requireContext(),
+                                            permission
+                                        ) == PackageManager.PERMISSION_GRANTED
+                                    } -> {
+                                        // 权限已授予
+                                        openFilePicker()
+                                    }
+                                    
+                                    permissions.any { permission ->
+                                        ActivityCompat.shouldShowRequestPermissionRationale(
+                                            requireActivity(),
+                                            permission
+                                        )
+                                    } -> {
+                                        // 显示权限说明
+                                        showPermissionRationale()
+                                    }
+                                    
+                                    else -> {
+                                        // 申请权限
+                                        requestPermissions(
+                                            permissions,
+                                            REQUEST_CODE_STORAGE
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            override fun onRequestPermissionsResult(
+                                requestCode: Int,
+                                permissions: Array<out String>,
+                                grantResults: IntArray
+                            ) {
+                                super.onRequestPermissionsResult(
+                                    requestCode,
+                                    permissions,
+                                    grantResults
+                                )
+                                
+                                if (requestCode == REQUEST_CODE_STORAGE) {
+                                    if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                                        // 所有权限已授予
+                                        openFilePicker()
+                                    } else {
+                                        // 权限被拒绝
+                                        handlePermissionDenied()
+                                    }
+                                }
+                            }
+                            
+                            private fun showPermissionRationale() {
+                                AlertDialog.Builder(requireContext())
+                                    .setTitle("需要存储权限")
+                                    .setMessage("需要存储权限来访问文件")
+                                    .setPositiveButton("确定") { _, _ ->
+                                        requestPermissions(
+                                            arrayOf(
+                                                Manifest.permission.READ_EXTERNAL_STORAGE,
+                                                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                                            ),
+                                            REQUEST_CODE_STORAGE
+                                        )
+                                    }
+                                    .setNegativeButton("取消", null)
+                                    .show()
+                            }
+                            
+                            private fun openFilePicker() {
+                                // 打开文件选择器
+                            }
+                            
+                            private fun handlePermissionDenied() {
+                                // 处理权限被拒绝
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "在Fragment中申请权限使用requestPermissions方法，在onRequestPermissionsResult中处理结果。注意使用requireContext()和requireActivity()获取Context和Activity。"
+                ),
+                CodeExample(
+                    title = "示例3：使用权限请求库（简化处理）",
+                    code = """
+                        // 使用第三方库简化权限处理
+                        // 例如：PermissionsDispatcher、EasyPermissions、RxPermissions等
+                        
+                        // 使用ActivityResultContracts（AndroidX Activity 1.2.0+）
+                        class MainActivity : AppCompatActivity() {
+                            
+                            private val requestPermissionLauncher = registerForActivityResult(
+                                ActivityResultContracts.RequestPermission()
+                            ) { isGranted ->
+                                if (isGranted) {
+                                    // 权限已授予
+                                    openCamera()
+                                } else {
+                                    // 权限被拒绝
+                                    handlePermissionDenied()
+                                }
+                            }
+                            
+                            private val requestMultiplePermissionsLauncher = registerForActivityResult(
+                                ActivityResultContracts.RequestMultiplePermissions()
+                            ) { permissions ->
+                                val allGranted = permissions.all { it.value }
+                                if (allGranted) {
+                                    // 所有权限已授予
+                                    openFilePicker()
+                                } else {
+                                    // 部分或全部权限被拒绝
+                                    handlePermissionDenied()
+                                }
+                            }
+                            
+                            fun requestCameraPermission() {
+                                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                            
+                            fun requestStoragePermissions() {
+                                requestMultiplePermissionsLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                                    )
+                                )
+                            }
+                        }
+                        
+                        // 使用ActivityResultContracts的优势：
+                        // 1. 更简洁的API
+                        // 2. 类型安全
+                        // 3. 不需要重写onRequestPermissionsResult
+                        // 4. 支持协程
+                    """.trimIndent(),
+                    explanation = "使用ActivityResultContracts可以简化权限请求处理，不需要重写onRequestPermissionsResult。这是Android推荐的现代方式。"
+                ),
+                CodeExample(
+                    title = "示例4：权限请求最佳实践",
+                    code = """
+                        class PermissionHelper(private val activity: Activity) {
+                            
+                            // 统一的权限请求方法
+                            suspend fun requestPermission(
+                                permission: String,
+                                rationale: String? = null
+                            ): Boolean {
+                                return suspendCoroutine { continuation ->
+                                    // 检查权限
+                                    if (ContextCompat.checkSelfPermission(
+                                            activity,
+                                            permission
+                                        ) == PackageManager.PERMISSION_GRANTED
+                                    ) {
+                                        continuation.resume(true)
+                                        return@suspendCoroutine
+                                    }
+                                    
+                                    // 显示权限说明
+                                    if (rationale != null &&
+                                        ActivityCompat.shouldShowRequestPermissionRationale(
+                                            activity,
+                                            permission
+                                        )
+                                    ) {
+                                        AlertDialog.Builder(activity)
+                                            .setTitle("需要权限")
+                                            .setMessage(rationale)
+                                            .setPositiveButton("确定") { _, _ ->
+                                                requestPermissionInternal(permission, continuation)
+                                            }
+                                            .setNegativeButton("取消") { _, _ ->
+                                                continuation.resume(false)
+                                            }
+                                            .setCancelable(false)
+                                            .show()
+                                    } else {
+                                        requestPermissionInternal(permission, continuation)
+                                    }
+                                }
+                            }
+                            
+                            private fun requestPermissionInternal(
+                                permission: String,
+                                continuation: Continuation<Boolean>
+                            ) {
+                                val launcher = activity.registerForActivityResult(
+                                    ActivityResultContracts.RequestPermission()
+                                ) { isGranted ->
+                                    continuation.resume(isGranted)
+                                }
+                                launcher.launch(permission)
+                            }
+                        }
+                        
+                        // 在ViewModel中使用
+                        class MyViewModel : ViewModel() {
+                            suspend fun requestCameraPermission(
+                                permissionHelper: PermissionHelper
+                            ): Boolean {
+                                return permissionHelper.requestPermission(
+                                    Manifest.permission.CAMERA,
+                                    "需要相机权限来拍照"
+                                )
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "权限请求的最佳实践包括：检查权限状态、显示权限说明、统一处理权限请求、使用协程简化异步处理。"
+                )
+            ),
+            useCases = listOf(
+                "功能访问：申请权限访问设备功能",
+                "用户体验：提供权限说明，提升用户体验",
+                "错误处理：处理权限被拒绝的情况",
+                "权限管理：统一管理权限请求逻辑",
+                "现代化：使用ActivityResultContracts简化权限处理"
+            ),
+            notes = listOf(
+                "使用ActivityCompat.requestPermissions申请权限",
+                "在onRequestPermissionsResult中处理权限结果",
+                "使用shouldShowRequestPermissionRationale检查是否应该显示权限说明",
+                "ActivityResultContracts是Android推荐的现代方式",
+                "权限请求是异步的，需要处理回调",
+                "用户可以选择\"不再询问\"，需要引导用户到设置页面",
+                "Fragment中使用requestPermissions，注意使用requireContext()"
+            ),
+            practiceTips = "建议使用ActivityResultContracts简化权限请求，这是Android推荐的现代方式。提供权限说明，解释为什么需要权限。处理权限被拒绝的情况，提供替代方案或引导用户到设置页面。统一管理权限请求逻辑，避免代码重复。使用协程简化异步权限请求处理。"
+        ),
+        
+        KnowledgeDetail(
+            id = "common_permissions",
+            title = "常见权限（存储、相机、位置等）",
+            overview = "Android应用常用的权限包括存储、相机、位置、联系人等。理解这些权限的特点和使用场景，可以正确申请和使用权限。",
+            keyPoints = listOf(
+                "存储权限：访问设备存储，Android 13+使用细粒度媒体权限",
+                "相机权限：访问设备相机，用于拍照和录像",
+                "位置权限：访问设备位置，包括精确位置和粗略位置",
+                "联系人权限：访问设备联系人",
+                "电话权限：访问电话功能，如拨打电话、读取电话状态",
+                "权限版本差异：不同Android版本的权限要求不同"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：存储权限（Android版本差异）",
+                    code = """
+                        class StoragePermissionHelper(private val activity: Activity) {
+                            
+                            // Android 13+ (API 33+)
+                            private val android13StoragePermissions = arrayOf(
+                                Manifest.permission.READ_MEDIA_IMAGES,
+                                Manifest.permission.READ_MEDIA_VIDEO,
+                                Manifest.permission.READ_MEDIA_AUDIO
+                            )
+                            
+                            // Android 12及以下
+                            private val legacyStoragePermissions = arrayOf(
+                                Manifest.permission.READ_EXTERNAL_STORAGE,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                            )
+                            
+                            fun getStoragePermissions(): Array<String> {
+                                return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    // Android 13+
+                                    android13StoragePermissions
+                                } else {
+                                    // Android 12及以下
+                                    legacyStoragePermissions
+                                }
+                            }
+                            
+                            fun requestStoragePermission() {
+                                val permissions = getStoragePermissions()
+                                
+                                if (permissions.all { permission ->
+                                    ContextCompat.checkSelfPermission(
+                                        activity,
+                                        permission
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                }) {
+                                    // 权限已授予
+                                    openFilePicker()
+                                } else {
+                                    // 申请权限
+                                    ActivityCompat.requestPermissions(
+                                        activity,
+                                        permissions,
+                                        REQUEST_CODE_STORAGE
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // AndroidManifest.xml
+                        // <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+                        //     android:maxSdkVersion="32" />
+                        // <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+                        // <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+                        // <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+                    """.trimIndent(),
+                    explanation = "Android 13+对存储权限进行了细分，使用READ_MEDIA_IMAGES、READ_MEDIA_VIDEO、READ_MEDIA_AUDIO替代READ_EXTERNAL_STORAGE。需要根据Android版本申请不同的权限。"
+                ),
+                CodeExample(
+                    title = "示例2：相机权限",
+                    code = """
+                        class CameraPermissionHelper(private val activity: Activity) {
+                            
+                            fun checkCameraPermission(): Boolean {
+                                return ContextCompat.checkSelfPermission(
+                                    activity,
+                                    Manifest.permission.CAMERA
+                                ) == PackageManager.PERMISSION_GRANTED
+                            }
+                            
+                            fun requestCameraPermission() {
+                                if (checkCameraPermission()) {
+                                    openCamera()
+                                } else {
+                                    ActivityCompat.requestPermissions(
+                                        activity,
+                                        arrayOf(Manifest.permission.CAMERA),
+                                        REQUEST_CODE_CAMERA
+                                    )
+                                }
+                            }
+                            
+                            // 使用CameraX（推荐）
+                            fun openCameraWithCameraX() {
+                                val cameraProviderFuture = ProcessCameraProvider.getInstance(activity)
+                                
+                                cameraProviderFuture.addListener({
+                                    val cameraProvider = cameraProviderFuture.get()
+                                    
+                                    // 检查权限
+                                    if (checkCameraPermission()) {
+                                        // 绑定相机用例
+                                        bindCameraUseCases(cameraProvider)
+                                    } else {
+                                        requestCameraPermission()
+                                    }
+                                }, ContextCompat.getMainExecutor(activity))
+                            }
+                        }
+                        
+                        // AndroidManifest.xml
+                        // <uses-permission android:name="android.permission.CAMERA" />
+                        // <uses-feature android:name="android.hardware.camera" android:required="false" />
+                    """.trimIndent(),
+                    explanation = "相机权限用于访问设备相机。使用CameraX可以简化相机使用，但同样需要申请相机权限。在AndroidManifest.xml中声明相机权限和特性。"
+                ),
+                CodeExample(
+                    title = "示例3：位置权限",
+                    code = """
+                        class LocationPermissionHelper(private val activity: Activity) {
+                            
+                            // 精确位置权限
+                            private val fineLocationPermission = Manifest.permission.ACCESS_FINE_LOCATION
+                            
+                            // 粗略位置权限
+                            private val coarseLocationPermission = Manifest.permission.ACCESS_COARSE_LOCATION
+                            
+                            fun checkLocationPermission(): Boolean {
+                                return ContextCompat.checkSelfPermission(
+                                    activity,
+                                    fineLocationPermission
+                                ) == PackageManager.PERMISSION_GRANTED ||
+                                ContextCompat.checkSelfPermission(
+                                    activity,
+                                    coarseLocationPermission
+                                ) == PackageManager.PERMISSION_GRANTED
+                            }
+                            
+                            fun requestLocationPermission() {
+                                if (checkLocationPermission()) {
+                                    startLocationUpdates()
+                                } else {
+                                    // 优先申请精确位置权限
+                                    ActivityCompat.requestPermissions(
+                                        activity,
+                                        arrayOf(fineLocationPermission),
+                                        REQUEST_CODE_LOCATION
+                                    )
+                                }
+                            }
+                            
+                            // 使用FusedLocationProviderClient
+                            fun startLocationUpdates() {
+                                val fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity)
+                                
+                                if (checkLocationPermission()) {
+                                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                                        // 获取位置
+                                        location?.let {
+                                            // 处理位置
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // AndroidManifest.xml
+                        // <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+                        // <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+                        // 
+                        // 注意：Android 10+需要在前台服务中使用位置权限时声明
+                        // <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+                    """.trimIndent(),
+                    explanation = "位置权限包括精确位置（ACCESS_FINE_LOCATION）和粗略位置（ACCESS_COARSE_LOCATION）。申请精确位置权限时，粗略位置权限也会自动授予。Android 10+在后台使用位置需要额外权限。"
+                ),
+                CodeExample(
+                    title = "示例4：联系人权限",
+                    code = """
+                        class ContactPermissionHelper(private val activity: Activity) {
+                            
+                            fun checkContactPermission(): Boolean {
+                                return ContextCompat.checkSelfPermission(
+                                    activity,
+                                    Manifest.permission.READ_CONTACTS
+                                ) == PackageManager.PERMISSION_GRANTED
+                            }
+                            
+                            fun requestContactPermission() {
+                                if (checkContactPermission()) {
+                                    readContacts()
+                                } else {
+                                    ActivityCompat.requestPermissions(
+                                        activity,
+                                        arrayOf(Manifest.permission.READ_CONTACTS),
+                                        REQUEST_CODE_CONTACTS
+                                    )
+                                }
+                            }
+                            
+                            fun readContacts() {
+                                val contacts = mutableListOf<Contact>()
+                                
+                                val projection = arrayOf(
+                                    android.provider.ContactsContract.Contacts._ID,
+                                    android.provider.ContactsContract.Contacts.DISPLAY_NAME
+                                )
+                                
+                                activity.contentResolver.query(
+                                    android.provider.ContactsContract.Contacts.CONTENT_URI,
+                                    projection,
+                                    null,
+                                    null,
+                                    null
+                                )?.use { cursor ->
+                                    val idColumn = cursor.getColumnIndex(
+                                        android.provider.ContactsContract.Contacts._ID
+                                    )
+                                    val nameColumn = cursor.getColumnIndex(
+                                        android.provider.ContactsContract.Contacts.DISPLAY_NAME
+                                    )
+                                    
+                                    while (cursor.moveToNext()) {
+                                        val id = cursor.getLong(idColumn)
+                                        val name = cursor.getString(nameColumn)
+                                        contacts.add(Contact(id, name))
+                                    }
+                                }
+                                
+                                return contacts
+                            }
+                        }
+                        
+                        // AndroidManifest.xml
+                        // <uses-permission android:name="android.permission.READ_CONTACTS" />
+                        // <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+                    """.trimIndent(),
+                    explanation = "联系人权限用于访问设备联系人。READ_CONTACTS用于读取联系人，WRITE_CONTACTS用于写入联系人。使用ContentResolver查询联系人数据。"
+                ),
+                CodeExample(
+                    title = "示例5：电话权限",
+                    code = """
+                        class PhonePermissionHelper(private val activity: Activity) {
+                            
+                            fun checkPhonePermission(): Boolean {
+                                return ContextCompat.checkSelfPermission(
+                                    activity,
+                                    Manifest.permission.CALL_PHONE
+                                ) == PackageManager.PERMISSION_GRANTED
+                            }
+                            
+                            fun requestPhonePermission() {
+                                if (checkPhonePermission()) {
+                                    makePhoneCall("1234567890")
+                                } else {
+                                    ActivityCompat.requestPermissions(
+                                        activity,
+                                        arrayOf(Manifest.permission.CALL_PHONE),
+                                        REQUEST_CODE_PHONE
+                                    )
+                                }
+                            }
+                            
+                            fun makePhoneCall(phoneNumber: String) {
+                                val intent = Intent(Intent.ACTION_CALL).apply {
+                                    data = Uri.parse("tel:${'$'}phoneNumber")
+                                }
+                                activity.startActivity(intent)
+                            }
+                            
+                            // 读取电话状态
+                            fun checkPhoneStatePermission(): Boolean {
+                                return ContextCompat.checkSelfPermission(
+                                    activity,
+                                    Manifest.permission.READ_PHONE_STATE
+                                ) == PackageManager.PERMISSION_GRANTED
+                            }
+                            
+                            fun getPhoneInfo(): String? {
+                                if (checkPhoneStatePermission()) {
+                                    val telephonyManager = activity.getSystemService(
+                                        Context.TELEPHONY_SERVICE
+                                    ) as TelephonyManager
+                                    
+                                    return telephonyManager.deviceId
+                                }
+                                return null
+                            }
+                        }
+                        
+                        // AndroidManifest.xml
+                        // <uses-permission android:name="android.permission.CALL_PHONE" />
+                        // <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+                    """.trimIndent(),
+                    explanation = "电话权限包括CALL_PHONE（拨打电话）和READ_PHONE_STATE（读取电话状态）。CALL_PHONE用于直接拨打电话，READ_PHONE_STATE用于读取设备信息。"
+                )
+            ),
+            useCases = listOf(
+                "文件访问：申请存储权限访问设备文件",
+                "拍照功能：申请相机权限实现拍照功能",
+                "定位服务：申请位置权限实现定位功能",
+                "联系人管理：申请联系人权限访问联系人",
+                "电话功能：申请电话权限实现拨打电话功能"
+            ),
+            notes = listOf(
+                "Android 13+对存储权限进行了细分，使用细粒度媒体权限",
+                "相机权限用于访问设备相机，CameraX也需要相机权限",
+                "位置权限包括精确位置和粗略位置，申请精确位置时粗略位置自动授予",
+                "联系人权限用于访问设备联系人，使用ContentResolver查询",
+                "电话权限包括CALL_PHONE和READ_PHONE_STATE",
+                "不同Android版本的权限要求不同，需要处理版本差异",
+                "在AndroidManifest.xml中声明权限，但声明不等于授予"
+            ),
+            practiceTips = "建议根据Android版本申请不同的权限，特别是存储权限。只在需要时申请权限，不要一次性申请所有权限。提供权限说明，解释为什么需要权限。处理权限被拒绝的情况，提供替代方案。注意权限的版本差异，使用Build.VERSION.SDK_INT判断Android版本。"
         )
     )
 }
