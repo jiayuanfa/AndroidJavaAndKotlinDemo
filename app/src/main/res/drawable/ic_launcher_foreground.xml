@@ -1,30 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:endX="85.84757"
-                android:endY="92.4963"
-                android:startX="42.9492"
-                android:startY="49.59793"
-                android:type="linear">
-                <item
-                    android:color="#44000000"
-                    android:offset="0.0" />
-                <item
-                    android:color="#00000000"
-                    android:offset="1.0" />
-            </gradient>
-        </aapt:attr>
-    </path>
-    <path
-        android:fillColor="#FFFFFF"
-        android:fillType="nonZero"
-        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
-        android:strokeWidth="1"
-        android:strokeColor="#00000000" />
+    
+    <!-- Java 咖啡杯（简化版） -->
+    <group android:translateX="18" android:translateY="20">
+        <!-- 咖啡杯主体 -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M12,18 L12,42 C12,45 14,47 17,47 L27,47 C30,47 32,45 32,42 L32,18 Z" />
+        <!-- 咖啡杯把手 -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3"
+            android:pathData="M32,23 Q38,23 38,28 Q38,33 32,33" />
+        <!-- 咖啡液面 -->
+        <path
+            android:fillColor="#3DDC84"
+            android:pathData="M14,23 L30,23 L30,28 L14,28 Z" />
+    </group>
+    
+    <!-- Kotlin K 字母 -->
+    <group android:translateX="50" android:translateY="18">
+        <!-- K 的左侧竖线 -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M8,4 L12,4 L12,32 L8,32 Z" />
+        <!-- K 的上半部分 -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M12,4 L12,18 L20,18 L28,4 L24,4 L18,14 L12,14 Z" />
+        <!-- K 的下半部分 -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M12,19 L12,32 L20,32 L28,19 L24,19 L18,22 L12,22 Z" />
+    </group>
+    
+    <!-- 代码括号装饰 -->
+    <group android:translateX="20" android:translateY="70">
+        <!-- 左大括号 { -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.6"
+            android:pathData="M6,2 Q2,2 2,6 L2,10 Q2,14 6,14 L8,14 Q10,14 10,12 L10,4 Q10,2 8,2 Z" />
+        <!-- 右大括号 } -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.6"
+            android:pathData="M22,2 Q26,2 26,6 L26,10 Q26,14 22,14 L20,14 Q18,14 18,12 L18,4 Q18,2 20,2 Z" />
+    </group>
 </vector>
