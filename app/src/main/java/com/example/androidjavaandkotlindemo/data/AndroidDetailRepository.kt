@@ -2350,6 +2350,1151 @@ object AndroidDetailRepository {
             practiceTips = "建议从简单的Composable函数开始，逐步学习状态管理、布局和动画。使用Compose Preview可以快速预览UI。对于复杂的状态管理，考虑使用ViewModel和StateFlow。注意性能优化，避免不必要的重组。"
         ),
         
+        KnowledgeDetail(
+            id = "compose_layout",
+            title = "Compose布局（Column、Row、Box、Modifier）",
+            overview = "Compose布局系统使用Column、Row、Box等基础布局组件和Modifier修饰符来构建UI。理解布局系统和Modifier的使用是掌握Compose布局的关键。",
+            keyPoints = listOf(
+                "Column：垂直排列子组件的布局容器",
+                "Row：水平排列子组件的布局容器",
+                "Box：叠加排列子组件的布局容器",
+                "Modifier：修饰符系统，用于设置组件的样式、大小、间距等",
+                "布局约束：理解Compose的布局约束系统，实现复杂布局",
+                "自定义布局：使用Layout Composable创建自定义布局"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Column和Row基础使用",
+                    code = """
+                        @Composable
+                        fun LayoutExample() {
+                            // Column：垂直排列
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("标题")
+                                Text("内容1")
+                                Text("内容2")
+                                Button(onClick = { }) {
+                                    Text("按钮")
+                                }
+                            }
+                            
+                            // Row：水平排列
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("左侧")
+                                Text("中间")
+                                Text("右侧")
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Column用于垂直排列，Row用于水平排列。verticalArrangement和horizontalArrangement控制子组件的排列方式，alignment控制对齐方式。"
+                ),
+                CodeExample(
+                    title = "示例2：Box叠加布局",
+                    code = """
+                        @Composable
+                        fun BoxExample() {
+                            Box(
+                                modifier = Modifier
+                                    .size(200.dp)
+                                    .background(Color.Gray)
+                            ) {
+                                // 底层：图片
+                                Image(
+                                    painter = rememberImagePainter("https://example.com/image.jpg"),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                                
+                                // 中层：渐变遮罩
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            Brush.verticalGradient(
+                                                colors = listOf(
+                                                    Color.Transparent,
+                                                    Color.Black.copy(alpha = 0.7f)
+                                                )
+                                            )
+                                        )
+                                )
+                                
+                                // 顶层：文字
+                                Text(
+                                    text = "标题",
+                                    color = Color.White,
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .padding(16.dp),
+                                    style = MaterialTheme.typography.headlineMedium
+                                )
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Box用于叠加排列子组件，后添加的组件在上层。使用align可以控制子组件在Box中的位置。"
+                ),
+                CodeExample(
+                    title = "示例3：Modifier修饰符系统",
+                    code = """
+                        @Composable
+                        fun ModifierExample() {
+                            Text(
+                                text = "Hello Compose",
+                                modifier = Modifier
+                                    // 尺寸
+                                    .size(width = 200.dp, height = 100.dp)
+                                    .fillMaxWidth()  // 填充最大宽度
+                                    .fillMaxHeight()  // 填充最大高度
+                                    
+                                    // 间距
+                                    .padding(16.dp)  // 内边距
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    
+                                    // 背景和边框
+                                    .background(Color.Blue)
+                                    .border(2.dp, Color.Red, RoundedCornerShape(8.dp))
+                                    
+                                    // 点击事件
+                                    .clickable { /* 处理点击 */ }
+                                    
+                                    // 滚动
+                                    .verticalScroll(rememberScrollState())
+                                    
+                                    // 透明度
+                                    .alpha(0.8f)
+                                    
+                                    // 旋转和缩放
+                                    .rotate(45f)
+                                    .scale(1.2f)
+                            )
+                            
+                            // Modifier可以链式调用，顺序很重要
+                            // 例如：padding在background之前，padding会影响background的范围
+                        }
+                    """.trimIndent(),
+                    explanation = "Modifier用于设置组件的样式、大小、间距等。可以链式调用多个Modifier，顺序会影响效果。"
+                ),
+                CodeExample(
+                    title = "示例4：自定义布局",
+                    code = """
+                        @Composable
+                        fun CustomLayout(
+                            modifier: Modifier = Modifier,
+                            content: @Composable () -> Unit
+                        ) {
+                            Layout(
+                                modifier = modifier,
+                                content = content
+                            ) { measurables, constraints ->
+                                // 测量所有子组件
+                                val placeables = measurables.map { it.measure(constraints) }
+                                
+                                // 计算布局大小
+                                val width = placeables.maxOfOrNull { it.width } ?: 0
+                                val height = placeables.sumOf { it.height }
+                                
+                                // 布局子组件
+                                layout(width, height) {
+                                    var yPosition = 0
+                                    placeables.forEach { placeable ->
+                                        placeable.placeRelative(x = 0, y = yPosition)
+                                        yPosition += placeable.height
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 使用自定义布局
+                        @Composable
+                        fun CustomLayoutExample() {
+                            CustomLayout(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text("项目1")
+                                Text("项目2")
+                                Text("项目3")
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "使用Layout Composable可以创建自定义布局。需要实现测量（measure）和布局（layout）逻辑。"
+                )
+            ),
+            useCases = listOf(
+                "页面布局：使用Column、Row、Box构建页面布局",
+                "列表项布局：使用Row和Column构建列表项",
+                "叠加效果：使用Box实现图片叠加文字等效果",
+                "样式定制：使用Modifier定制组件的外观和行为",
+                "复杂布局：使用自定义Layout实现特殊布局需求"
+            ),
+            notes = listOf(
+                "Column和Row的arrangement控制子组件的排列方式",
+                "Modifier的顺序很重要，会影响最终效果",
+                "Box用于叠加布局，后添加的组件在上层",
+                "使用fillMaxSize()可以让组件填充父容器",
+                "padding和margin在Compose中都是使用padding Modifier",
+                "自定义布局需要理解Compose的测量和布局流程",
+                "使用Layout Inspector可以查看Compose的布局层次"
+            ),
+            practiceTips = "建议先掌握Column、Row、Box这三个基础布局，它们是Compose布局的基础。理解Modifier的使用，它是Compose样式系统的核心。对于复杂布局，考虑使用自定义Layout。注意Modifier的顺序，它会影响最终效果。使用Compose Preview可以快速预览布局效果。"
+        ),
+        
+        KnowledgeDetail(
+            id = "compose_material",
+            title = "Material 3组件、主题系统",
+            overview = "Material 3是Google最新的设计系统，Compose提供了完整的Material 3组件库和主题系统。使用Material 3可以快速构建符合现代设计规范的应用。",
+            keyPoints = listOf(
+                "Material 3组件：Button、TextField、Card、FloatingActionButton等组件",
+                "主题系统：使用MaterialTheme定义应用的主题，包括颜色、文字、形状等",
+                "颜色系统：Material 3的颜色系统，包括主色、辅助色、表面色等",
+                "文字排版：Material 3的文字排版系统，定义文字样式",
+                "形状系统：Material 3的形状系统，定义组件的圆角等",
+                "暗色主题：支持亮色和暗色主题切换"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Material 3组件使用",
+                    code = """
+                        @Composable
+                        fun MaterialComponentsExample() {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                // Button
+                                Button(onClick = { }) {
+                                    Text("按钮")
+                                }
+                                
+                                // TextField
+                                var text by remember { mutableStateOf("") }
+                                TextField(
+                                    value = text,
+                                    onValueChange = { text = it },
+                                    label = { Text("输入框") },
+                                    placeholder = { Text("请输入内容") }
+                                )
+                                
+                                // Card
+                                Card(
+                                    onClick = { },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text("卡片标题")
+                                        Text("卡片内容")
+                                    }
+                                }
+                                
+                                // FloatingActionButton
+                                FloatingActionButton(onClick = { }) {
+                                    Icon(Icons.Default.Add, contentDescription = "添加")
+                                }
+                                
+                                // Switch
+                                var checked by remember { mutableStateOf(false) }
+                                Switch(
+                                    checked = checked,
+                                    onCheckedChange = { checked = it }
+                                )
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Material 3提供了丰富的组件，如Button、TextField、Card等。这些组件符合Material Design规范，提供一致的用户体验。"
+                ),
+                CodeExample(
+                    title = "示例2：Material主题配置",
+                    code = """
+                        // 定义颜色方案
+                        private val LightColorScheme = lightColorScheme(
+                            primary = Color(0xFF6750A4),
+                            onPrimary = Color(0xFFFFFFFF),
+                            primaryContainer = Color(0xFFEADDFF),
+                            onPrimaryContainer = Color(0xFF21005D),
+                            secondary = Color(0xFF625B71),
+                            onSecondary = Color(0xFFFFFFFF),
+                            // ... 其他颜色
+                        )
+                        
+                        private val DarkColorScheme = darkColorScheme(
+                            primary = Color(0xFFD0BCFF),
+                            onPrimary = Color(0xFF381E72),
+                            // ... 其他颜色
+                        )
+                        
+                        // 应用主题
+                        @Composable
+                        fun MyApp() {
+                            val colorScheme = if (isSystemInDarkTheme()) {
+                                DarkColorScheme
+                            } else {
+                                LightColorScheme
+                            }
+                            
+                            MaterialTheme(
+                                colorScheme = colorScheme,
+                                typography = Typography,
+                                shapes = Shapes
+                            ) {
+                                // 应用内容
+                                Surface(
+                                    modifier = Modifier.fillMaxSize(),
+                                    color = MaterialTheme.colorScheme.background
+                                ) {
+                                    MyScreen()
+                                }
+                            }
+                        }
+                        
+                        // 使用主题
+                        @Composable
+                        fun MyScreen() {
+                            Text(
+                                text = "Hello",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.headlineLarge
+                            )
+                        }
+                    """.trimIndent(),
+                    explanation = "MaterialTheme用于定义应用的主题，包括颜色方案、文字排版、形状等。支持亮色和暗色主题。"
+                ),
+                CodeExample(
+                    title = "示例3：Material形状系统",
+                    code = """
+                        // 定义形状
+                        val Shapes = Shapes(
+                            extraSmall = RoundedCornerShape(4.dp),
+                            small = RoundedCornerShape(8.dp),
+                            medium = RoundedCornerShape(12.dp),
+                            large = RoundedCornerShape(16.dp),
+                            extraLarge = RoundedCornerShape(28.dp)
+                        )
+                        
+                        // 在主题中使用
+                        MaterialTheme(
+                            colorScheme = colorScheme,
+                            typography = Typography,
+                            shapes = Shapes
+                        ) {
+                            // 组件会自动使用主题中的形状
+                            Card(
+                                shape = MaterialTheme.shapes.medium,
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text("卡片内容")
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Material形状系统定义了组件的圆角等形状属性。不同尺寸的组件使用不同大小的形状，保持视觉一致性。"
+                )
+            ),
+            useCases = listOf(
+                "快速开发：使用Material 3组件快速构建符合规范的UI",
+                "主题定制：使用Material主题系统定制应用外观",
+                "暗色主题：使用Material主题系统支持暗色主题",
+                "一致性：使用Material组件保持应用UI的一致性",
+                "现代化：使用Material 3实现现代化的UI设计"
+            ),
+            notes = listOf(
+                "Material 3是Google最新的设计系统，替代了Material 2",
+                "MaterialTheme用于定义应用的主题，包括颜色、文字、形状",
+                "支持亮色和暗色主题，可以通过isSystemInDarkTheme()检测",
+                "Material组件会自动使用主题中的颜色、文字、形状",
+                "颜色系统定义了主色、辅助色、表面色等颜色角色",
+                "文字排版系统定义了不同级别的文字样式",
+                "形状系统定义了组件的圆角等形状属性"
+            ),
+            practiceTips = "建议使用Material 3组件构建应用，它提供了符合现代设计规范的组件和主题系统。使用MaterialTheme定义应用主题，支持亮色和暗色主题。注意颜色系统的使用，确保文字在背景上的可读性。使用Material形状系统保持视觉一致性。定期更新Material组件库以获得最新特性。"
+        ),
+        
+        KnowledgeDetail(
+            id = "compose_state",
+            title = "状态管理（State、StateFlow、ViewModel集成）",
+            overview = "Compose的状态管理是构建响应式UI的关键。理解State、StateFlow和ViewModel的使用，可以实现数据驱动的UI更新。",
+            keyPoints = listOf(
+                "State：Compose的状态类型，使用mutableStateOf创建可变状态",
+                "StateFlow：Kotlin Flow的状态流，用于在ViewModel中管理状态",
+                "ViewModel集成：使用ViewModel管理业务逻辑和状态，与Compose集成",
+                "状态提升：将状态提升到共同父级，实现状态共享",
+                "状态恢复：使用rememberSaveable保存和恢复状态",
+                "状态收集：使用collectAsState收集StateFlow，自动更新UI"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：State基础使用",
+                    code = """
+                        @Composable
+                        fun StateExample() {
+                            // 使用remember和mutableStateOf创建状态
+                            var count by remember { mutableStateOf(0) }
+                            
+                            Column {
+                                Text("Count: ${'$'}count")
+                                Button(onClick = { count++ }) {
+                                    Text("增加")
+                                }
+                            }
+                            
+                            // 多个状态
+                            var name by remember { mutableStateOf("") }
+                            var age by remember { mutableStateOf(0) }
+                            
+                            Column {
+                                TextField(
+                                    value = name,
+                                    onValueChange = { name = it },
+                                    label = { Text("姓名") }
+                                )
+                                TextField(
+                                    value = age.toString(),
+                                    onValueChange = { age = it.toIntOrNull() ?: 0 },
+                                    label = { Text("年龄") }
+                                )
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "使用remember和mutableStateOf创建状态。状态变化会触发重组，只重组读取该状态的Composable函数。"
+                ),
+                CodeExample(
+                    title = "示例2：ViewModel和StateFlow集成",
+                    code = """
+                        // ViewModel
+                        class MyViewModel : ViewModel() {
+                            private val _uiState = MutableStateFlow(MyUiState())
+                            val uiState: StateFlow<MyUiState> = _uiState.asStateFlow()
+                            
+                            fun updateName(name: String) {
+                                _uiState.update { it.copy(name = name) }
+                            }
+                        }
+                        
+                        data class MyUiState(
+                            val name: String = "",
+                            val isLoading: Boolean = false
+                        )
+                        
+                        // 在Compose中使用
+                        @Composable
+                        fun MyScreen(viewModel: MyViewModel = viewModel()) {
+                            // 收集StateFlow
+                            val uiState by viewModel.uiState.collectAsState()
+                            
+                            Column {
+                                TextField(
+                                    value = uiState.name,
+                                    onValueChange = { viewModel.updateName(it) },
+                                    label = { Text("姓名") }
+                                )
+                                
+                                if (uiState.isLoading) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "ViewModel使用StateFlow管理状态，Compose使用collectAsState收集StateFlow。状态变化会自动更新UI。"
+                ),
+                CodeExample(
+                    title = "示例3：状态提升",
+                    code = """
+                        // 无状态Composable（推荐）
+                        @Composable
+                        fun Counter(
+                            count: Int,
+                            onIncrement: () -> Unit,
+                            onDecrement: () -> Unit
+                        ) {
+                            Column {
+                                Text("Count: ${'$'}count")
+                                Row {
+                                    Button(onClick = onDecrement) { Text("-") }
+                                    Button(onClick = onIncrement) { Text("+") }
+                                }
+                            }
+                        }
+                        
+                        // 有状态Composable（状态提升到父级）
+                        @Composable
+                        fun CounterScreen() {
+                            var count by remember { mutableStateOf(0) }
+                            
+                            // 状态提升，可以传递给多个子组件
+                            Counter(
+                                count = count,
+                                onIncrement = { count++ },
+                                onDecrement = { count-- }
+                            )
+                            
+                            // 另一个组件也可以使用同一个状态
+                            Text("当前计数: ${'$'}count")
+                        }
+                    """.trimIndent(),
+                    explanation = "状态提升是将状态提升到共同父级，子组件通过参数接收状态和回调。这样可以让组件更容易测试和复用。"
+                ),
+                CodeExample(
+                    title = "示例4：状态恢复（rememberSaveable）",
+                    code = """
+                        @Composable
+                        fun StateRestorationExample() {
+                            // rememberSaveable：配置变更时保存和恢复状态
+                            var count by rememberSaveable { mutableStateOf(0) }
+                            
+                            // 自定义Saver
+                            var customData by rememberSaveable(
+                                saver = Saver(
+                                    save = { it.toString() },
+                                    restore = { it.toIntOrNull() ?: 0 }
+                                )
+                            ) { mutableStateOf(0) }
+                            
+                            Column {
+                                Text("Count: ${'$'}count")
+                                Button(onClick = { count++ }) {
+                                    Text("增加")
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "rememberSaveable用于在配置变更（如屏幕旋转）时保存和恢复状态。remember只会在重组间保持状态，不会跨配置变更。"
+                )
+            ),
+            useCases = listOf(
+                "UI状态管理：使用State管理UI组件的状态",
+                "业务逻辑：使用ViewModel管理业务逻辑和状态",
+                "数据驱动：使用StateFlow实现数据驱动的UI更新",
+                "状态共享：使用状态提升在多个组件间共享状态",
+                "状态持久化：使用rememberSaveable保存和恢复状态"
+            ),
+            notes = listOf(
+                "State变化会触发重组，只重组读取该状态的Composable函数",
+                "remember用于在重组间保持值，rememberSaveable用于跨配置变更保持",
+                "ViewModel使用StateFlow管理状态，Compose使用collectAsState收集",
+                "状态提升是Compose的重要模式，有助于提高代码可测试性",
+                "避免在Composable函数中创建ViewModel实例，应该使用viewModel()",
+                "StateFlow是热流，会立即发送当前值给新的收集者",
+                "使用derivedStateOf可以基于其他状态计算新状态"
+            ),
+            practiceTips = "建议使用ViewModel管理业务逻辑和状态，Compose只负责UI展示。使用StateFlow在ViewModel中管理状态，使用collectAsState在Compose中收集。遵循状态提升模式，让组件更容易测试和复用。使用rememberSaveable保存需要跨配置变更的状态。注意性能优化，避免不必要的重组。"
+        ),
+        
+        KnowledgeDetail(
+            id = "compose_navigation",
+            title = "Compose导航（Navigation Compose）",
+            overview = "Navigation Compose是Compose的导航库，用于在Compose应用中进行页面导航。理解Navigation Compose的使用可以实现类型安全的导航。",
+            keyPoints = listOf(
+                "NavController：导航控制器，用于执行导航操作",
+                "NavHost：导航宿主，定义导航图和路由",
+                "路由定义：使用composable函数定义路由和参数",
+                "类型安全：使用Safe Args生成类型安全的导航代码",
+                "深层链接：支持深层链接导航",
+                "嵌套导航：支持嵌套导航图"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：基础导航",
+                    code = """
+                        @Composable
+                        fun NavigationExample() {
+                            val navController = rememberNavController()
+                            
+                            NavHost(
+                                navController = navController,
+                                startDestination = "home"
+                            ) {
+                                composable("home") {
+                                    HomeScreen(
+                                        onNavigateToDetail = {
+                                            navController.navigate("detail")
+                                        }
+                                    )
+                                }
+                                
+                                composable("detail") {
+                                    DetailScreen(
+                                        onNavigateBack = {
+                                            navController.popBackStack()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        
+                        @Composable
+                        fun HomeScreen(onNavigateToDetail: () -> Unit) {
+                            Column {
+                                Text("首页")
+                                Button(onClick = onNavigateToDetail) {
+                                    Text("跳转到详情")
+                                }
+                            }
+                        }
+                        
+                        @Composable
+                        fun DetailScreen(onNavigateBack: () -> Unit) {
+                            Column {
+                                Text("详情页")
+                                Button(onClick = onNavigateBack) {
+                                    Text("返回")
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "NavHost定义导航图，composable定义路由。使用navController.navigate导航，使用popBackStack返回。"
+                ),
+                CodeExample(
+                    title = "示例2：参数传递",
+                    code = """
+                        @Composable
+                        fun NavigationWithArgs() {
+                            val navController = rememberNavController()
+                            
+                            NavHost(
+                                navController = navController,
+                                startDestination = "home"
+                            ) {
+                                composable("home") {
+                                    HomeScreen(
+                                        onNavigateToDetail = { id ->
+                                            navController.navigate("detail/${'$'}id")
+                                        }
+                                    )
+                                }
+                                
+                                composable(
+                                    route = "detail/{itemId}",
+                                    arguments = listOf(
+                                        navArgument("itemId") { type = NavType.StringType }
+                                    )
+                                ) { backStackEntry ->
+                                    val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
+                                    DetailScreen(
+                                        itemId = itemId,
+                                        onNavigateBack = {
+                                            navController.popBackStack()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // 使用类型安全的导航（推荐）
+                        // 在build.gradle中添加：
+                        // implementation "androidx.navigation:navigation-compose:2.8.4"
+                        
+                        // 定义路由（使用sealed class）
+                        sealed class Screen(val route: String) {
+                            object Home : Screen("home")
+                            data class Detail(val id: String) : Screen("detail/${'$'}id")
+                        }
+                        
+                        @Composable
+                        fun TypeSafeNavigation() {
+                            val navController = rememberNavController()
+                            
+                            NavHost(
+                                navController = navController,
+                                startDestination = Screen.Home.route
+                            ) {
+                                composable(Screen.Home.route) {
+                                    HomeScreen(
+                                        onNavigateToDetail = { id ->
+                                            navController.navigate(Screen.Detail(id).route)
+                                        }
+                                    )
+                                }
+                                
+                                composable(
+                                    route = Screen.Detail.route,
+                                    arguments = listOf(
+                                        navArgument("id") { type = NavType.StringType }
+                                    )
+                                ) { backStackEntry ->
+                                    val id = backStackEntry.arguments?.getString("id") ?: ""
+                                    DetailScreen(itemId = id)
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "可以通过路由参数传递数据。使用sealed class定义路由可以实现类型安全的导航。"
+                ),
+                CodeExample(
+                    title = "示例3：深层链接",
+                    code = """
+                        @Composable
+                        fun DeepLinkNavigation() {
+                            val navController = rememberNavController()
+                            
+                            NavHost(
+                                navController = navController,
+                                startDestination = "home"
+                            ) {
+                                composable("home") {
+                                    HomeScreen()
+                                }
+                                
+                                composable(
+                                    route = "detail/{id}",
+                                    deepLinks = listOf(
+                                        navDeepLink {
+                                            uriPattern = "https://example.com/detail/{id}"
+                                        },
+                                        navDeepLink {
+                                            uriPattern = "myapp://detail/{id}"
+                                        }
+                                    )
+                                ) { backStackEntry ->
+                                    val id = backStackEntry.arguments?.getString("id") ?: ""
+                                    DetailScreen(itemId = id)
+                                }
+                            }
+                        }
+                        
+                        // AndroidManifest.xml中配置
+                        // <activity>
+                        //     <intent-filter>
+                        //         <action android:name="android.intent.action.VIEW" />
+                        //         <category android:name="android.intent.category.DEFAULT" />
+                        //         <category android:name="android.intent.category.BROWSABLE" />
+                        //         <data android:scheme="https" android:host="example.com" />
+                        //     </intent-filter>
+                        // </activity>
+                    """.trimIndent(),
+                    explanation = "深层链接允许通过URL直接导航到应用内的特定页面。需要在NavHost中定义deepLinks，并在AndroidManifest.xml中配置intent-filter。"
+                )
+            ),
+            useCases = listOf(
+                "页面导航：在Compose应用中进行页面间的导航",
+                "参数传递：在导航时传递参数",
+                "深层链接：支持通过URL直接导航到应用内页面",
+                "返回栈管理：管理导航返回栈",
+                "嵌套导航：实现复杂的导航结构"
+            ),
+            notes = listOf(
+                "NavController用于执行导航操作，NavHost定义导航图",
+                "使用composable函数定义路由，可以传递参数",
+                "使用sealed class定义路由可以实现类型安全的导航",
+                "深层链接需要在NavHost和AndroidManifest.xml中配置",
+                "popBackStack用于返回上一页，可以传递路由或ID",
+                "支持嵌套导航图，可以组织复杂的导航结构",
+                "导航参数可以是String、Int、Float等类型"
+            ),
+            practiceTips = "建议使用sealed class定义路由，实现类型安全的导航。使用NavHost定义导航图，使用composable定义路由。对于需要传递参数的路由，使用navArgument定义参数类型。支持深层链接可以提升用户体验。注意返回栈的管理，避免创建过深的返回栈。"
+        ),
+        
+        KnowledgeDetail(
+            id = "compose_animation",
+            title = "Compose动画",
+            overview = "Compose提供了强大的动画API，可以创建流畅的动画效果。理解Compose动画的使用可以提升用户体验。",
+            keyPoints = listOf(
+                "animateAsState：基于状态变化自动创建动画",
+                "Transition动画：多个值之间的过渡动画",
+                "AnimatedVisibility：显示和隐藏的动画",
+                "手势动画：基于手势的动画",
+                "自定义动画：使用AnimationSpec自定义动画曲线",
+                "性能优化：动画性能优化技巧"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：animateAsState基础使用",
+                    code = """
+                        @Composable
+                        fun AnimateAsStateExample() {
+                            var expanded by remember { mutableStateOf(false) }
+                            
+                            // 基于状态自动创建动画
+                            val rotation by animateFloatAsState(
+                                targetValue = if (expanded) 180f else 0f,
+                                animationSpec = tween(durationMillis = 300)
+                            )
+                            
+                            val scale by animateFloatAsState(
+                                targetValue = if (expanded) 1.2f else 1f
+                            )
+                            
+                            Column {
+                                Icon(
+                                    imageVector = Icons.Default.ExpandMore,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .rotate(rotation)
+                                        .scale(scale)
+                                        .clickable { expanded = !expanded }
+                                )
+                                
+                                if (expanded) {
+                                    Text("展开的内容")
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "animateAsState基于状态变化自动创建动画。当targetValue变化时，会自动从当前值动画到目标值。"
+                ),
+                CodeExample(
+                    title = "示例2：AnimatedVisibility",
+                    code = """
+                        @Composable
+                        fun AnimatedVisibilityExample() {
+                            var visible by remember { mutableStateOf(false) }
+                            
+                            Column {
+                                Button(onClick = { visible = !visible }) {
+                                    Text(if (visible) "隐藏" else "显示")
+                                }
+                                
+                                AnimatedVisibility(
+                                    visible = visible,
+                                    enter = fadeIn() + expandVertically(),
+                                    exit = fadeOut() + shrinkVertically()
+                                ) {
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
+                                    ) {
+                                        Text(
+                                            "这是动画显示的内容",
+                                            modifier = Modifier.padding(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 常用动画效果：
+                        // - fadeIn/fadeOut：淡入淡出
+                        // - slideIn/slideOut：滑入滑出
+                        // - expandIn/expandOut：展开收缩
+                        // - scaleIn/scaleOut：缩放
+                    """.trimIndent(),
+                    explanation = "AnimatedVisibility用于显示和隐藏的动画。可以组合多个动画效果，如fadeIn + expandVertically。"
+                ),
+                CodeExample(
+                    title = "示例3：Transition动画",
+                    code = """
+                        @Composable
+                        fun TransitionExample() {
+                            var currentState by remember { mutableStateOf(BoxState.Collapsed) }
+                            
+                            val transition = updateTransition(
+                                targetState = currentState,
+                                label = "box_transition"
+                            )
+                            
+                            val alpha by transition.animateFloat(
+                                transitionSpec = { tween(300) },
+                                label = "alpha"
+                            ) { state ->
+                                if (state == BoxState.Expanded) 1f else 0.5f
+                            }
+                            
+                            val scale by transition.animateFloat(
+                                label = "scale"
+                            ) { state ->
+                                if (state == BoxState.Expanded) 1f else 0.8f
+                            }
+                            
+                            Box(
+                                modifier = Modifier
+                                    .size(200.dp)
+                                    .alpha(alpha)
+                                    .scale(scale)
+                                    .clickable {
+                                        currentState = when (currentState) {
+                                            BoxState.Collapsed -> BoxState.Expanded
+                                            BoxState.Expanded -> BoxState.Collapsed
+                                        }
+                                    }
+                            ) {
+                                Text("点击切换状态")
+                            }
+                        }
+                        
+                        enum class BoxState { Collapsed, Expanded }
+                    """.trimIndent(),
+                    explanation = "Transition用于多个值之间的过渡动画。使用updateTransition创建Transition，然后为每个需要动画的值定义动画。"
+                ),
+                CodeExample(
+                    title = "示例4：自定义动画曲线",
+                    code = """
+                        @Composable
+                        fun CustomAnimationExample() {
+                            var offset by remember { mutableStateOf(0f) }
+                            
+                            val animatedOffset by animateFloatAsState(
+                                targetValue = offset,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                )
+                            )
+                            
+                            // 其他动画曲线：
+                            // - tween：线性插值
+                            // - spring：弹簧动画
+                            // - keyframes：关键帧动画
+                            // - repeatable：重复动画
+                            // - infiniteRepeatable：无限重复动画
+                            
+                            Box(
+                                modifier = Modifier
+                                    .offset(x = animatedOffset.dp)
+                                    .clickable { offset = if (offset == 0f) 200f else 0f }
+                            ) {
+                                Text("点击移动")
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "AnimationSpec用于自定义动画曲线。spring创建弹簧动画，tween创建线性动画，keyframes创建关键帧动画。"
+                )
+            ),
+            useCases = listOf(
+                "UI动画：为UI组件添加动画效果，提升用户体验",
+                "状态切换：为状态切换添加过渡动画",
+                "交互反馈：为用户交互添加动画反馈",
+                "页面转场：为页面切换添加转场动画",
+                "加载动画：为加载状态添加动画效果"
+            ),
+            notes = listOf(
+                "animateAsState基于状态变化自动创建动画",
+                "AnimatedVisibility用于显示和隐藏的动画",
+                "Transition用于多个值之间的过渡动画",
+                "AnimationSpec用于自定义动画曲线",
+                "动画应该在UI线程执行，Compose会自动处理",
+                "注意动画性能，避免创建过多动画",
+                "使用remember保存动画状态，避免每次重组时重新创建"
+            ),
+            practiceTips = "建议使用animateAsState实现简单的状态动画，使用Transition实现复杂的状态切换动画。使用AnimatedVisibility实现显示隐藏动画。注意动画性能，避免创建过多动画。使用合适的动画曲线，如spring实现自然的动画效果。测试动画在不同设备上的性能。"
+        ),
+        
+        KnowledgeDetail(
+            id = "compose_advanced",
+            title = "Compose高级特性（性能优化、自定义绘制）",
+            overview = "Compose的高级特性包括性能优化、自定义绘制、与View系统互操作等。掌握这些特性可以构建高性能、功能丰富的应用。",
+            keyPoints = listOf(
+                "性能优化：使用LazyColumn、LazyRow实现高效列表，避免不必要的重组",
+                "自定义绘制：使用Canvas和自定义绘制实现复杂图形",
+                "与View系统互操作：在Compose中使用传统View，在View中使用Compose",
+                "重组优化：使用derivedStateOf、remember等优化重组",
+                "布局优化：使用SubcomposeLayout等优化布局性能",
+                "调试工具：使用Compose工具调试和优化性能"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：LazyColumn性能优化",
+                    code = """
+                        @Composable
+                        fun LazyColumnExample(items: List<Item>) {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(
+                                    items = items,
+                                    key = { it.id }  // 使用key提升性能
+                                ) { item ->
+                                    ItemCard(item = item)
+                                }
+                                
+                                // 添加头部
+                                item {
+                                    Header()
+                                }
+                                
+                                // 添加尾部
+                                item {
+                                    Footer()
+                                }
+                            }
+                        }
+                        
+                        @Composable
+                        fun ItemCard(item: Item) {
+                            // 使用remember避免每次重组时重新创建对象
+                            val formattedDate = remember(item.date) {
+                                formatDate(item.date)
+                            }
+                            
+                            Card(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(item.title)
+                                    Text(formattedDate)
+                                }
+                            }
+                        }
+                        
+                        // 性能优化技巧：
+                        // 1. 使用key参数提升列表性能
+                        // 2. 使用remember缓存计算结果
+                        // 3. 避免在列表项中创建复杂对象
+                        // 4. 使用contentPadding而不是在item中添加padding
+                    """.trimIndent(),
+                    explanation = "LazyColumn和LazyRow只组合可见的item，性能优于Column和Row。使用key参数可以提升列表性能，使用remember缓存计算结果。"
+                ),
+                CodeExample(
+                    title = "示例2：自定义绘制",
+                    code = """
+                        @Composable
+                        fun CustomDrawExample() {
+                            Canvas(
+                                modifier = Modifier
+                                    .size(200.dp)
+                                    .background(Color.White)
+                            ) {
+                                // 绘制圆形
+                                drawCircle(
+                                    color = Color.Blue,
+                                    radius = 50.dp.toPx(),
+                                    center = center
+                                )
+                                
+                                // 绘制矩形
+                                drawRect(
+                                    color = Color.Red,
+                                    topLeft = Offset(50.dp.toPx(), 50.dp.toPx()),
+                                    size = Size(100.dp.toPx(), 100.dp.toPx())
+                                )
+                                
+                                // 绘制路径
+                                val path = Path().apply {
+                                    moveTo(0f, 0f)
+                                    lineTo(size.width, size.height)
+                                }
+                                drawPath(
+                                    path = path,
+                                    color = Color.Green,
+                                    style = Stroke(width = 4.dp.toPx())
+                                )
+                                
+                                // 绘制文字
+                                drawContext.canvas.nativeCanvas.apply {
+                    drawText(
+                        "Hello",
+                        100f,
+                        100f,
+                        android.graphics.Paint().apply {
+                            color = android.graphics.Color.BLACK
+                            textSize = 40f
+                        }
+                    )
+                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Canvas用于自定义绘制。可以使用drawCircle、drawRect、drawPath等方法绘制各种图形。"
+                ),
+                CodeExample(
+                    title = "示例3：与View系统互操作",
+                    code = """
+                        // 在Compose中使用传统View
+                        @Composable
+                        fun ViewInCompose() {
+                            AndroidView(
+                                factory = { context ->
+                                    // 创建传统View
+                                    WebView(context).apply {
+                                        loadUrl("https://example.com")
+                                    }
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                                update = { view ->
+                                    // 更新View（可选）
+                                    view.loadUrl("https://example.com")
+                                }
+                            )
+                        }
+                        
+                        // 在传统View中使用Compose
+                        class MainActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                setContentView(
+                                    ComposeView(this).apply {
+                                        setContent {
+                                            MaterialTheme {
+                                                MyComposeScreen()
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "AndroidView用于在Compose中使用传统View，ComposeView用于在传统View中使用Compose。这样可以逐步迁移到Compose。"
+                ),
+                CodeExample(
+                    title = "示例4：重组优化",
+                    code = """
+                        @Composable
+                        fun RecompositionOptimization() {
+                            var count by remember { mutableStateOf(0) }
+                            var name by remember { mutableStateOf("") }
+                            
+                            // derivedStateOf：基于其他状态计算新状态，只在依赖变化时重组
+                            val displayText by remember {
+                                derivedStateOf {
+                                    "Count: ${'$'}count, Name: ${'$'}name"
+                                }
+                            }
+                            
+                            Column {
+                                // 只有count变化时才会重组
+                                Text("Count: ${'$'}count")
+                                
+                                // 只有name变化时才会重组
+                                Text("Name: ${'$'}name")
+                                
+                                // 只有count或name变化时才会重组
+                                Text(displayText)
+                                
+                                Button(onClick = { count++ }) {
+                                    Text("增加")
+                                }
+                            }
+                            
+                            // 优化技巧：
+                            // 1. 使用derivedStateOf计算派生状态
+                            // 2. 使用remember缓存计算结果
+                            // 3. 将状态提升到最小范围
+                            // 4. 使用key参数稳定列表项
+                        }
+                    """.trimIndent(),
+                    explanation = "使用derivedStateOf可以基于其他状态计算新状态，只在依赖变化时重组。使用remember缓存计算结果，避免每次重组时重新计算。"
+                )
+            ),
+            useCases = listOf(
+                "列表性能：使用LazyColumn和LazyRow实现高效的长列表",
+                "自定义UI：使用Canvas实现自定义图形和动画",
+                "渐进迁移：使用互操作功能逐步从View迁移到Compose",
+                "性能优化：优化重组和布局性能",
+                "复杂绘制：实现复杂的自定义绘制效果"
+            ),
+            notes = listOf(
+                "LazyColumn和LazyRow只组合可见的item，性能优于Column和Row",
+                "使用key参数可以提升列表性能，帮助Compose识别item",
+                "Canvas用于自定义绘制，可以使用各种draw方法",
+                "AndroidView用于在Compose中使用传统View",
+                "derivedStateOf用于计算派生状态，只在依赖变化时重组",
+                "使用remember缓存计算结果，避免每次重组时重新计算",
+                "使用Compose工具可以调试和优化性能"
+            ),
+            practiceTips = "建议使用LazyColumn和LazyRow实现长列表，它们只组合可见的item。使用key参数提升列表性能。使用derivedStateOf计算派生状态，使用remember缓存计算结果。对于复杂的自定义UI，使用Canvas实现。使用Compose工具调试和优化性能。注意重组范围，将状态提升到最小范围。"
+        ),
+        
         // ========== 数据存储 ==========
         
         KnowledgeDetail(
