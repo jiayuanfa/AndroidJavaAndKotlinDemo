@@ -7673,6 +7673,852 @@ object AndroidDetailRepository {
                 "在AndroidManifest.xml中声明权限，但声明不等于授予"
             ),
             practiceTips = "建议根据Android版本申请不同的权限，特别是存储权限。只在需要时申请权限，不要一次性申请所有权限。提供权限说明，解释为什么需要权限。处理权限被拒绝的情况，提供替代方案。注意权限的版本差异，使用Build.VERSION.SDK_INT判断Android版本。"
+        ),
+        
+        // ========== 多媒体开发 ==========
+        
+        KnowledgeDetail(
+            id = "camera",
+            title = "相机（Camera2、CameraX）",
+            overview = "Android相机开发可以使用Camera2 API或CameraX库。CameraX是Google推荐的现代相机库，简化了相机使用，支持生命周期管理。",
+            keyPoints = listOf(
+                "Camera2 API：Android 5.0+引入的相机API，功能强大但使用复杂",
+                "CameraX：Google推荐的现代相机库，简化相机使用，支持生命周期管理",
+                "相机用例：Preview（预览）、ImageCapture（拍照）、ImageAnalysis（图像分析）、VideoCapture（录像）",
+                "生命周期绑定：CameraX自动绑定生命周期，无需手动管理",
+                "权限要求：需要CAMERA权限和相机特性声明",
+                "多相机支持：支持前置和后置相机，多相机设备"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：CameraX基础使用",
+                    code = """
+                        class CameraActivity : AppCompatActivity() {
+                            
+                            private lateinit var cameraProvider: ProcessCameraProvider
+                            private var imageCapture: ImageCapture? = null
+                            private var imageAnalyzer: ImageAnalysis? = null
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_camera)
+                                
+                                // 检查相机权限
+                                if (checkCameraPermission()) {
+                                    startCamera()
+                                } else {
+                                    requestCameraPermission()
+                                }
+                            }
+                            
+                            private fun startCamera() {
+                                val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+                                
+                                cameraProviderFuture.addListener({
+                                    cameraProvider = cameraProviderFuture.get()
+                                
+                                    // Preview用例
+                                    val preview = Preview.Builder().build().also {
+                                        it.setSurfaceProvider(binding.previewView.surfaceProvider)
+                                    }
+                                
+                                    // ImageCapture用例
+                                    imageCapture = ImageCapture.Builder()
+                                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                                        .build()
+                                
+                                    // ImageAnalysis用例
+                                    imageAnalyzer = ImageAnalysis.Builder()
+                                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                        .build()
+                                        .also {
+                                            it.setAnalyzer(cameraExecutor, LuminosityAnalyzer())
+                                        }
+                                
+                                    // 选择相机（后置相机）
+                                    val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                                
+                                    try {
+                                        // 解绑所有用例
+                                        cameraProvider.unbindAll()
+                                
+                                        // 绑定用例到生命周期
+                                        cameraProvider.bindToLifecycle(
+                                            this,
+                                            cameraSelector,
+                                            preview,
+                                            imageCapture,
+                                            imageAnalyzer
+                                        )
+                                    } catch (e: Exception) {
+                                        Log.e("Camera", "绑定失败", e)
+                                    }
+                                }, ContextCompat.getMainExecutor(this))
+                            }
+                            
+                            private fun takePhoto() {
+                                val imageCapture = imageCapture ?: return
+                                
+                                val outputFileOptions = ImageCapture.OutputFileOptions.Builder(
+                                    File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "photo.jpg")
+                                ).build()
+                                
+                                imageCapture.takePicture(
+                                    outputFileOptions,
+                                    ContextCompat.getMainExecutor(this),
+                                    object : ImageCapture.OnImageSavedCallback {
+                                        override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                                            // 拍照成功
+                                            val savedUri = output.savedUri
+                                        }
+                                
+                                        override fun onError(exception: ImageCaptureException) {
+                                            // 拍照失败
+                                            Log.e("Camera", "拍照失败", exception)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "CameraX使用ProcessCameraProvider管理相机，支持Preview、ImageCapture、ImageAnalysis等用例。使用bindToLifecycle绑定生命周期，自动管理相机资源。"
+                ),
+                CodeExample(
+                    title = "示例2：Camera2 API使用",
+                    code = """
+                        class Camera2Activity : AppCompatActivity() {
+                            
+                            private lateinit var cameraManager: CameraManager
+                            private var cameraDevice: CameraDevice? = null
+                            private var captureSession: CameraCaptureSession? = null
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_camera)
+                                
+                                cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+                                
+                                if (checkCameraPermission()) {
+                                    openCamera()
+                                } else {
+                                    requestCameraPermission()
+                                }
+                            }
+                            
+                            private fun openCamera() {
+                                try {
+                                    val cameraId = cameraManager.cameraIdList[0]
+                                    val characteristics = cameraManager.getCameraCharacteristics(cameraId)
+                                
+                                    // 获取相机能力
+                                    val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+                                    val largest = Collections.max(
+                                        Arrays.asList(*map!!.getOutputSizes(ImageFormat.JPEG)),
+                                        CompareSizesByArea()
+                                    )
+                                
+                                    // 打开相机
+                                    if (ActivityCompat.checkSelfPermission(
+                                            this,
+                                            Manifest.permission.CAMERA
+                                        ) == PackageManager.PERMISSION_GRANTED
+                                    ) {
+                                        cameraManager.openCamera(cameraId, stateCallback, backgroundHandler)
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("Camera2", "打开相机失败", e)
+                                }
+                            }
+                            
+                            private val stateCallback = object : CameraDevice.StateCallback() {
+                                override fun onOpened(camera: CameraDevice) {
+                                    cameraDevice = camera
+                                    createCaptureSession()
+                                }
+                            
+                                override fun onDisconnected(camera: CameraDevice) {
+                                    camera.close()
+                                    cameraDevice = null
+                                }
+                            
+                                override fun onError(camera: CameraDevice, error: Int) {
+                                    camera.close()
+                                    cameraDevice = null
+                                }
+                            }
+                            
+                            private fun createCaptureSession() {
+                                // 创建CaptureSession
+                                // ...
+                            }
+                        }
+                        
+                        // Camera2 API特点：
+                        // 1. 功能强大，可以精确控制相机
+                        // 2. 使用复杂，需要手动管理生命周期
+                        // 3. 适合需要精细控制的场景
+                        // 4. 推荐使用CameraX，除非有特殊需求
+                    """.trimIndent(),
+                    explanation = "Camera2 API提供了强大的相机控制能力，但使用复杂。需要手动管理CameraDevice、CaptureSession等，适合需要精细控制的场景。"
+                ),
+                CodeExample(
+                    title = "示例3：CameraX高级特性",
+                    code = """
+                        class AdvancedCameraActivity : AppCompatActivity() {
+                            
+                            private var imageCapture: ImageCapture? = null
+                            
+                            // 切换相机
+                            fun switchCamera() {
+                                val currentSelector = cameraSelector
+                                val newSelector = if (currentSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
+                                    CameraSelector.DEFAULT_FRONT_CAMERA
+                                } else {
+                                    CameraSelector.DEFAULT_BACK_CAMERA
+                                }
+                                
+                                cameraProvider.unbindAll()
+                                bindCameraUseCases(newSelector)
+                            }
+                            
+                            // 缩放控制
+                            fun setZoomRatio(ratio: Float) {
+                                val cameraControl = camera?.cameraControl
+                                cameraControl?.setZoomRatio(ratio)
+                            }
+                            
+                            // 闪光灯控制
+                            fun setFlashMode(mode: Int) {
+                                imageCapture?.flashMode = mode
+                            }
+                            
+                            // 对焦控制
+                            fun focusOnPoint(x: Float, y: Float) {
+                                val cameraControl = camera?.cameraControl
+                                val meteringPointFactory = SurfaceOrientedMeteringPointFactory(
+                                    binding.previewView.width.toFloat(),
+                                    binding.previewView.height.toFloat()
+                                )
+                                val point = meteringPointFactory.createPoint(x, y)
+                                val action = FocusMeteringAction.Builder(point).build()
+                                cameraControl?.startFocusAndMetering(action)
+                            }
+                            
+                            // 图像分析
+                            class FaceAnalyzer : ImageAnalysis.Analyzer {
+                                override fun analyze(image: ImageProxy) {
+                                    // 分析图像（如人脸检测）
+                                    // 注意：处理完成后调用image.close()
+                                    image.close()
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "CameraX支持切换相机、缩放控制、闪光灯控制、对焦控制等高级特性。ImageAnalysis用于实时分析图像，如人脸检测、二维码识别等。"
+                )
+            ),
+            useCases = listOf(
+                "拍照功能：使用ImageCapture实现拍照功能",
+                "视频录制：使用VideoCapture实现视频录制",
+                "实时预览：使用Preview实现相机预览",
+                "图像分析：使用ImageAnalysis实现实时图像分析（如人脸检测、二维码识别）",
+                "多相机支持：支持前置和后置相机切换"
+            ),
+            notes = listOf(
+                "CameraX是Google推荐的现代相机库，简化了相机使用",
+                "CameraX自动绑定生命周期，无需手动管理相机资源",
+                "需要CAMERA权限和相机特性声明",
+                "支持Preview、ImageCapture、ImageAnalysis、VideoCapture等用例",
+                "Camera2 API功能强大但使用复杂，适合需要精细控制的场景",
+                "ImageAnalysis用于实时分析图像，处理完成后需要调用image.close()",
+                "支持多相机设备，可以切换前置和后置相机"
+            ),
+            practiceTips = "建议使用CameraX进行相机开发，它简化了相机使用并自动管理生命周期。使用Preview实现预览，使用ImageCapture实现拍照，使用ImageAnalysis实现图像分析。注意权限处理，需要申请CAMERA权限。对于需要精细控制的场景，可以考虑使用Camera2 API。"
+        ),
+        
+        KnowledgeDetail(
+            id = "image_processing",
+            title = "图片处理（Glide、Coil、图片压缩）",
+            overview = "Android图片处理包括图片加载、缓存、压缩等。Glide和Coil是常用的图片加载库，提供了强大的图片处理功能。",
+            keyPoints = listOf(
+                "Glide：功能强大的图片加载库，支持多种图片源和转换",
+                "Coil：Kotlin友好的图片加载库，专为Kotlin协程设计",
+                "图片压缩：压缩图片减少内存占用和文件大小",
+                "图片缓存：内存缓存和磁盘缓存，提升加载速度",
+                "图片转换：圆角、裁剪、模糊等图片转换效果",
+                "占位符和错误处理：显示占位符和处理加载错误"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Glide基础使用",
+                    code = """
+                        // 在Activity/Fragment中使用Glide
+                        class ImageActivity : AppCompatActivity() {
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_image)
+                                
+                                val imageView = findViewById<ImageView>(R.id.imageView)
+                                
+                                // 基础加载
+                                Glide.with(this)
+                                    .load("https://example.com/image.jpg")
+                                    .into(imageView)
+                                
+                                // 带占位符和错误图片
+                                Glide.with(this)
+                                    .load("https://example.com/image.jpg")
+                                    .placeholder(R.drawable.placeholder)
+                                    .error(R.drawable.error)
+                                    .into(imageView)
+                                
+                                // 从资源加载
+                                Glide.with(this)
+                                    .load(R.drawable.image)
+                                    .into(imageView)
+                                
+                                // 从文件加载
+                                Glide.with(this)
+                                    .load(File("/path/to/image.jpg"))
+                                    .into(imageView)
+                                
+                                // 从URI加载
+                                Glide.with(this)
+                                    .load(Uri.parse("content://..."))
+                                    .into(imageView)
+                            }
+                        }
+                        
+                        // Glide配置
+                        class MyApp : Application() {
+                            override fun onCreate() {
+                                super.onCreate()
+                                
+                                val builder = GlideBuilder()
+                                builder.setMemoryCache(LruResourceCache(10 * 1024 * 1024)) // 10MB
+                                builder.setDiskCache(
+                                    InternalCacheDiskCacheFactory(this, 100 * 1024 * 1024) // 100MB
+                                )
+                                
+                                Glide.init(this, builder)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Glide是功能强大的图片加载库，支持从URL、资源、文件、URI等加载图片。可以配置占位符、错误图片、缓存等。"
+                ),
+                CodeExample(
+                    title = "示例2：Coil使用（Kotlin友好）",
+                    code = """
+                        // 在Compose中使用Coil
+                        @Composable
+                        fun CoilImageExample() {
+                            AsyncImage(
+                                model = "https://example.com/image.jpg",
+                                contentDescription = null,
+                                modifier = Modifier.size(200.dp),
+                                placeholder = painterResource(R.drawable.placeholder),
+                                error = painterResource(R.drawable.error),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        
+                        // 在传统View中使用Coil
+                        class ImageActivity : AppCompatActivity() {
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_image)
+                                
+                                val imageView = findViewById<ImageView>(R.id.imageView)
+                                
+                                // 基础加载
+                                imageView.load("https://example.com/image.jpg")
+                                
+                                // 带占位符和错误图片
+                                imageView.load("https://example.com/image.jpg") {
+                                    placeholder(R.drawable.placeholder)
+                                    error(R.drawable.error)
+                                    crossfade(true)
+                                }
+                                
+                                // 图片转换
+                                imageView.load("https://example.com/image.jpg") {
+                                    transformations(
+                                        CircleCropTransformation(),
+                                        RoundedCornersTransformation(16f)
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // Coil配置
+                        class MyApp : Application() {
+                            override fun onCreate() {
+                                super.onCreate()
+                                
+                                val imageLoader = ImageLoader.Builder(this)
+                                    .memoryCache {
+                                        MemoryCache.Builder(this)
+                                            .maxSizePercent(0.25)
+                                            .build()
+                                    }
+                                    .diskCache {
+                                        DiskCache.Builder()
+                                            .directory(cacheDir.resolve("image_cache"))
+                                            .maxSizePercent(0.02)
+                                            .build()
+                                    }
+                                    .build()
+                                
+                                Coil.setImageLoader(imageLoader)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Coil是Kotlin友好的图片加载库，专为Kotlin协程设计。在Compose中使用AsyncImage，在传统View中使用load扩展函数。支持图片转换和缓存配置。"
+                ),
+                CodeExample(
+                    title = "示例3：图片压缩",
+                    code = """
+                        class ImageCompressor(private val context: Context) {
+                            
+                            // 压缩图片文件
+                            fun compressImageFile(
+                                imageFile: File,
+                                maxSize: Long = 1024 * 1024 // 1MB
+                            ): File? {
+                                return try {
+                                    var quality = 90
+                                    var compressedFile = imageFile
+                                    
+                                    while (compressedFile.length() > maxSize && quality > 10) {
+                                        val bitmap = BitmapFactory.decodeFile(compressedFile.absolutePath)
+                                        val outputFile = File(context.cacheDir, "compressed_${'$'}{System.currentTimeMillis()}.jpg")
+                                        
+                                        outputFile.outputStream().use { out ->
+                                            bitmap.compress(
+                                                Bitmap.CompressFormat.JPEG,
+                                                quality,
+                                                out
+                                            )
+                                        }
+                                        
+                                        compressedFile = outputFile
+                                        quality -= 10
+                                    }
+                                    
+                                    compressedFile
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            }
+                            
+                            // 压缩Bitmap
+                            fun compressBitmap(
+                                bitmap: Bitmap,
+                                maxWidth: Int = 1920,
+                                maxHeight: Int = 1080
+                            ): Bitmap {
+                                val width = bitmap.width
+                                val height = bitmap.height
+                                
+                                if (width <= maxWidth && height <= maxHeight) {
+                                    return bitmap
+                                }
+                                
+                                val scale = minOf(
+                                    maxWidth.toFloat() / width,
+                                    maxHeight.toFloat() / height
+                                )
+                                
+                                val newWidth = (width * scale).toInt()
+                                val newHeight = (height * scale).toInt()
+                                
+                                return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+                            }
+                            
+                            // 使用Glide压缩
+                            fun loadCompressedImage(imageView: ImageView, url: String) {
+                                Glide.with(context)
+                                    .load(url)
+                                    .override(800, 600) // 指定尺寸
+                                    .encodeFormat(Bitmap.CompressFormat.JPEG)
+                                    .encodeQuality(80) // 质量
+                                    .into(imageView)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "图片压缩可以减少内存占用和文件大小。可以压缩图片文件或Bitmap，使用Glide可以自动压缩。注意平衡图片质量和文件大小。"
+                ),
+                CodeExample(
+                    title = "示例4：图片转换和效果",
+                    code = """
+                        // 使用Glide图片转换
+                        class ImageTransformExample {
+                            
+                            fun loadWithTransform(imageView: ImageView, url: String) {
+                                Glide.with(context)
+                                    .load(url)
+                                    // 圆角
+                                    .transform(RoundedCorners(16))
+                                    // 或圆形
+                                    .circleCrop()
+                                    // 或自定义转换
+                                    .transform(CustomTransform())
+                                    .into(imageView)
+                            }
+                            
+                            // 自定义转换
+                            class CustomTransform : Transformation<Bitmap> {
+                                override fun transform(
+                                    context: Context,
+                                    resource: Resource<Bitmap>,
+                                    outWidth: Int,
+                                    outHeight: Int
+                                ): Resource<Bitmap> {
+                                    val bitmap = resource.get()
+                                    // 实现自定义转换逻辑
+                                    return BitmapResource.obtain(bitmap, context)
+                                }
+                                
+                                override fun getId(): String = "custom_transform"
+                            }
+                        }
+                        
+                        // 使用Coil图片转换
+                        imageView.load("https://example.com/image.jpg") {
+                            transformations(
+                                CircleCropTransformation(),
+                                RoundedCornersTransformation(16f),
+                                BlurTransformation(context, 10f)
+                            )
+                        }
+                    """.trimIndent(),
+                    explanation = "图片转换可以实现圆角、圆形、模糊等效果。Glide和Coil都支持图片转换，可以链式调用多个转换。"
+                )
+            ),
+            useCases = listOf(
+                "图片加载：从网络、本地加载图片",
+                "图片缓存：使用内存和磁盘缓存提升加载速度",
+                "图片压缩：压缩图片减少内存占用和文件大小",
+                "图片转换：实现圆角、圆形、模糊等效果",
+                "占位符：显示加载占位符，提升用户体验"
+            ),
+            notes = listOf(
+                "Glide是功能强大的图片加载库，支持多种图片源",
+                "Coil是Kotlin友好的图片加载库，专为Kotlin协程设计",
+                "图片压缩可以减少内存占用和文件大小",
+                "使用内存缓存和磁盘缓存可以提升加载速度",
+                "图片转换可以实现各种视觉效果",
+                "占位符和错误处理可以提升用户体验",
+                "注意图片内存管理，避免内存溢出"
+            ),
+            practiceTips = "建议使用Glide或Coil进行图片加载，它们提供了强大的功能和良好的性能。使用图片缓存提升加载速度。对于大图片，进行压缩处理。使用占位符和错误处理提升用户体验。注意图片内存管理，及时释放不需要的图片。"
+        ),
+        
+        KnowledgeDetail(
+            id = "audio_video",
+            title = "音频和视频（MediaPlayer、ExoPlayer）",
+            overview = "Android音频和视频播放可以使用MediaPlayer或ExoPlayer。ExoPlayer是Google推荐的现代媒体播放库，功能强大且可扩展。",
+            keyPoints = listOf(
+                "MediaPlayer：Android系统提供的音频播放API，简单易用",
+                "ExoPlayer：Google开发的现代媒体播放库，功能强大且可扩展",
+                "音频播放：播放本地和网络音频文件",
+                "视频播放：播放本地和网络视频文件",
+                "媒体控制：播放、暂停、进度控制等",
+                "流媒体：支持流媒体播放，如HLS、DASH"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：MediaPlayer音频播放",
+                    code = """
+                        class AudioPlayerActivity : AppCompatActivity() {
+                            
+                            private var mediaPlayer: MediaPlayer? = null
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_audio)
+                                
+                                buttonPlay.setOnClickListener { playAudio() }
+                                buttonPause.setOnClickListener { pauseAudio() }
+                                buttonStop.setOnClickListener { stopAudio() }
+                            }
+                            
+                            private fun playAudio() {
+                                try {
+                                    if (mediaPlayer == null) {
+                                        // 从资源播放
+                                        mediaPlayer = MediaPlayer.create(
+                                            this,
+                                            R.raw.audio_file
+                                        )
+                                        
+                                        // 或从文件播放
+                                        // mediaPlayer = MediaPlayer().apply {
+                                        //     setDataSource("/path/to/audio.mp3")
+                                        //     prepare()
+                                        // }
+                                        
+                                        // 或从网络播放
+                                        // mediaPlayer = MediaPlayer().apply {
+                                        //     setDataSource("https://example.com/audio.mp3")
+                                        //     prepareAsync()
+                                        // }
+                                        
+                                        mediaPlayer?.setOnPreparedListener {
+                                            it.start()
+                                        }
+                                        
+                                        mediaPlayer?.setOnCompletionListener {
+                                            // 播放完成
+                                            releaseMediaPlayer()
+                                        }
+                                        
+                                        mediaPlayer?.setOnErrorListener { _, what, extra ->
+                                            // 播放错误
+                                            Log.e("MediaPlayer", "播放错误: ${'$'}what, ${'$'}extra")
+                                            true
+                                        }
+                                    } else {
+                                        mediaPlayer?.start()
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("MediaPlayer", "播放失败", e)
+                                }
+                            }
+                            
+                            private fun pauseAudio() {
+                                mediaPlayer?.pause()
+                            }
+                            
+                            private fun stopAudio() {
+                                mediaPlayer?.stop()
+                                releaseMediaPlayer()
+                            }
+                            
+                            private fun releaseMediaPlayer() {
+                                mediaPlayer?.release()
+                                mediaPlayer = null
+                            }
+                            
+                            override fun onDestroy() {
+                                super.onDestroy()
+                                releaseMediaPlayer()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "MediaPlayer用于播放音频，支持从资源、文件、网络加载。需要管理MediaPlayer的生命周期，在不需要时释放资源。"
+                ),
+                CodeExample(
+                    title = "示例2：ExoPlayer视频播放",
+                    code = """
+                        class VideoPlayerActivity : AppCompatActivity() {
+                            
+                            private var player: ExoPlayer? = null
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_video)
+                                
+                                initializePlayer()
+                            }
+                            
+                            private fun initializePlayer() {
+                                player = ExoPlayer.Builder(this).build()
+                                
+                                // 绑定到PlayerView
+                                binding.playerView.player = player
+                                
+                                // 创建媒体项
+                                val mediaItem = MediaItem.fromUri("https://example.com/video.mp4")
+                                
+                                // 或从本地文件
+                                // val mediaItem = MediaItem.fromUri(Uri.fromFile(File("/path/to/video.mp4")))
+                                
+                                // 设置媒体项
+                                player?.setMediaItem(mediaItem)
+                                
+                                // 准备播放
+                                player?.prepare()
+                                
+                                // 自动播放
+                                player?.playWhenReady = true
+                                
+                                // 监听播放状态
+                                player?.addListener(object : Player.Listener {
+                                    override fun onPlaybackStateChanged(state: Int) {
+                                        when (state) {
+                                            Player.STATE_READY -> {
+                                                // 准备就绪
+                                            }
+                                            Player.STATE_BUFFERING -> {
+                                                // 缓冲中
+                                            }
+                                            Player.STATE_ENDED -> {
+                                                // 播放结束
+                                            }
+                                        }
+                                    }
+                                })
+                            }
+                            
+                            override fun onResume() {
+                                super.onResume()
+                                if (player == null) {
+                                    initializePlayer()
+                                }
+                            }
+                            
+                            override fun onPause() {
+                                super.onPause()
+                                player?.pause()
+                            }
+                            
+                            override fun onDestroy() {
+                                super.onDestroy()
+                                releasePlayer()
+                            }
+                            
+                            private fun releasePlayer() {
+                                player?.release()
+                                player = null
+                            }
+                        }
+                        
+                        // 布局文件：activity_video.xml
+                        // <com.google.android.exoplayer2.ui.PlayerView
+                        //     android:id="@+id/playerView"
+                        //     android:layout_width="match_parent"
+                        //     android:layout_height="wrap_content" />
+                    """.trimIndent(),
+                    explanation = "ExoPlayer用于播放视频，功能强大且可扩展。使用PlayerView显示视频，支持播放控制、全屏等功能。需要管理ExoPlayer的生命周期。"
+                ),
+                CodeExample(
+                    title = "示例3：ExoPlayer音频播放",
+                    code = """
+                        class AudioExoPlayerActivity : AppCompatActivity() {
+                            
+                            private var player: ExoPlayer? = null
+                            
+                            private fun initializeAudioPlayer() {
+                                player = ExoPlayer.Builder(this).build()
+                                
+                                // 创建音频媒体项
+                                val mediaItem = MediaItem.fromUri("https://example.com/audio.mp3")
+                                
+                                player?.setMediaItem(mediaItem)
+                                player?.prepare()
+                                player?.playWhenReady = true
+                                
+                                // 监听播放进度
+                                player?.addListener(object : Player.Listener {
+                                    override fun onIsPlayingChanged(isPlaying: Boolean) {
+                                        // 播放状态变化
+                                    }
+                                    
+                                    override fun onPlaybackStateChanged(state: Int) {
+                                        // 播放状态变化
+                                    }
+                                })
+                            }
+                            
+                            // 播放控制
+                            fun play() {
+                                player?.play()
+                            }
+                            
+                            fun pause() {
+                                player?.pause()
+                            }
+                            
+                            fun seekTo(position: Long) {
+                                player?.seekTo(position)
+                            }
+                            
+                            fun getCurrentPosition(): Long {
+                                return player?.currentPosition ?: 0
+                            }
+                            
+                            fun getDuration(): Long {
+                                return player?.duration ?: 0
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "ExoPlayer也可以用于播放音频，提供更强大的功能和更好的控制。支持播放控制、进度监听等功能。"
+                ),
+                CodeExample(
+                    title = "示例4：ExoPlayer流媒体播放",
+                    code = """
+                        class StreamingPlayerActivity : AppCompatActivity() {
+                            
+                            private var player: ExoPlayer? = null
+                            
+                            private fun initializeStreamingPlayer() {
+                                player = ExoPlayer.Builder(this).build()
+                                
+                                // HLS流媒体
+                                val hlsMediaItem = MediaItem.fromUri("https://example.com/stream.m3u8")
+                                
+                                // DASH流媒体
+                                val dashMediaItem = MediaItem.fromUri("https://example.com/stream.mpd")
+                                
+                                // 播放列表
+                                val playlist = listOf(
+                                    MediaItem.fromUri("https://example.com/video1.mp4"),
+                                    MediaItem.fromUri("https://example.com/video2.mp4"),
+                                    MediaItem.fromUri("https://example.com/video3.mp4")
+                                )
+                                
+                                player?.setMediaItems(playlist)
+                                player?.prepare()
+                                player?.playWhenReady = true
+                                
+                                // 播放列表控制
+                                player?.addListener(object : Player.Listener {
+                                    override fun onMediaItemTransition(
+                                        mediaItem: MediaItem?,
+                                        reason: Int
+                                    ) {
+                                        // 切换到下一个媒体项
+                                    }
+                                })
+                                
+                                // 切换到下一个
+                                player?.seekToNext()
+                                
+                                // 切换到上一个
+                                player?.seekToPrevious()
+                            }
+                        }
+                        
+                        // ExoPlayer支持的格式：
+                        // - MP4, WebM, Matroska
+                        // - HLS (m3u8)
+                        // - DASH (mpd)
+                        // - SmoothStreaming
+                        // - 等等
+                    """.trimIndent(),
+                    explanation = "ExoPlayer支持多种流媒体格式，如HLS、DASH等。支持播放列表，可以播放多个媒体项。适合流媒体播放场景。"
+                )
+            ),
+            useCases = listOf(
+                "音频播放：播放本地和网络音频文件",
+                "视频播放：播放本地和网络视频文件",
+                "流媒体：播放HLS、DASH等流媒体",
+                "播放列表：播放多个媒体项",
+                "媒体控制：实现播放、暂停、进度控制等功能"
+            ),
+            notes = listOf(
+                "MediaPlayer简单易用，适合简单的音频播放",
+                "ExoPlayer功能强大，适合视频播放和流媒体",
+                "需要管理MediaPlayer和ExoPlayer的生命周期",
+                "ExoPlayer支持多种媒体格式和流媒体协议",
+                "使用PlayerView显示视频，提供播放控制",
+                "注意释放媒体播放器资源，避免内存泄漏",
+                "流媒体播放需要处理网络状态和缓冲"
+            ),
+            practiceTips = "建议使用ExoPlayer进行视频播放和流媒体播放，它功能强大且可扩展。对于简单的音频播放，可以使用MediaPlayer。注意管理播放器的生命周期，及时释放资源。使用PlayerView显示视频，提供良好的用户体验。处理播放错误和网络状态，提升稳定性。"
         )
     )
 }
