@@ -4544,6 +4544,1163 @@ object AndroidDetailRepository {
                 "复杂查询应该在后台线程执行"
             ),
             practiceTips = "建议使用系统ContentProvider访问系统数据，如联系人、媒体等。对于应用间数据共享，考虑使用ContentProvider。注意权限控制，确保数据安全。使用URI匹配器处理不同的URI模式。注意性能，复杂查询应该在后台线程执行。考虑使用Room等现代数据库库，它们提供了ContentProvider支持。"
+        ),
+        
+        // ========== 网络请求 ==========
+        
+        KnowledgeDetail(
+            id = "http_basic",
+            title = "HTTP基础",
+            overview = "HTTP（HyperText Transfer Protocol）是应用层协议，用于客户端和服务器之间的通信。理解HTTP的基础知识是Android网络编程的基础。",
+            keyPoints = listOf(
+                "HTTP方法：GET、POST、PUT、DELETE、PATCH等，用于不同的操作",
+                "HTTP状态码：200（成功）、404（未找到）、500（服务器错误）等",
+                "HTTP头：请求头和响应头，包含元数据信息",
+                "请求体：POST、PUT等方法可以携带请求体数据",
+                "URL和URI：统一资源定位符和统一资源标识符",
+                "HTTPS：加密的HTTP协议，保证数据传输安全"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：HTTP请求和响应结构",
+                    code = """
+                        // HTTP请求结构
+                        // GET /api/users HTTP/1.1
+                        // Host: api.example.com
+                        // User-Agent: MyApp/1.0
+                        // Accept: application/json
+                        // Authorization: Bearer token123
+                        //
+                        // （GET请求没有请求体）
+                        
+                        // HTTP响应结构
+                        // HTTP/1.1 200 OK
+                        // Content-Type: application/json
+                        // Content-Length: 1234
+                        // 
+                        // {
+                        //   "users": [...]
+                        // }
+                        
+                        // HTTP方法说明：
+                        // - GET：获取资源，参数在URL中
+                        // - POST：创建资源，数据在请求体中
+                        // - PUT：更新资源（完整更新），数据在请求体中
+                        // - PATCH：更新资源（部分更新），数据在请求体中
+                        // - DELETE：删除资源
+                    """.trimIndent(),
+                    explanation = "HTTP请求包含请求行、请求头和可选的请求体。HTTP响应包含状态行、响应头和响应体。不同的HTTP方法用于不同的操作。"
+                ),
+                CodeExample(
+                    title = "示例2：HTTP状态码",
+                    code = """
+                        // 2xx - 成功
+                        // 200 OK：请求成功
+                        // 201 Created：资源创建成功
+                        // 204 No Content：请求成功，无返回内容
+                        
+                        // 3xx - 重定向
+                        // 301 Moved Permanently：永久重定向
+                        // 302 Found：临时重定向
+                        // 304 Not Modified：资源未修改（缓存有效）
+                        
+                        // 4xx - 客户端错误
+                        // 400 Bad Request：请求错误
+                        // 401 Unauthorized：未授权
+                        // 403 Forbidden：禁止访问
+                        // 404 Not Found：资源未找到
+                        // 429 Too Many Requests：请求过多
+                        
+                        // 5xx - 服务器错误
+                        // 500 Internal Server Error：服务器内部错误
+                        // 502 Bad Gateway：网关错误
+                        // 503 Service Unavailable：服务不可用
+                        
+                        // 在Android中处理状态码
+                        class HttpResponseHandler {
+                            fun handleResponse(response: Response) {
+                                when (response.code) {
+                                    200 -> {
+                                        // 处理成功响应
+                                    }
+                                    401 -> {
+                                        // 处理未授权，可能需要重新登录
+                                    }
+                                    404 -> {
+                                        // 处理资源未找到
+                                    }
+                                    500 -> {
+                                        // 处理服务器错误
+                                    }
+                                    else -> {
+                                        // 处理其他状态码
+                                    }
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "HTTP状态码表示请求的处理结果。2xx表示成功，3xx表示重定向，4xx表示客户端错误，5xx表示服务器错误。需要根据不同的状态码进行相应处理。"
+                ),
+                CodeExample(
+                    title = "示例3：HTTP头和Cookie",
+                    code = """
+                        // 常用请求头
+                        // Content-Type: application/json  // 请求体类型
+                        // Accept: application/json      // 期望的响应类型
+                        // Authorization: Bearer token   // 认证信息
+                        // User-Agent: MyApp/1.0         // 客户端信息
+                        // Cookie: session=abc123        // Cookie信息
+                        
+                        // 常用响应头
+                        // Content-Type: application/json  // 响应体类型
+                        // Set-Cookie: session=abc123      // 设置Cookie
+                        // Cache-Control: max-age=3600     // 缓存控制
+                        // Location: /new-url              // 重定向地址
+                        
+                        // 在Android中使用Cookie
+                        class CookieManager {
+                            private val cookieStore = CookieManager()
+                            
+                            fun setupCookieManager() {
+                                cookieStore.setCookiePolicy(CookiePolicy.ACCEPT_ALL)
+                                CookieHandler.setDefault(cookieStore)
+                            }
+                            
+                            fun getCookies(url: String): String? {
+                                return cookieStore.cookieStore.get(URI(url))
+                                    ?.joinToString("; ") { "${'$'}{it.name}=${'$'}{it.value}" }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "HTTP头包含请求和响应的元数据信息。Cookie用于在客户端和服务器之间传递状态信息。在Android中可以使用CookieManager管理Cookie。"
+                ),
+                CodeExample(
+                    title = "示例4：HTTPS和安全",
+                    code = """
+                        // HTTPS是加密的HTTP协议，使用TLS/SSL加密
+                        // 在Android中使用HTTPS
+                        
+                        // 1. 使用系统默认证书（推荐）
+                        // Retrofit和OkHttp默认支持HTTPS，无需额外配置
+                        
+                        // 2. 自定义证书验证（不推荐，仅用于测试）
+                        class UnsafeOkHttpClient {
+                            fun getUnsafeOkHttpClient(): OkHttpClient {
+                                val trustAllCerts = arrayOf<TrustManager>(
+                                    object : X509TrustManager {
+                                        override fun checkClientTrusted(
+                                            chain: Array<out X509Certificate>?,
+                                            authType: String?
+                                        ) {}
+                                        
+                                        override fun checkServerTrusted(
+                                            chain: Array<out X509Certificate>?,
+                                            authType: String?
+                                        ) {}
+                                        
+                                        override fun getAcceptedIssuers() = arrayOf<X509Certificate>()
+                                    }
+                                )
+                                
+                                val sslContext = SSLContext.getInstance("SSL")
+                                sslContext.init(null, trustAllCerts, SecureRandom())
+                                
+                                return OkHttpClient.Builder()
+                                    .sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+                                    .hostnameVerifier { _, _ -> true }
+                                    .build()
+                            }
+                        }
+                        
+                        // 3. 证书锁定（Certificate Pinning）- 增强安全性
+                        class SecureOkHttpClient {
+                            fun getSecureOkHttpClient(): OkHttpClient {
+                                return OkHttpClient.Builder()
+                                    .certificatePinner(
+                                        CertificatePinner.Builder()
+                                            .add("api.example.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+                                            .build()
+                                    )
+                                    .build()
+                            }
+                        }
+                        
+                        // 注意：不要在生产环境中使用不安全的证书验证
+                    """.trimIndent(),
+                    explanation = "HTTPS使用TLS/SSL加密数据传输，保证安全性。Android默认支持HTTPS，无需额外配置。可以使用证书锁定增强安全性。"
+                )
+            ),
+            useCases = listOf(
+                "API调用：使用HTTP协议调用RESTful API",
+                "数据获取：使用GET方法获取服务器数据",
+                "数据提交：使用POST方法提交数据到服务器",
+                "数据更新：使用PUT或PATCH方法更新服务器数据",
+                "安全通信：使用HTTPS保证数据传输安全"
+            ),
+            notes = listOf(
+                "GET请求参数在URL中，POST请求数据在请求体中",
+                "HTTP是无状态协议，需要使用Cookie或Token维护状态",
+                "HTTPS是加密的HTTP，保证数据传输安全",
+                "不同的HTTP方法有不同的语义，应该正确使用",
+                "HTTP状态码表示请求的处理结果，需要根据状态码进行相应处理",
+                "HTTP头包含元数据信息，如Content-Type、Authorization等",
+                "Android默认支持HTTPS，无需额外配置"
+            ),
+            practiceTips = "建议使用HTTPS保证数据传输安全。正确使用HTTP方法，GET用于获取数据，POST用于创建数据。根据HTTP状态码进行相应的错误处理。使用HTTP头传递必要的元数据信息。注意Cookie和Token的管理，保证安全性。"
+        ),
+        
+        KnowledgeDetail(
+            id = "retrofit",
+            title = "Retrofit配置和使用",
+            overview = "Retrofit是Square开发的类型安全的HTTP客户端库，用于Android和Java。它简化了HTTP API的调用，支持同步和异步请求。",
+            keyPoints = listOf(
+                "类型安全：使用接口定义API，编译时类型检查",
+                "注解支持：使用注解定义HTTP方法、URL、参数等",
+                "数据转换：支持多种数据转换器（Gson、Moshi等）",
+                "协程支持：支持Kotlin协程，简化异步编程",
+                "拦截器：支持OkHttp拦截器，实现认证、日志等功能",
+                "错误处理：统一的错误处理机制"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Retrofit基础配置",
+                    code = """
+                        // 定义API接口
+                        interface ApiService {
+                            @GET("users")
+                            suspend fun getUsers(): List<User>
+                            
+                            @GET("users/{id}")
+                            suspend fun getUserById(@Path("id") id: Long): User
+                            
+                            @POST("users")
+                            suspend fun createUser(@Body user: User): User
+                            
+                            @PUT("users/{id}")
+                            suspend fun updateUser(
+                                @Path("id") id: Long,
+                                @Body user: User
+                            ): User
+                            
+                            @DELETE("users/{id}")
+                            suspend fun deleteUser(@Path("id") id: Long): Response<Unit>
+                        }
+                        
+                        // 配置Retrofit
+                        class RetrofitClient {
+                            private val retrofit = Retrofit.Builder()
+                                .baseUrl("https://api.example.com/")
+                                .addConverterFactory(GsonConverterFactory.create())
+                                .client(createOkHttpClient())
+                                .build()
+                            
+                            val apiService: ApiService = retrofit.create(ApiService::class.java)
+                            
+                            private fun createOkHttpClient(): OkHttpClient {
+                                return OkHttpClient.Builder()
+                                    .addInterceptor(HttpLoggingInterceptor().apply {
+                                        level = HttpLoggingInterceptor.Level.BODY
+                                    })
+                                    .connectTimeout(30, TimeUnit.SECONDS)
+                                    .readTimeout(30, TimeUnit.SECONDS)
+                                    .build()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Retrofit使用接口定义API，通过注解指定HTTP方法和参数。使用Retrofit.Builder配置Retrofit，包括baseUrl、转换器等。"
+                ),
+                CodeExample(
+                    title = "示例2：Retrofit注解使用",
+                    code = """
+                        interface ApiService {
+                            // 路径参数
+                            @GET("users/{id}/posts")
+                            suspend fun getUserPosts(@Path("id") userId: Long): List<Post>
+                            
+                            // 查询参数
+                            @GET("users")
+                            suspend fun searchUsers(
+                                @Query("name") name: String,
+                                @Query("age") age: Int?,
+                                @QueryMap params: Map<String, String>
+                            ): List<User>
+                            
+                            // 请求头
+                            @GET("profile")
+                            @Headers("Authorization: Bearer token123")
+                            suspend fun getProfile(): Profile
+                            
+                            // 动态请求头
+                            @GET("profile")
+                            suspend fun getProfile(
+                                @Header("Authorization") token: String
+                            ): Profile
+                            
+                            // 表单数据
+                            @FormUrlEncoded
+                            @POST("login")
+                            suspend fun login(
+                                @Field("username") username: String,
+                                @Field("password") password: String
+                            ): LoginResponse
+                            
+                            // 文件上传
+                            @Multipart
+                            @POST("upload")
+                            suspend fun uploadFile(
+                                @Part("description") description: RequestBody,
+                                @Part file: MultipartBody.Part
+                            ): UploadResponse
+                        }
+                    """.trimIndent(),
+                    explanation = "Retrofit提供了丰富的注解：@Path用于路径参数，@Query用于查询参数，@Header用于请求头，@Body用于请求体，@FormUrlEncoded和@Field用于表单数据，@Multipart和@Part用于文件上传。"
+                ),
+                CodeExample(
+                    title = "示例3：Retrofit与协程集成",
+                    code = """
+                        interface ApiService {
+                            @GET("users")
+                            suspend fun getUsers(): List<User>
+                            
+                            @GET("users/{id}")
+                            suspend fun getUserById(@Path("id") id: Long): User
+                        }
+                        
+                        class UserRepository(
+                            private val apiService: ApiService
+                        ) {
+                            suspend fun getUsers(): Result<List<User>> {
+                                return try {
+                                    val users = apiService.getUsers()
+                                    Result.success(users)
+                                } catch (e: HttpException) {
+                                    Result.failure(e)
+                                } catch (e: IOException) {
+                                    Result.failure(e)
+                                }
+                            }
+                            
+                            suspend fun getUserById(id: Long): Result<User> {
+                                return try {
+                                    val user = apiService.getUserById(id)
+                                    Result.success(user)
+                                } catch (e: HttpException) {
+                                    when (e.code()) {
+                                        404 -> Result.failure(Exception("用户未找到"))
+                                        else -> Result.failure(e)
+                                    }
+                                } catch (e: IOException) {
+                                    Result.failure(Exception("网络错误"))
+                                }
+                            }
+                        }
+                        
+                        // 在ViewModel中使用
+                        class UserViewModel(
+                            private val repository: UserRepository
+                        ) : ViewModel() {
+                            
+                            private val _users = MutableStateFlow<List<User>>(emptyList())
+                            val users: StateFlow<List<User>> = _users.asStateFlow()
+                            
+                            fun loadUsers() {
+                                viewModelScope.launch {
+                                    repository.getUsers()
+                                        .onSuccess { _users.value = it }
+                                        .onFailure { /* 处理错误 */ }
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Retrofit支持Kotlin协程，使用suspend函数定义API方法。在Repository中处理错误，在ViewModel中使用viewModelScope调用。"
+                ),
+                CodeExample(
+                    title = "示例4：Retrofit错误处理",
+                    code = """
+                        // 自定义错误响应
+                        data class ErrorResponse(
+                            val code: Int,
+                            val message: String
+                        )
+                        
+                        // 使用CallAdapter处理错误
+                        class ApiCallAdapterFactory : CallAdapter.Factory() {
+                            override fun get(
+                                returnType: Type,
+                                annotations: Array<Annotation>,
+                                retrofit: Retrofit
+                            ): CallAdapter<*, *>? {
+                                // 实现自定义CallAdapter
+                                return null
+                            }
+                        }
+                        
+                        // 在Repository中统一处理错误
+                        class ApiRepository(
+                            private val apiService: ApiService
+                        ) {
+                            suspend fun <T> safeApiCall(
+                                apiCall: suspend () -> Response<T>
+                            ): Result<T> {
+                                return try {
+                                    val response = apiCall()
+                                    if (response.isSuccessful) {
+                                        Result.success(response.body()!!)
+                                    } else {
+                                        val errorBody = response.errorBody()?.string()
+                                        Result.failure(Exception("API错误: ${'$'}{response.code()}"))
+                                    }
+                                } catch (e: HttpException) {
+                                    Result.failure(Exception("HTTP错误: ${'$'}{e.code()}"))
+                                } catch (e: IOException) {
+                                    Result.failure(Exception("网络错误: ${'$'}{e.message}"))
+                                } catch (e: Exception) {
+                                    Result.failure(e)
+                                }
+                            }
+                            
+                            suspend fun getUsers(): Result<List<User>> {
+                                return safeApiCall { apiService.getUsers() }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Retrofit的错误处理包括HTTP错误和网络错误。可以使用统一的错误处理函数，也可以使用CallAdapter自定义错误处理。"
+                )
+            ),
+            useCases = listOf(
+                "RESTful API调用：使用Retrofit调用RESTful API",
+                "类型安全：使用接口定义API，编译时类型检查",
+                "异步编程：使用协程简化异步网络请求",
+                "数据转换：使用转换器自动序列化和反序列化数据",
+                "统一配置：统一配置baseUrl、拦截器等"
+            ),
+            notes = listOf(
+                "Retrofit使用接口定义API，通过注解指定HTTP方法和参数",
+                "支持多种数据转换器，如Gson、Moshi、Jackson等",
+                "支持Kotlin协程，使用suspend函数定义API方法",
+                "使用OkHttp作为底层HTTP客户端",
+                "支持拦截器，可以实现认证、日志等功能",
+                "baseUrl必须以/结尾，相对路径不能以/开头",
+                "错误处理包括HTTP错误和网络错误，需要统一处理"
+            ),
+            practiceTips = "建议使用Retrofit进行网络请求，它提供了类型安全和简洁的API。使用接口定义API，通过注解指定HTTP方法和参数。使用协程简化异步编程。统一配置baseUrl和拦截器。实现统一的错误处理机制。使用Repository模式封装API调用。"
+        ),
+        
+        KnowledgeDetail(
+            id = "okhttp",
+            title = "OkHttp配置和拦截器",
+            overview = "OkHttp是Square开发的HTTP客户端库，是Retrofit的底层实现。理解OkHttp的配置和拦截器可以实现认证、日志、缓存等功能。",
+            keyPoints = listOf(
+                "HTTP客户端：OkHttp是强大的HTTP客户端库",
+                "拦截器：使用拦截器实现认证、日志、重试等功能",
+                "连接池：OkHttp使用连接池复用连接，提升性能",
+                "缓存：支持HTTP缓存，减少网络请求",
+                "超时配置：可以配置连接、读取、写入超时",
+                "Cookie管理：支持Cookie的自动管理"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：OkHttp基础配置",
+                    code = """
+                        class OkHttpClientFactory {
+                            fun createOkHttpClient(): OkHttpClient {
+                                return OkHttpClient.Builder()
+                                    // 连接超时
+                                    .connectTimeout(30, TimeUnit.SECONDS)
+                                    // 读取超时
+                                    .readTimeout(30, TimeUnit.SECONDS)
+                                    // 写入超时
+                                    .writeTimeout(30, TimeUnit.SECONDS)
+                                    // 连接池配置
+                                    .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
+                                    // 重试配置
+                                    .retryOnConnectionFailure(true)
+                                    // 拦截器
+                                    .addInterceptor(createLoggingInterceptor())
+                                    .addInterceptor(createAuthInterceptor())
+                                    .addNetworkInterceptor(createCacheInterceptor())
+                                    // Cookie管理
+                                    .cookieJar(createCookieJar())
+                                    // 缓存
+                                    .cache(createCache())
+                                    .build()
+                            }
+                            
+                            private fun createLoggingInterceptor(): Interceptor {
+                                return HttpLoggingInterceptor().apply {
+                                    level = if (BuildConfig.DEBUG) {
+                                        HttpLoggingInterceptor.Level.BODY
+                                    } else {
+                                        HttpLoggingInterceptor.Level.NONE
+                                    }
+                                }
+                            }
+                            
+                            private fun createCache(): Cache {
+                                val cacheSize = 10 * 1024 * 1024L // 10MB
+                                val cacheDir = File(context.cacheDir, "http_cache")
+                                return Cache(cacheDir, cacheSize)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "OkHttp使用Builder模式配置，包括超时、连接池、拦截器、缓存等。可以配置连接、读取、写入超时，设置连接池大小，添加拦截器。"
+                ),
+                CodeExample(
+                    title = "示例2：认证拦截器",
+                    code = """
+                        class AuthInterceptor(
+                            private val tokenManager: TokenManager
+                        ) : Interceptor {
+                            
+                            override fun intercept(chain: Interceptor.Chain): Response {
+                                val originalRequest = chain.request()
+                                
+                                // 获取token
+                                val token = tokenManager.getToken()
+                                
+                                // 添加认证头
+                                val authenticatedRequest = originalRequest.newBuilder()
+                                    .header("Authorization", "Bearer ${'$'}token")
+                                    .build()
+                                
+                                // 执行请求
+                                val response = chain.proceed(authenticatedRequest)
+                                
+                                // 如果token过期，尝试刷新token
+                                if (response.code == 401) {
+                                    val newToken = tokenManager.refreshToken()
+                                    if (newToken != null) {
+                                        val retryRequest = originalRequest.newBuilder()
+                                            .header("Authorization", "Bearer ${'$'}newToken")
+                                            .build()
+                                        return chain.proceed(retryRequest)
+                                    }
+                                }
+                                
+                                return response
+                            }
+                        }
+                        
+                        class TokenManager {
+                            private var token: String? = null
+                            
+                            fun getToken(): String? = token
+                            
+                            fun refreshToken(): String? {
+                                // 刷新token的逻辑
+                                return null
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "认证拦截器用于自动添加认证头。如果请求返回401，可以尝试刷新token并重试请求。"
+                ),
+                CodeExample(
+                    title = "示例3：日志拦截器",
+                    code = """
+                        class CustomLoggingInterceptor : Interceptor {
+                            
+                            override fun intercept(chain: Interceptor.Chain): Response {
+                                val request = chain.request()
+                                
+                                // 记录请求信息
+                                val requestBody = request.body
+                                val requestLog = StringBuilder().apply {
+                                    append("Request: ${'$'}{request.method} ${'$'}{request.url}\n")
+                                    append("Headers: ${'$'}{request.headers}\n")
+                                    if (requestBody != null) {
+                                        append("Body: ${'$'}{requestBody.toString()}\n")
+                                    }
+                                }
+                                Log.d("OkHttp", requestLog.toString())
+                                
+                                val startTime = System.currentTimeMillis()
+                                val response = chain.proceed(request)
+                                val endTime = System.currentTimeMillis()
+                                
+                                // 记录响应信息
+                                val responseLog = StringBuilder().apply {
+                                    append("Response: ${'$'}{response.code} ${'$'}{response.message}\n")
+                                    append("Time: ${'$'}{endTime - startTime}ms\n")
+                                    append("Headers: ${'$'}{response.headers}\n")
+                                }
+                                Log.d("OkHttp", responseLog.toString())
+                                
+                                return response
+                            }
+                        }
+                        
+                        // 或者使用HttpLoggingInterceptor
+                        val loggingInterceptor = HttpLoggingInterceptor().apply {
+                            level = HttpLoggingInterceptor.Level.BODY
+                        }
+                    """.trimIndent(),
+                    explanation = "日志拦截器用于记录请求和响应信息，便于调试。可以使用自定义拦截器或HttpLoggingInterceptor。"
+                ),
+                CodeExample(
+                    title = "示例4：缓存拦截器",
+                    code = """
+                        class CacheInterceptor : Interceptor {
+                            
+                            override fun intercept(chain: Interceptor.Chain): Response {
+                                val request = chain.request()
+                                
+                                // 尝试从缓存获取响应
+                                val cacheResponse = getCachedResponse(request)
+                                if (cacheResponse != null) {
+                                    return cacheResponse
+                                }
+                                
+                                // 执行网络请求
+                                val response = chain.proceed(request)
+                                
+                                // 缓存响应
+                                cacheResponse(response)
+                                
+                                return response
+                            }
+                            
+                            private fun getCachedResponse(request: Request): Response? {
+                                // 从缓存获取响应的逻辑
+                                return null
+                            }
+                            
+                            private fun cacheResponse(response: Response) {
+                                // 缓存响应的逻辑
+                            }
+                        }
+                        
+                        // 或者使用OkHttp内置缓存
+                        val cache = Cache(
+                            directory = File(context.cacheDir, "http_cache"),
+                            maxSize = 10 * 1024 * 1024L // 10MB
+                        )
+                        
+                        val client = OkHttpClient.Builder()
+                            .cache(cache)
+                            .build()
+                    """.trimIndent(),
+                    explanation = "缓存拦截器用于缓存HTTP响应，减少网络请求。可以使用自定义拦截器或OkHttp内置的Cache。"
+                )
+            ),
+            useCases = listOf(
+                "HTTP客户端：使用OkHttp作为HTTP客户端",
+                "认证：使用拦截器实现自动认证",
+                "日志：使用拦截器记录请求和响应日志",
+                "缓存：使用缓存减少网络请求",
+                "重试：实现请求重试机制"
+            ),
+            notes = listOf(
+                "OkHttp是Retrofit的底层HTTP客户端",
+                "拦截器分为应用拦截器和网络拦截器",
+                "应用拦截器在请求发送前和响应返回后执行",
+                "网络拦截器在建立连接后执行，可以访问实际网络请求",
+                "连接池可以复用连接，提升性能",
+                "缓存可以减少网络请求，提升响应速度",
+                "超时配置包括连接、读取、写入超时"
+            ),
+            practiceTips = "建议使用OkHttp作为HTTP客户端，它提供了强大的功能和良好的性能。使用拦截器实现认证、日志等功能。配置连接池和缓存提升性能。注意超时配置，避免请求长时间等待。使用Cookie管理自动处理Cookie。"
+        ),
+        
+        KnowledgeDetail(
+            id = "data_parsing",
+            title = "数据解析（JSON、XML、Protobuf）",
+            overview = "网络请求返回的数据通常是JSON、XML或Protobuf格式，需要解析成对象。理解不同数据格式的解析方法是网络编程的基础。",
+            keyPoints = listOf(
+                "JSON解析：使用Gson、Moshi等库解析JSON数据",
+                "XML解析：使用XmlPullParser等解析XML数据",
+                "Protobuf：使用Protocol Buffers进行数据序列化",
+                "数据转换：使用Retrofit的转换器自动解析数据",
+                "自定义解析：实现自定义的数据解析逻辑",
+                "错误处理：处理解析错误和异常情况"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：JSON解析（Gson）",
+                    code = """
+                        // 数据类
+                        data class User(
+                            val id: Long,
+                            val name: String,
+                            val email: String,
+                            val age: Int
+                        )
+                        
+                        // 使用Gson解析JSON
+                        class JsonParser {
+                            private val gson = Gson()
+                            
+                            // 解析单个对象
+                            fun parseUser(json: String): User {
+                                return gson.fromJson(json, User::class.java)
+                            }
+                            
+                            // 解析列表
+                            fun parseUsers(json: String): List<User> {
+                                val type = object : TypeToken<List<User>>() {}.type
+                                return gson.fromJson(json, type)
+                            }
+                            
+                            // 对象转JSON
+                            fun toJson(user: User): String {
+                                return gson.toJson(user)
+                            }
+                            
+                            // 处理嵌套对象
+                            data class UserResponse(
+                                val code: Int,
+                                val message: String,
+                                val data: User
+                            )
+                            
+                            fun parseUserResponse(json: String): UserResponse {
+                                return gson.fromJson(json, UserResponse::class.java)
+                            }
+                        }
+                        
+                        // 在Retrofit中使用GsonConverterFactory
+                        val retrofit = Retrofit.Builder()
+                            .baseUrl("https://api.example.com/")
+                            .addConverterFactory(GsonConverterFactory.create())
+                            .build()
+                    """.trimIndent(),
+                    explanation = "Gson是Google开发的JSON解析库，可以自动将JSON转换为对象，也可以将对象转换为JSON。在Retrofit中使用GsonConverterFactory自动解析响应。"
+                ),
+                CodeExample(
+                    title = "示例2：JSON解析（Moshi）",
+                    code = """
+                        // 使用Moshi解析JSON（Kotlin友好）
+                        class MoshiParser {
+                            private val moshi = Moshi.Builder()
+                                .add(KotlinJsonAdapterFactory())
+                                .build()
+                            
+                            private val userAdapter = moshi.adapter(User::class.java)
+                            
+                            // 解析JSON
+                            fun parseUser(json: String): User? {
+                                return try {
+                                    userAdapter.fromJson(json)
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            }
+                            
+                            // 对象转JSON
+                            fun toJson(user: User): String {
+                                return userAdapter.toJson(user)
+                            }
+                        }
+                        
+                        // 在Retrofit中使用MoshiConverterFactory
+                        val moshi = Moshi.Builder()
+                            .add(KotlinJsonAdapterFactory())
+                            .build()
+                        
+                        val retrofit = Retrofit.Builder()
+                            .baseUrl("https://api.example.com/")
+                            .addConverterFactory(MoshiConverterFactory.create(moshi))
+                            .build()
+                    """.trimIndent(),
+                    explanation = "Moshi是Square开发的JSON解析库，对Kotlin更友好。使用KotlinJsonAdapterFactory支持Kotlin特性，如数据类、可空类型等。"
+                ),
+                CodeExample(
+                    title = "示例3：XML解析",
+                    code = """
+                        // XML数据
+                        // <users>
+                        //     <user>
+                        //         <id>1</id>
+                        //         <name>John</name>
+                        //         <email>john@example.com</email>
+                        //     </user>
+                        // </users>
+                        
+                        class XmlParser(private val context: Context) {
+                            
+                            fun parseUsers(xml: String): List<User> {
+                                val users = mutableListOf<User>()
+                                
+                                val parser = Xml.newPullParser()
+                                parser.setInput(StringReader(xml))
+                                
+                                var eventType = parser.eventType
+                                var currentUser: User? = null
+                                var currentTag: String? = null
+                                
+                                while (eventType != XmlPullParser.END_DOCUMENT) {
+                                    when (eventType) {
+                                        XmlPullParser.START_TAG -> {
+                                            when (parser.name) {
+                                                "user" -> {
+                                                    currentUser = User(0, "", "", 0)
+                                                }
+                                                "id", "name", "email", "age" -> {
+                                                    currentTag = parser.name
+                                                }
+                                            }
+                                        }
+                                        XmlPullParser.TEXT -> {
+                                            val text = parser.text
+                                            currentUser?.let { user ->
+                                                when (currentTag) {
+                                                    "id" -> user.id = text.toLong()
+                                                    "name" -> user.name = text
+                                                    "email" -> user.email = text
+                                                    "age" -> user.age = text.toInt()
+                                                }
+                                            }
+                                        }
+                                        XmlPullParser.END_TAG -> {
+                                            if (parser.name == "user") {
+                                                currentUser?.let { users.add(it) }
+                                                currentUser = null
+                                            }
+                                            currentTag = null
+                                        }
+                                    }
+                                    eventType = parser.next()
+                                }
+                                
+                                return users
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "XML解析使用XmlPullParser，通过事件驱动的方式解析XML。需要处理START_TAG、TEXT、END_TAG等事件。"
+                ),
+                CodeExample(
+                    title = "示例4：Protobuf",
+                    code = """
+                        // 定义.proto文件
+                        // syntax = "proto3";
+                        // 
+                        // message User {
+                        //     int64 id = 1;
+                        //     string name = 2;
+                        //     string email = 3;
+                        //     int32 age = 4;
+                        // }
+                        
+                        // 使用Protobuf（需要先编译.proto文件生成Java类）
+                        class ProtobufParser {
+                            
+                            // 序列化
+                            fun serializeUser(user: User): ByteArray {
+                                return user.toByteArray()
+                            }
+                            
+                            // 反序列化
+                            fun deserializeUser(data: ByteArray): User {
+                                return User.parseFrom(data)
+                            }
+                        }
+                        
+                        // 在Retrofit中使用ProtobufConverterFactory
+                        val retrofit = Retrofit.Builder()
+                            .baseUrl("https://api.example.com/")
+                            .addConverterFactory(ProtoConverterFactory.create())
+                            .build()
+                        
+                        // Protobuf的优势：
+                        // 1. 更小的数据体积
+                        // 2. 更快的解析速度
+                        // 3. 类型安全
+                        // 4. 向后兼容
+                    """.trimIndent(),
+                    explanation = "Protobuf是Google开发的数据序列化格式，比JSON更小更快。需要先定义.proto文件，然后编译生成Java类。在Retrofit中使用ProtoConverterFactory。"
+                )
+            ),
+            useCases = listOf(
+                "API响应解析：解析RESTful API返回的JSON数据",
+                "数据序列化：将对象序列化为JSON发送到服务器",
+                "XML处理：处理XML格式的数据",
+                "高性能场景：使用Protobuf提升性能",
+                "数据转换：使用转换器自动解析数据"
+            ),
+            notes = listOf(
+                "JSON是最常用的数据格式，Gson和Moshi是常用的解析库",
+                "Moshi对Kotlin更友好，支持Kotlin特性",
+                "XML解析使用XmlPullParser，是事件驱动的",
+                "Protobuf比JSON更小更快，适合高性能场景",
+                "Retrofit支持多种转换器，可以自动解析响应",
+                "需要处理解析错误和异常情况",
+                "自定义解析可以实现特殊的数据格式处理"
+            ),
+            practiceTips = "建议使用Gson或Moshi解析JSON数据，Moshi对Kotlin更友好。在Retrofit中使用转换器自动解析响应。对于XML数据，使用XmlPullParser解析。对于高性能场景，考虑使用Protobuf。注意处理解析错误和异常情况。"
+        ),
+        
+        KnowledgeDetail(
+            id = "networking_best",
+            title = "网络最佳实践",
+            overview = "网络编程的最佳实践包括错误处理、重试机制、缓存策略、性能优化等。遵循最佳实践可以构建稳定、高效的网络应用。",
+            keyPoints = listOf(
+                "错误处理：统一的错误处理机制，处理网络错误和业务错误",
+                "重试机制：实现智能重试，处理临时网络故障",
+                "缓存策略：使用缓存减少网络请求，提升响应速度",
+                "性能优化：优化网络请求，减少数据传输",
+                "安全性：使用HTTPS、证书锁定等保证安全性",
+                "监控和日志：记录网络请求日志，监控网络性能"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：统一错误处理",
+                    code = """
+                        // 定义错误类型
+                        sealed class NetworkError {
+                            data class HttpError(val code: Int, val message: String) : NetworkError()
+                            data class NetworkException(val message: String) : NetworkError()
+                            data class ParseError(val message: String) : NetworkError()
+                            object UnknownError : NetworkError()
+                        }
+                        
+                        // 统一错误处理函数
+                        class NetworkErrorHandler {
+                            
+                            suspend fun <T> safeApiCall(
+                                apiCall: suspend () -> Response<T>
+                            ): Result<T, NetworkError> {
+                                return try {
+                                    val response = apiCall()
+                                    if (response.isSuccessful) {
+                                        Result.success(response.body()!!)
+                                    } else {
+                                        Result.failure(
+                                            NetworkError.HttpError(
+                                                response.code(),
+                                                response.message()
+                                            )
+                                        )
+                                    }
+                                } catch (e: HttpException) {
+                                    Result.failure(
+                                        NetworkError.HttpError(e.code(), e.message())
+                                    )
+                                } catch (e: IOException) {
+                                    Result.failure(
+                                        NetworkError.NetworkException(e.message ?: "网络错误")
+                                    )
+                                } catch (e: Exception) {
+                                    Result.failure(NetworkError.UnknownError)
+                                }
+                            }
+                        }
+                        
+                        // 在Repository中使用
+                        class UserRepository(
+                            private val apiService: ApiService,
+                            private val errorHandler: NetworkErrorHandler
+                        ) {
+                            suspend fun getUsers(): Result<List<User>, NetworkError> {
+                                return errorHandler.safeApiCall { apiService.getUsers() }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "统一的错误处理机制可以简化错误处理逻辑。使用sealed class定义错误类型，使用统一的错误处理函数处理各种错误。"
+                ),
+                CodeExample(
+                    title = "示例2：重试机制",
+                    code = """
+                        class RetryInterceptor(
+                            private val maxRetries: Int = 3
+                        ) : Interceptor {
+                            
+                            override fun intercept(chain: Interceptor.Chain): Response {
+                                var request = chain.request()
+                                var response: Response? = null
+                                var lastException: IOException? = null
+                                
+                                for (attempt in 0..maxRetries) {
+                                    try {
+                                        response = chain.proceed(request)
+                                        
+                                        // 如果成功或不可重试的错误，直接返回
+                                        if (response.isSuccessful || !shouldRetry(response, attempt)) {
+                                            return response
+                                        }
+                                        
+                                        // 关闭响应体
+                                        response.close()
+                                    } catch (e: IOException) {
+                                        lastException = e
+                                        
+                                        // 如果是最后一次尝试，抛出异常
+                                        if (attempt == maxRetries) {
+                                            throw e
+                                        }
+                                    }
+                                    
+                                    // 等待后重试
+                                    Thread.sleep(getRetryDelay(attempt))
+                                }
+                                
+                                throw lastException ?: IOException("未知错误")
+                            }
+                            
+                            private fun shouldRetry(response: Response, attempt: Int): Boolean {
+                                // 只对特定错误码重试
+                                return response.code in listOf(500, 502, 503, 504) && attempt < maxRetries
+                            }
+                            
+                            private fun getRetryDelay(attempt: Int): Long {
+                                // 指数退避
+                                return (1000 * (1 shl attempt)).toLong()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "重试机制可以处理临时网络故障。使用拦截器实现重试逻辑，支持指数退避策略。只对特定错误码重试，避免无限重试。"
+                ),
+                CodeExample(
+                    title = "示例3：缓存策略",
+                    code = """
+                        class CacheStrategy {
+                            
+                            // 使用OkHttp缓存
+                            fun createCache(context: Context): Cache {
+                                val cacheSize = 10 * 1024 * 1024L // 10MB
+                                val cacheDir = File(context.cacheDir, "http_cache")
+                                return Cache(cacheDir, cacheSize)
+                            }
+                            
+                            // 缓存拦截器
+                            class CacheInterceptor : Interceptor {
+                                override fun intercept(chain: Interceptor.Chain): Response {
+                                    val request = chain.request()
+                                    
+                                    // 检查缓存
+                                    val cacheResponse = getCachedResponse(request)
+                                    if (cacheResponse != null && isCacheValid(cacheResponse)) {
+                                        return cacheResponse
+                                    }
+                                    
+                                    // 执行网络请求
+                                    val response = chain.proceed(request)
+                                    
+                                    // 缓存响应
+                                    if (shouldCache(response)) {
+                                        cacheResponse(response)
+                                    }
+                                    
+                                    return response
+                                }
+                                
+                                private fun getCachedResponse(request: Request): Response? {
+                                    // 从缓存获取响应
+                                    return null
+                                }
+                                
+                                private fun isCacheValid(response: Response): Boolean {
+                                    // 检查缓存是否有效
+                                    val cacheControl = response.header("Cache-Control")
+                                    return cacheControl?.contains("max-age") == true
+                                }
+                                
+                                private fun shouldCache(response: Response): Boolean {
+                                    // 判断是否应该缓存
+                                    return response.isSuccessful && response.code == 200
+                                }
+                                
+                                private fun cacheResponse(response: Response) {
+                                    // 缓存响应
+                                }
+                            }
+                            
+                            // 在请求中设置缓存控制
+                            fun createCachedRequest(url: String): Request {
+                                return Request.Builder()
+                                    .url(url)
+                                    .header("Cache-Control", "max-age=3600") // 缓存1小时
+                                    .build()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "缓存策略可以减少网络请求，提升响应速度。使用OkHttp缓存或自定义缓存拦截器实现缓存。根据响应头判断缓存是否有效。"
+                ),
+                CodeExample(
+                    title = "示例4：性能优化",
+                    code = """
+                        class NetworkOptimizer {
+                            
+                            // 1. 使用连接池
+                            fun createOptimizedClient(): OkHttpClient {
+                                return OkHttpClient.Builder()
+                                    .connectionPool(
+                                        ConnectionPool(
+                                            maxIdleConnections = 5,
+                                            keepAliveDuration = 5,
+                                            timeUnit = TimeUnit.MINUTES
+                                        )
+                                    )
+                                    .build()
+                            }
+                            
+                            // 2. 压缩请求和响应
+                            class CompressionInterceptor : Interceptor {
+                                override fun intercept(chain: Interceptor.Chain): Response {
+                                    val request = chain.request().newBuilder()
+                                        .header("Accept-Encoding", "gzip")
+                                        .build()
+                                    
+                                    val response = chain.proceed(request)
+                                    
+                                    // 自动解压响应
+                                    return response
+                                }
+                            }
+                            
+                            // 3. 批量请求
+                            suspend fun batchRequest(requests: List<Request>): List<Response> {
+                                return coroutineScope {
+                                    requests.map { request ->
+                                        async { executeRequest(request) }
+                                    }.awaitAll()
+                                }
+                            }
+                            
+                            // 4. 请求去重
+                            class RequestDeduplicationInterceptor : Interceptor {
+                                private val pendingRequests = mutableMapOf<String, Deferred<Response>>()
+                                
+                                override fun intercept(chain: Interceptor.Chain): Response {
+                                    val request = chain.request()
+                                    val key = request.url.toString()
+                                    
+                                    // 如果已有相同请求在进行，等待其结果
+                                    pendingRequests[key]?.let {
+                                        return it.await()
+                                    }
+                                    
+                                    // 执行请求
+                                    val deferred = async { chain.proceed(request) }
+                                    pendingRequests[key] = deferred
+                                    
+                                    return try {
+                                        deferred.await()
+                                    } finally {
+                                        pendingRequests.remove(key)
+                                    }
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "网络性能优化包括使用连接池、压缩数据、批量请求、请求去重等。这些优化可以提升网络请求的效率和性能。"
+                )
+            ),
+            useCases = listOf(
+                "错误处理：统一的错误处理机制，提升用户体验",
+                "重试机制：处理临时网络故障，提高请求成功率",
+                "缓存策略：减少网络请求，提升响应速度",
+                "性能优化：优化网络请求，提升应用性能",
+                "安全性：保证数据传输安全"
+            ),
+            notes = listOf(
+                "统一的错误处理可以简化错误处理逻辑",
+                "重试机制应该使用指数退避策略，避免过度重试",
+                "缓存策略可以减少网络请求，但需要注意缓存失效",
+                "使用连接池可以复用连接，提升性能",
+                "压缩数据可以减少传输量，提升速度",
+                "使用HTTPS保证数据传输安全",
+                "记录网络请求日志，便于调试和监控"
+            ),
+            practiceTips = "建议实现统一的错误处理机制，简化错误处理逻辑。使用重试机制处理临时网络故障，使用指数退避策略。实现缓存策略减少网络请求。优化网络性能，使用连接池、压缩等。使用HTTPS保证安全性。记录网络请求日志，便于调试和监控。"
         )
     )
 }
