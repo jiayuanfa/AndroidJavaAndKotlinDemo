@@ -3812,6 +3812,738 @@ object AndroidDetailRepository {
                 "DataStore不支持多进程访问，多进程场景需要使用其他方案"
             ),
             practiceTips = "建议使用Repository模式封装DataStore访问，ViewModel通过Repository访问数据。使用Flow实现响应式数据流，在Compose中使用collectAsState。对于复杂数据，考虑使用Proto DataStore或Room。迁移SharedPreferences时，确保数据完整性。"
+        ),
+        
+        KnowledgeDetail(
+            id = "shared_prefs",
+            title = "SharedPreferences",
+            overview = "SharedPreferences是Android提供的轻量级键值对存储方案，用于存储简单的配置数据。虽然DataStore是推荐的替代方案，但理解SharedPreferences仍然重要，特别是在维护旧代码时。",
+            keyPoints = listOf(
+                "键值对存储：使用键值对方式存储简单的配置数据",
+                "同步操作：SharedPreferences是同步的，可能阻塞主线程",
+                "数据类型：支持String、Int、Long、Float、Boolean、Set<String>等类型",
+                "文件存储：数据存储在XML文件中",
+                "多进程：支持多进程访问，但需要MODE_MULTI_PROCESS（已过时）",
+                "迁移：可以从SharedPreferences迁移到DataStore"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：SharedPreferences基础使用",
+                    code = """
+                        class SettingsManager(context: Context) {
+                            private val prefs = context.getSharedPreferences(
+                                "settings",
+                                Context.MODE_PRIVATE
+                            )
+                            
+                            // 写入数据
+                            fun saveUserName(name: String) {
+                                prefs.edit().apply {
+                                    putString("user_name", name)
+                                    apply()  // 异步提交
+                                    // 或使用commit()同步提交
+                                }
+                            }
+                            
+                            fun saveUserAge(age: Int) {
+                                prefs.edit()
+                                    .putInt("user_age", age)
+                                    .apply()
+                            }
+                            
+                            fun saveIsLoggedIn(isLoggedIn: Boolean) {
+                                prefs.edit()
+                                    .putBoolean("is_logged_in", isLoggedIn)
+                                    .apply()
+                            }
+                            
+                            // 读取数据
+                            fun getUserName(): String {
+                                return prefs.getString("user_name", "") ?: ""
+                            }
+                            
+                            fun getUserAge(): Int {
+                                return prefs.getInt("user_age", 0)
+                            }
+                            
+                            fun isLoggedIn(): Boolean {
+                                return prefs.getBoolean("is_logged_in", false)
+                            }
+                            
+                            // 删除数据
+                            fun clearUserData() {
+                                prefs.edit().clear().apply()
+                            }
+                            
+                            fun removeUserName() {
+                                prefs.edit().remove("user_name").apply()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "SharedPreferences使用getSharedPreferences获取实例，使用edit()获取Editor进行写入操作。apply()异步提交，commit()同步提交。"
+                ),
+                CodeExample(
+                    title = "示例2：SharedPreferences监听器",
+                    code = """
+                        class SettingsManager(context: Context) {
+                            private val prefs = context.getSharedPreferences(
+                                "settings",
+                                Context.MODE_PRIVATE
+                            )
+                            
+                            // 注册监听器
+                            fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+                                prefs.registerOnSharedPreferenceChangeListener(listener)
+                            }
+                            
+                            // 取消注册监听器
+                            fun unregisterListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+                                prefs.unregisterOnSharedPreferenceChangeListener(listener)
+                            }
+                        }
+                        
+                        // 在Activity中使用
+                        class MainActivity : AppCompatActivity() {
+                            private val settingsManager = SettingsManager(this)
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                val listener = SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+                                    when (key) {
+                                        "user_name" -> {
+                                            // 处理用户名变化
+                                            val newName = prefs.getString(key, "")
+                                        }
+                                    }
+                                }
+                                
+                                settingsManager.registerListener(listener)
+                            }
+                            
+                            override fun onDestroy() {
+                                super.onDestroy()
+                                // 记得取消注册，避免内存泄漏
+                                // settingsManager.unregisterListener(listener)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "SharedPreferences支持监听器，可以监听数据变化。但需要注意在适当时机取消注册，避免内存泄漏。"
+                ),
+                CodeExample(
+                    title = "示例3：SharedPreferences的限制和迁移",
+                    code = """
+                        // SharedPreferences的限制：
+                        // 1. 同步操作可能阻塞主线程
+                        // 2. 不支持类型安全
+                        // 3. 不支持Flow响应式数据流
+                        // 4. 多进程支持有限
+                        
+                        // 迁移到DataStore
+                        class MigrationHelper(
+                            private val context: Context,
+                            private val dataStore: DataStore<Preferences>
+                        ) {
+                            suspend fun migrateFromSharedPreferences() {
+                                val sharedPrefs = context.getSharedPreferences(
+                                    "settings",
+                                    Context.MODE_PRIVATE
+                                )
+                                
+                                val allEntries = sharedPrefs.all
+                                
+                                dataStore.edit { preferences ->
+                                    allEntries.forEach { (key, value) ->
+                                        when (value) {
+                                            is String -> {
+                                                preferences[stringPreferencesKey(key)] = value
+                                            }
+                                            is Int -> {
+                                                preferences[intPreferencesKey(key)] = value
+                                            }
+                                            is Long -> {
+                                                preferences[longPreferencesKey(key)] = value
+                                            }
+                                            is Float -> {
+                                                preferences[floatPreferencesKey(key)] = value
+                                            }
+                                            is Boolean -> {
+                                                preferences[booleanPreferencesKey(key)] = value
+                                            }
+                                            is Set<*> -> {
+                                                preferences[stringSetPreferencesKey(key)] = value as Set<String>
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // 迁移完成后，可以删除SharedPreferences
+                                // sharedPrefs.edit().clear().apply()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "SharedPreferences有诸多限制，建议迁移到DataStore。迁移时读取SharedPreferences的所有数据并写入DataStore。"
+                )
+            ),
+            useCases = listOf(
+                "简单配置：存储简单的应用配置数据",
+                "用户偏好：存储用户偏好设置",
+                "临时数据：存储临时数据（不推荐，应该使用DataStore）",
+                "旧代码维护：维护使用SharedPreferences的旧代码",
+                "快速原型：在快速原型开发中使用（不推荐用于生产环境）"
+            ),
+            notes = listOf(
+                "SharedPreferences是同步的，可能阻塞主线程，应该使用apply()而不是commit()",
+                "apply()是异步的，commit()是同步的，推荐使用apply()",
+                "SharedPreferences不支持类型安全，容易出现类型错误",
+                "不支持Flow响应式数据流，无法自动响应数据变化",
+                "多进程支持有限，MODE_MULTI_PROCESS已过时",
+                "数据存储在XML文件中，不适合存储大量数据",
+                "建议迁移到DataStore，它是Android推荐的现代数据存储方案"
+            ),
+            practiceTips = "虽然SharedPreferences仍然可用，但建议新项目使用DataStore。如果必须使用SharedPreferences，使用apply()而不是commit()，避免阻塞主线程。对于旧代码，考虑逐步迁移到DataStore。注意监听器的注册和取消注册，避免内存泄漏。不要使用SharedPreferences存储敏感数据，应该使用EncryptedSharedPreferences。"
+        ),
+        
+        KnowledgeDetail(
+            id = "file_storage",
+            title = "文件存储（内部存储、外部存储、Scoped Storage）",
+            overview = "Android提供了多种文件存储方式，包括内部存储、外部存储和Scoped Storage。理解这些存储方式的特点和使用场景是Android文件操作的基础。",
+            keyPoints = listOf(
+                "内部存储：应用私有存储，其他应用无法访问，卸载应用时删除",
+                "外部存储：共享存储，其他应用可以访问，分为公共目录和应用私有目录",
+                "Scoped Storage：Android 10+引入的存储范围限制，提升用户隐私",
+                "MediaStore API：访问媒体文件（图片、视频、音频）的标准API",
+                "SAF（Storage Access Framework）：用户选择文件和目录的框架",
+                "权限：访问外部存储需要相应的权限"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：内部存储",
+                    code = """
+                        class FileStorageManager(private val context: Context) {
+                            
+                            // 写入内部存储
+                            fun writeToInternalStorage(filename: String, content: String) {
+                                try {
+                                    context.openFileOutput(filename, Context.MODE_PRIVATE).use { output ->
+                                        output.write(content.toByteArray())
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+                            
+                            // 读取内部存储
+                            fun readFromInternalStorage(filename: String): String {
+                                return try {
+                                    context.openFileInput(filename).use { input ->
+                                        input.bufferedReader().use { reader ->
+                                            reader.readText()
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    ""
+                                }
+                            }
+                            
+                            // 获取内部存储目录
+                            fun getInternalStorageDir(): File {
+                                return context.filesDir  // /data/data/包名/files
+                            }
+                            
+                            // 获取缓存目录
+                            fun getCacheDir(): File {
+                                return context.cacheDir  // /data/data/包名/cache
+                            }
+                            
+                            // 列出内部文件
+                            fun listInternalFiles(): Array<String> {
+                                return context.fileList()
+                            }
+                            
+                            // 删除内部文件
+                            fun deleteInternalFile(filename: String): Boolean {
+                                return context.deleteFile(filename)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "内部存储使用openFileOutput和openFileInput进行文件操作。数据存储在应用私有目录，其他应用无法访问。"
+                ),
+                CodeExample(
+                    title = "示例2：外部存储（Android 9及以下）",
+                    code = """
+                        class ExternalStorageManager(private val context: Context) {
+                            
+                            // 检查外部存储是否可用
+                            fun isExternalStorageWritable(): Boolean {
+                                return Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED
+                            }
+                            
+                            // 获取外部存储目录（需要权限）
+                            fun getExternalStorageDir(): File? {
+                                return if (isExternalStorageWritable()) {
+                                    context.getExternalFilesDir(null)  // 应用私有目录
+                                    // 或 Environment.getExternalStorageDirectory()  // 公共目录（已过时）
+                                } else {
+                                    null
+                                }
+                            }
+                            
+                            // 写入外部存储
+                            fun writeToExternalStorage(filename: String, content: String) {
+                                val file = File(context.getExternalFilesDir(null), filename)
+                                try {
+                                    file.writeText(content)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+                            
+                            // 读取外部存储
+                            fun readFromExternalStorage(filename: String): String {
+                                val file = File(context.getExternalFilesDir(null), filename)
+                                return try {
+                                    file.readText()
+                                } catch (e: Exception) {
+                                    ""
+                                }
+                            }
+                        }
+                        
+                        // AndroidManifest.xml
+                        // <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+                        // <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+                    """.trimIndent(),
+                    explanation = "外部存储分为应用私有目录（getExternalFilesDir）和公共目录。Android 10+引入了Scoped Storage，限制了公共目录的访问。"
+                ),
+                CodeExample(
+                    title = "示例3：Scoped Storage和MediaStore API（Android 10+）",
+                    code = """
+                        class ScopedStorageManager(private val context: Context) {
+                            
+                            // 使用MediaStore保存图片
+                            suspend fun saveImage(bitmap: Bitmap, displayName: String): Uri? {
+                                val contentValues = ContentValues().apply {
+                                    put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, displayName)
+                                    put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                                    put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                                }
+                                
+                                val uri = context.contentResolver.insert(
+                                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                    contentValues
+                                )
+                                
+                                uri?.let {
+                                    context.contentResolver.openOutputStream(it)?.use { output ->
+                                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output)
+                                    }
+                                }
+                                
+                                return uri
+                            }
+                            
+                            // 使用MediaStore读取图片
+                            suspend fun loadImages(): List<Uri> {
+                                val projection = arrayOf(android.provider.MediaStore.Images.Media._ID)
+                                val selection = "${android.provider.MediaStore.Images.Media.DATE_ADDED} >= ?"
+                                val selectionArgs = arrayOf(
+                                    (System.currentTimeMillis() / 1000 - 86400).toString()
+                                )
+                                
+                                val images = mutableListOf<Uri>()
+                                
+                                context.contentResolver.query(
+                                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                    projection,
+                                    selection,
+                                    selectionArgs,
+                                    "${android.provider.MediaStore.Images.Media.DATE_ADDED} DESC"
+                                )?.use { cursor ->
+                                    val idColumn = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media._ID)
+                                    while (cursor.moveToNext()) {
+                                        val id = cursor.getLong(idColumn)
+                                        val uri = ContentUris.withAppendedId(
+                                            android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                            id
+                                        )
+                                        images.add(uri)
+                                    }
+                                }
+                                
+                                return images
+                            }
+                        }
+                        
+                        // AndroidManifest.xml（Android 10+不需要存储权限）
+                        // 但访问其他应用的媒体文件需要权限
+                        // <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+                    """.trimIndent(),
+                    explanation = "Scoped Storage限制了应用对公共目录的访问。使用MediaStore API访问媒体文件，这是Android 10+推荐的方式。"
+                ),
+                CodeExample(
+                    title = "示例4：SAF（Storage Access Framework）",
+                    code = """
+                        class SAFManager(private val activity: Activity) {
+                            
+                            // 选择文件
+                            fun selectFile() {
+                                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                    type = "*/*"
+                                    // 或指定类型：type = "image/*"
+                                }
+                                activity.startActivityForResult(intent, REQUEST_CODE_SELECT_FILE)
+                            }
+                            
+                            // 创建文件
+                            fun createFile() {
+                                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TITLE, "new_file.txt")
+                                }
+                                activity.startActivityForResult(intent, REQUEST_CODE_CREATE_FILE)
+                            }
+                            
+                            // 处理结果
+                            fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+                                if (resultCode == Activity.RESULT_OK && data != null) {
+                                    val uri = data.data
+                                    uri?.let {
+                                        // 读取文件
+                                        readFile(uri)
+                                        
+                                        // 写入文件
+                                        writeFile(uri, "content")
+                                    }
+                                }
+                            }
+                            
+                            // 读取文件
+                            private fun readFile(uri: Uri): String {
+                                return try {
+                                    activity.contentResolver.openInputStream(uri)?.use { input ->
+                                        input.bufferedReader().use { reader ->
+                                            reader.readText()
+                                        }
+                                    } ?: ""
+                                } catch (e: Exception) {
+                                    ""
+                                }
+                            }
+                            
+                            // 写入文件
+                            private fun writeFile(uri: Uri, content: String) {
+                                try {
+                                    activity.contentResolver.openOutputStream(uri)?.use { output ->
+                                        output.write(content.toByteArray())
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+                            
+                            companion object {
+                                const val REQUEST_CODE_SELECT_FILE = 1001
+                                const val REQUEST_CODE_CREATE_FILE = 1002
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "SAF允许用户选择文件和目录，无需存储权限。使用Intent.ACTION_OPEN_DOCUMENT选择文件，使用Intent.ACTION_CREATE_DOCUMENT创建文件。"
+                )
+            ),
+            useCases = listOf(
+                "应用数据：使用内部存储存储应用私有数据",
+                "缓存数据：使用缓存目录存储临时缓存数据",
+                "媒体文件：使用MediaStore API访问图片、视频、音频等媒体文件",
+                "用户文件：使用SAF让用户选择和管理文件",
+                "数据备份：使用外部存储备份应用数据"
+            ),
+            notes = listOf(
+                "内部存储是应用私有的，其他应用无法访问，卸载应用时删除",
+                "外部存储分为应用私有目录和公共目录",
+                "Android 10+引入了Scoped Storage，限制了公共目录的访问",
+                "使用MediaStore API访问媒体文件，这是Android 10+推荐的方式",
+                "SAF允许用户选择文件，无需存储权限",
+                "访问外部存储需要相应的权限（Android 9及以下）",
+                "缓存目录可能被系统清理，不适合存储重要数据"
+            ),
+            practiceTips = "建议使用内部存储存储应用私有数据，使用缓存目录存储临时数据。对于媒体文件，使用MediaStore API（Android 10+）。对于用户文件选择，使用SAF。注意权限处理，Android 10+对存储权限有新的要求。定期清理缓存，避免占用过多存储空间。重要数据应该备份到云端。"
+        ),
+        
+        KnowledgeDetail(
+            id = "content_provider",
+            title = "内容提供者（ContentProvider）",
+            overview = "ContentProvider是Android四大组件之一，用于在不同应用间共享数据。理解ContentProvider的使用可以实现应用间的数据共享和安全访问。",
+            keyPoints = listOf(
+                "数据共享：ContentProvider允许应用间共享数据",
+                "URI机制：使用URI标识和访问数据",
+                "CRUD操作：支持查询、插入、更新、删除操作",
+                "权限控制：通过权限控制数据访问",
+                "系统ContentProvider：使用系统提供的ContentProvider（联系人、媒体等）",
+                "自定义ContentProvider：创建自定义ContentProvider共享应用数据"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：使用系统ContentProvider（联系人）",
+                    code = """
+                        class ContactManager(private val context: Context) {
+                            
+                            // 查询联系人
+                            fun queryContacts(): List<Contact> {
+                                val contacts = mutableListOf<Contact>()
+                                
+                                val projection = arrayOf(
+                                    android.provider.ContactsContract.Contacts._ID,
+                                    android.provider.ContactsContract.Contacts.DISPLAY_NAME,
+                                    android.provider.ContactsContract.Contacts.HAS_PHONE_NUMBER
+                                )
+                                
+                                context.contentResolver.query(
+                                    android.provider.ContactsContract.Contacts.CONTENT_URI,
+                                    projection,
+                                    null,
+                                    null,
+                                    android.provider.ContactsContract.Contacts.DISPLAY_NAME + " ASC"
+                                )?.use { cursor ->
+                                    val idColumn = cursor.getColumnIndex(android.provider.ContactsContract.Contacts._ID)
+                                    val nameColumn = cursor.getColumnIndex(android.provider.ContactsContract.Contacts.DISPLAY_NAME)
+                                    
+                                    while (cursor.moveToNext()) {
+                                        val id = cursor.getLong(idColumn)
+                                        val name = cursor.getString(nameColumn)
+                                        
+                                        // 查询电话号码
+                                        val phones = queryPhones(id)
+                                        
+                                        contacts.add(Contact(id, name, phones))
+                                    }
+                                }
+                                
+                                return contacts
+                            }
+                            
+                            // 查询电话号码
+                            private fun queryPhones(contactId: Long): List<String> {
+                                val phones = mutableListOf<String>()
+                                
+                                context.contentResolver.query(
+                                    android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                                    arrayOf(android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER),
+                                    "${android.provider.ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+                                    arrayOf(contactId.toString()),
+                                    null
+                                )?.use { cursor ->
+                                    val numberColumn = cursor.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER)
+                                    while (cursor.moveToNext()) {
+                                        phones.add(cursor.getString(numberColumn))
+                                    }
+                                }
+                                
+                                return phones
+                            }
+                            
+                            data class Contact(
+                                val id: Long,
+                                val name: String,
+                                val phones: List<String>
+                            )
+                        }
+                        
+                        // AndroidManifest.xml
+                        // <uses-permission android:name="android.permission.READ_CONTACTS" />
+                    """.trimIndent(),
+                    explanation = "使用ContentResolver查询系统ContentProvider。ContactsContract提供了访问联系人的API，需要READ_CONTACTS权限。"
+                ),
+                CodeExample(
+                    title = "示例2：自定义ContentProvider",
+                    code = """
+                        // 定义Contract
+                        object MyProviderContract {
+                            const val AUTHORITY = "com.example.myapp.provider"
+                            val CONTENT_URI = Uri.parse("content://${'$'}AUTHORITY/items")
+                            
+                            object Items {
+                                const val _ID = "_id"
+                                const val NAME = "name"
+                                const val DESCRIPTION = "description"
+                            }
+                        }
+                        
+                        // 自定义ContentProvider
+                        class MyContentProvider : ContentProvider() {
+                            
+                            private lateinit var dbHelper: DatabaseHelper
+                            
+                            override fun onCreate(): Boolean {
+                                dbHelper = DatabaseHelper(context!!)
+                                return true
+                            }
+                            
+                            override fun query(
+                                uri: Uri,
+                                projection: Array<String>?,
+                                selection: String?,
+                                selectionArgs: Array<String>?,
+                                sortOrder: String?
+                            ): Cursor? {
+                                val db = dbHelper.readableDatabase
+                                val cursor = db.query(
+                                    "items",
+                                    projection,
+                                    selection,
+                                    selectionArgs,
+                                    null,
+                                    null,
+                                    sortOrder
+                                )
+                                cursor.setNotificationUri(context!!.contentResolver, uri)
+                                return cursor
+                            }
+                            
+                            override fun insert(uri: Uri, values: ContentValues?): Uri? {
+                                val db = dbHelper.writableDatabase
+                                val id = db.insert("items", null, values)
+                                context!!.contentResolver.notifyChange(uri, null)
+                                return ContentUris.withAppendedId(uri, id)
+                            }
+                            
+                            override fun update(
+                                uri: Uri,
+                                values: ContentValues?,
+                                selection: String?,
+                                selectionArgs: Array<String>?
+                            ): Int {
+                                val db = dbHelper.writableDatabase
+                                val count = db.update("items", values, selection, selectionArgs)
+                                context!!.contentResolver.notifyChange(uri, null)
+                                return count
+                            }
+                            
+                            override fun delete(
+                                uri: Uri,
+                                selection: String?,
+                                selectionArgs: Array<String>?
+                            ): Int {
+                                val db = dbHelper.writableDatabase
+                                val count = db.delete("items", selection, selectionArgs)
+                                context!!.contentResolver.notifyChange(uri, null)
+                                return count
+                            }
+                            
+                            override fun getType(uri: Uri): String? {
+                                return "vnd.android.cursor.dir/vnd.com.example.items"
+                            }
+                        }
+                        
+                        // AndroidManifest.xml
+                        // <provider
+                        //     android:name=".MyContentProvider"
+                        //     android:authorities="com.example.myapp.provider"
+                        //     android:exported="true"
+                        //     android:permission="com.example.myapp.PERMISSION" />
+                    """.trimIndent(),
+                    explanation = "自定义ContentProvider需要继承ContentProvider类，实现query、insert、update、delete等方法。使用URI标识数据，通过权限控制访问。"
+                ),
+                CodeExample(
+                    title = "示例3：使用自定义ContentProvider",
+                    code = """
+                        class MyProviderClient(private val context: Context) {
+                            
+                            // 查询数据
+                            fun queryItems(): List<Item> {
+                                val items = mutableListOf<Item>()
+                                
+                                context.contentResolver.query(
+                                    MyProviderContract.CONTENT_URI,
+                                    null,
+                                    null,
+                                    null,
+                                    null
+                                )?.use { cursor ->
+                                    val idColumn = cursor.getColumnIndex(MyProviderContract.Items._ID)
+                                    val nameColumn = cursor.getColumnIndex(MyProviderContract.Items.NAME)
+                                    val descColumn = cursor.getColumnIndex(MyProviderContract.Items.DESCRIPTION)
+                                    
+                                    while (cursor.moveToNext()) {
+                                        items.add(
+                                            Item(
+                                                id = cursor.getLong(idColumn),
+                                                name = cursor.getString(nameColumn),
+                                                description = cursor.getString(descColumn)
+                                            )
+                                        )
+                                    }
+                                }
+                                
+                                return items
+                            }
+                            
+                            // 插入数据
+                            fun insertItem(name: String, description: String): Uri? {
+                                val values = ContentValues().apply {
+                                    put(MyProviderContract.Items.NAME, name)
+                                    put(MyProviderContract.Items.DESCRIPTION, description)
+                                }
+                                
+                                return context.contentResolver.insert(
+                                    MyProviderContract.CONTENT_URI,
+                                    values
+                                )
+                            }
+                            
+                            // 更新数据
+                            fun updateItem(id: Long, name: String): Int {
+                                val values = ContentValues().apply {
+                                    put(MyProviderContract.Items.NAME, name)
+                                }
+                                
+                                val uri = ContentUris.withAppendedId(
+                                    MyProviderContract.CONTENT_URI,
+                                    id
+                                )
+                                
+                                return context.contentResolver.update(uri, values, null, null)
+                            }
+                            
+                            // 删除数据
+                            fun deleteItem(id: Long): Int {
+                                val uri = ContentUris.withAppendedId(
+                                    MyProviderContract.CONTENT_URI,
+                                    id
+                                )
+                                
+                                return context.contentResolver.delete(uri, null, null)
+                            }
+                            
+                            data class Item(
+                                val id: Long,
+                                val name: String,
+                                val description: String
+                            )
+                        }
+                    """.trimIndent(),
+                    explanation = "使用ContentResolver访问自定义ContentProvider。通过URI标识数据，使用ContentValues传递数据，支持CRUD操作。"
+                )
+            ),
+            useCases = listOf(
+                "数据共享：在不同应用间共享数据",
+                "系统数据访问：访问系统ContentProvider（联系人、媒体等）",
+                "数据安全：通过权限控制数据访问",
+                "数据同步：实现数据同步和更新通知",
+                "插件化：支持插件化架构，插件间共享数据"
+            ),
+            notes = listOf(
+                "ContentProvider使用URI标识和访问数据",
+                "ContentResolver用于访问ContentProvider",
+                "系统ContentProvider需要相应权限（如READ_CONTACTS）",
+                "自定义ContentProvider需要在AndroidManifest.xml中注册",
+                "使用notifyChange通知数据变化",
+                "ContentProvider是Android四大组件之一，运行在主线程",
+                "复杂查询应该在后台线程执行"
+            ),
+            practiceTips = "建议使用系统ContentProvider访问系统数据，如联系人、媒体等。对于应用间数据共享，考虑使用ContentProvider。注意权限控制，确保数据安全。使用URI匹配器处理不同的URI模式。注意性能，复杂查询应该在后台线程执行。考虑使用Room等现代数据库库，它们提供了ContentProvider支持。"
         )
     )
 }
