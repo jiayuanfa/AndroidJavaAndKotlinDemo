@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.androidjavaandkotlindemo.data.KnowledgeDetailsRepository
+import com.example.androidjavaandkotlindemo.data.AndroidDetailRepository
 
 /**
  * FeatureDetailScreen - 功能详情页面
@@ -29,8 +30,11 @@ fun FeatureDetailScreen(
     knowledgeId: String? = null, // 知识点ID，用于获取详细内容
     onNavigateBack: () -> Unit // 返回上一页的导航回调
 ) {
-    // 根据knowledgeId获取知识详情
-    val knowledgeDetail = knowledgeId?.let { KnowledgeDetailsRepository.getKnowledgeDetail(it) }
+    // 优先从AndroidDetailRepository获取详情，如果未找到则从KnowledgeDetailsRepository获取
+    val knowledgeDetail = knowledgeId?.let { id ->
+        AndroidDetailRepository.getAndroidDetail(id)
+            ?: KnowledgeDetailsRepository.getKnowledgeDetail(id)
+    }
     
     Scaffold(
         topBar = {
