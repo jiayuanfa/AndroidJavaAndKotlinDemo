@@ -1176,6 +1176,1006 @@ object AndroidDetailRepository {
             practiceTips = "建议使用ViewModel + SavedStateHandle管理所有UI数据，Activity和Fragment只负责UI展示。使用Navigation Component简化导航，使用Fragment Result API实现Fragment间通信。遵循MVVM架构，将业务逻辑放在ViewModel中，保持Activity和Fragment的简洁。使用LifecycleObserver观察生命周期，在合适的时机执行操作。对于复杂的转场动画，考虑使用共享元素动画提升用户体验。"
         ),
         
+        // ========== UI开发基础 ==========
+        
+        KnowledgeDetail(
+            id = "view_system",
+            title = "View系统、自定义View、事件分发",
+            overview = "View是Android UI的基础组件，理解View的绘制流程、自定义View的实现和事件分发机制是Android UI开发的核心。掌握这些知识可以创建高性能、交互流畅的自定义UI组件。",
+            keyPoints = listOf(
+                "View和ViewGroup：View是UI的基础单元，ViewGroup是View的容器，可以包含多个子View",
+                "View绘制流程：Measure（测量）、Layout（布局）、Draw（绘制）三个阶段",
+                "自定义View：继承View或ViewGroup，重写onMeasure、onLayout、onDraw等方法",
+                "事件分发机制：事件从Activity传递到ViewGroup再到View，通过onInterceptTouchEvent和onTouchEvent处理",
+                "自定义属性：使用attrs.xml定义自定义属性，在布局文件中使用",
+                "性能优化：避免过度绘制、使用硬件加速、合理使用缓存"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：View绘制流程",
+                    code = """
+                        class CustomView @JvmOverloads constructor(
+                            context: Context,
+                            attrs: AttributeSet? = null,
+                            defStyleAttr: Int = 0
+                        ) : View(context, attrs, defStyleAttr) {
+                            
+                            // 1. Measure阶段：测量View的宽高
+                            override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+                                val width = MeasureSpec.getSize(widthMeasureSpec)
+                                val height = MeasureSpec.getSize(heightMeasureSpec)
+                                
+                                // 设置测量后的宽高
+                                setMeasuredDimension(width, height)
+                            }
+                            
+                            // 2. Layout阶段：确定View的位置（ViewGroup需要重写）
+                            override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+                                super.onLayout(changed, left, top, right, bottom)
+                                // ViewGroup需要在这里布局子View
+                            }
+                            
+                            // 3. Draw阶段：绘制View的内容
+                            override fun onDraw(canvas: Canvas?) {
+                                super.onDraw(canvas)
+                                canvas?.let {
+                                    val paint = Paint().apply {
+                                        color = Color.RED
+                                        style = Paint.Style.FILL
+                                    }
+                                    // 绘制圆形
+                                    it.drawCircle(width / 2f, height / 2f, 50f, paint)
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "View的绘制流程包括Measure（测量）、Layout（布局）、Draw（绘制）三个阶段。自定义View需要重写相应的方法来实现自定义绘制。"
+                ),
+                CodeExample(
+                    title = "示例2：自定义ViewGroup",
+                    code = """
+                        class CustomLayout @JvmOverloads constructor(
+                            context: Context,
+                            attrs: AttributeSet? = null,
+                            defStyleAttr: Int = 0
+                        ) : ViewGroup(context, attrs, defStyleAttr) {
+                            
+                            override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+                                // 测量所有子View
+                                var totalWidth = 0
+                                var totalHeight = 0
+                                
+                                for (i in 0 until childCount) {
+                                    val child = getChildAt(i)
+                                    measureChild(child, widthMeasureSpec, heightMeasureSpec)
+                                    totalWidth += child.measuredWidth
+                                    totalHeight = max(totalHeight, child.measuredHeight)
+                                }
+                                
+                                // 设置自己的尺寸
+                                setMeasuredDimension(
+                                    resolveSize(totalWidth, widthMeasureSpec),
+                                    resolveSize(totalHeight, heightMeasureSpec)
+                                )
+                            }
+                            
+                            override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+                                var left = 0
+                                
+                                // 布局所有子View（水平排列）
+                                for (i in 0 until childCount) {
+                                    val child = getChildAt(i)
+                                    val width = child.measuredWidth
+                                    val height = child.measuredHeight
+                                    
+                                    child.layout(left, 0, left + width, height)
+                                    left += width
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "自定义ViewGroup需要重写onMeasure和onLayout方法。onMeasure测量所有子View，onLayout确定每个子View的位置。"
+                ),
+                CodeExample(
+                    title = "示例3：事件分发机制",
+                    code = """
+                        class CustomViewGroup @JvmOverloads constructor(
+                            context: Context,
+                            attrs: AttributeSet? = null
+                        ) : ViewGroup(context, attrs) {
+                            
+                            // 是否拦截事件
+                            override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
+                                // 返回true表示拦截事件，子View不会收到事件
+                                // 返回false表示不拦截，事件继续传递给子View
+                                return false
+                            }
+                            
+                            // 处理事件
+                            override fun onTouchEvent(event: MotionEvent?): Boolean {
+                                when (event?.action) {
+                                    MotionEvent.ACTION_DOWN -> {
+                                        // 按下事件
+                                        return true  // 返回true表示消费了事件
+                                    }
+                                    MotionEvent.ACTION_MOVE -> {
+                                        // 移动事件
+                                    }
+                                    MotionEvent.ACTION_UP -> {
+                                        // 抬起事件
+                                    }
+                                }
+                                return super.onTouchEvent(event)
+                            }
+                        }
+                        
+                        class CustomView @JvmOverloads constructor(
+                            context: Context,
+                            attrs: AttributeSet? = null
+                        ) : View(context, attrs) {
+                            
+                            override fun onTouchEvent(event: MotionEvent?): Boolean {
+                                when (event?.action) {
+                                    MotionEvent.ACTION_DOWN -> {
+                                        // 处理按下事件
+                                        return true
+                                    }
+                                }
+                                return super.onTouchEvent(event)
+                            }
+                        }
+                        
+                        // 事件分发流程：
+                        // Activity.dispatchTouchEvent() 
+                        //   -> ViewGroup.onInterceptTouchEvent() (是否拦截)
+                        //     -> ViewGroup.onTouchEvent() (如果拦截)
+                        //     -> View.onTouchEvent() (如果不拦截)
+                    """.trimIndent(),
+                    explanation = "事件分发从Activity开始，经过ViewGroup的onInterceptTouchEvent判断是否拦截，如果不拦截则传递给子View。onTouchEvent返回true表示消费了事件。"
+                ),
+                CodeExample(
+                    title = "示例4：自定义属性",
+                    code = """
+                        // res/values/attrs.xml
+                        // <resources>
+                        //     <declare-styleable name="CustomView">
+                        //         <attr name="customColor" format="color" />
+                        //         <attr name="customText" format="string" />
+                        //         <attr name="customSize" format="dimension" />
+                        //     </declare-styleable>
+                        // </resources>
+                        
+                        class CustomView @JvmOverloads constructor(
+                            context: Context,
+                            attrs: AttributeSet? = null,
+                            defStyleAttr: Int = 0
+                        ) : View(context, attrs, defStyleAttr) {
+                            
+                            private var customColor: Int = Color.BLACK
+                            private var customText: String = ""
+                            private var customSize: Float = 0f
+                            
+                            init {
+                                // 读取自定义属性
+                                context.obtainStyledAttributes(
+                                    attrs,
+                                    R.styleable.CustomView
+                                ).apply {
+                                    customColor = getColor(R.styleable.CustomView_customColor, Color.BLACK)
+                                    customText = getString(R.styleable.CustomView_customText) ?: ""
+                                    customSize = getDimension(R.styleable.CustomView_customSize, 0f)
+                                    recycle()
+                                }
+                            }
+                            
+                            override fun onDraw(canvas: Canvas?) {
+                                super.onDraw(canvas)
+                                canvas?.let {
+                                    val paint = Paint().apply {
+                                        color = customColor
+                                        textSize = customSize
+                                    }
+                                    it.drawText(customText, 0f, height / 2f, paint)
+                                }
+                            }
+                        }
+                        
+                        // 在布局文件中使用
+                        // <com.example.CustomView
+                        //     android:layout_width="wrap_content"
+                        //     android:layout_height="wrap_content"
+                        //     app:customColor="@color/red"
+                        //     app:customText="Hello"
+                        //     app:customSize="16sp" />
+                    """.trimIndent(),
+                    explanation = "自定义属性需要在attrs.xml中声明，然后在自定义View的构造函数中读取。这样可以在布局文件中直接设置自定义属性。"
+                )
+            ),
+            useCases = listOf(
+                "自定义UI组件：创建符合设计要求的自定义View和ViewGroup",
+                "性能优化：理解绘制流程，优化View的绘制性能",
+                "交互设计：通过事件分发机制实现复杂的触摸交互",
+                "动画效果：在onDraw中实现自定义动画效果",
+                "复杂布局：自定义ViewGroup实现特殊的布局需求"
+            ),
+            notes = listOf(
+                "onMeasure必须调用setMeasuredDimension设置测量后的宽高",
+                "ViewGroup的onLayout需要布局所有子View",
+                "事件分发中，onInterceptTouchEvent返回true会拦截事件",
+                "onTouchEvent返回true表示消费了事件，事件不会继续传递",
+                "自定义属性需要在attrs.xml中声明，使用declare-styleable",
+                "避免在onDraw中创建对象，应该复用Paint等对象",
+                "使用硬件加速可以提升绘制性能"
+            ),
+            practiceTips = "建议先理解View的绘制流程，再实现自定义View。对于简单的自定义View，可以继承View；对于需要包含子View的，继承ViewGroup。事件分发机制比较复杂，建议通过实际测试来理解。自定义属性可以让View更灵活，建议为自定义View定义必要的属性。注意性能优化，避免过度绘制和不必要的重绘。"
+        ),
+        
+        KnowledgeDetail(
+            id = "layouts",
+            title = "布局（LinearLayout、RelativeLayout、ConstraintLayout）",
+            overview = "布局是Android UI的基础，用于组织和排列View。理解各种布局的特点和使用场景，选择合适的布局可以提高开发效率和UI性能。",
+            keyPoints = listOf(
+                "LinearLayout：线性布局，可以水平或垂直排列子View",
+                "RelativeLayout：相对布局，通过相对位置关系排列子View",
+                "ConstraintLayout：约束布局，使用约束关系排列View，性能最好，推荐使用",
+                "FrameLayout：帧布局，子View叠加显示，常用于Fragment容器",
+                "布局性能：ConstraintLayout性能最好，RelativeLayout次之，LinearLayout嵌套时性能较差",
+                "布局优化：减少布局层次、使用merge标签、使用include标签复用布局"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：LinearLayout使用",
+                    code = """
+                        <!-- 垂直排列的LinearLayout -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+                            
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="标题"
+                                android:textSize="18sp" />
+                            
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="内容"
+                                android:layout_marginTop="8dp" />
+                            
+                            <Button
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="按钮"
+                                android:layout_marginTop="16dp" />
+                        </LinearLayout>
+                        
+                        <!-- 水平排列的LinearLayout -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="左侧" />
+                            
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="右侧" />
+                        </LinearLayout>
+                    """.trimIndent(),
+                    explanation = "LinearLayout可以垂直或水平排列子View。使用layout_weight可以让子View按比例分配空间。"
+                ),
+                CodeExample(
+                    title = "示例2：RelativeLayout使用",
+                    code = """
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+                            
+                            <!-- 相对于父布局 -->
+                            <ImageView
+                                android:id="@+id/avatar"
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:layout_alignParentStart="true"
+                                android:layout_centerVertical="true"
+                                android:src="@drawable/avatar" />
+                            
+                            <!-- 相对于其他View -->
+                            <TextView
+                                android:id="@+id/name"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@id/avatar"
+                                android:layout_alignTop="@id/avatar"
+                                android:layout_marginStart="16dp"
+                                android:text="用户名" />
+                            
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@id/avatar"
+                                android:layout_below="@id/name"
+                                android:layout_marginStart="16dp"
+                                android:text="描述信息" />
+                            
+                            <!-- 相对于父布局底部 -->
+                            <Button
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:text="操作" />
+                        </RelativeLayout>
+                    """.trimIndent(),
+                    explanation = "RelativeLayout通过相对位置关系排列View，可以相对于父布局或其他View定位。适合复杂的布局需求，但性能不如ConstraintLayout。"
+                ),
+                CodeExample(
+                    title = "示例3：ConstraintLayout使用（推荐）",
+                    code = """
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="16dp">
+                            
+                            <ImageView
+                                android:id="@+id/avatar"
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent"
+                                android:src="@drawable/avatar" />
+                            
+                            <TextView
+                                android:id="@+id/name"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                app:layout_constraintStart_toEndOf="@id/avatar"
+                                app:layout_constraintEnd_toStartOf="@id/button"
+                                app:layout_constraintTop_toTopOf="@id/avatar"
+                                android:layout_marginStart="16dp"
+                                android:layout_marginEnd="16dp"
+                                android:text="用户名" />
+                            
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                app:layout_constraintStart_toStartOf="@id/name"
+                                app:layout_constraintEnd_toEndOf="@id/name"
+                                app:layout_constraintTop_toBottomOf="@id/name"
+                                android:layout_marginTop="4dp"
+                                android:text="描述信息" />
+                            
+                            <Button
+                                android:id="@+id/button"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintTop_toTopOf="@id/avatar"
+                                app:layout_constraintBottom_toBottomOf="@id/avatar"
+                                android:text="操作" />
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+                        
+                        // ConstraintLayout的优势：
+                        // 1. 性能最好，扁平化布局层次
+                        // 2. 功能强大，支持链、屏障、引导线等
+                        // 3. 可视化编辑，Android Studio支持可视化编辑
+                    """.trimIndent(),
+                    explanation = "ConstraintLayout是推荐的布局方式，使用约束关系排列View，性能最好。支持链、屏障、引导线等高级特性，适合复杂布局。"
+                ),
+                CodeExample(
+                    title = "示例4：布局优化（include和merge）",
+                    code = """
+                        <!-- 可复用的布局：layout_header.xml -->
+                        <merge xmlns:android="http://schemas.android.com/apk/res/android">
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="标题" />
+                            
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="副标题" />
+                        </merge>
+                        
+                        <!-- 使用include复用布局 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+                            
+                            <include
+                                layout="@layout/layout_header"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+                            
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="内容" />
+                        </LinearLayout>
+                        
+                        // merge标签的作用：
+                        // 1. 减少布局层次
+                        // 2. 当include的父布局与merge中的根布局类型相同时，merge会被替换
+                        // 3. 提升性能
+                    """.trimIndent(),
+                    explanation = "使用include标签可以复用布局，使用merge标签可以减少布局层次。这些优化可以提升布局性能和可维护性。"
+                )
+            ),
+            useCases = listOf(
+                "简单布局：使用LinearLayout实现简单的线性排列",
+                "复杂布局：使用ConstraintLayout实现复杂的约束关系布局",
+                "相对定位：使用RelativeLayout实现相对定位的布局",
+                "布局复用：使用include标签复用常用布局",
+                "性能优化：使用ConstraintLayout减少布局层次，提升性能"
+            ),
+            notes = listOf(
+                "ConstraintLayout是推荐的布局方式，性能最好",
+                "避免嵌套LinearLayout，会导致性能问题",
+                "RelativeLayout适合复杂布局，但性能不如ConstraintLayout",
+                "使用include和merge可以复用布局和减少层次",
+                "FrameLayout常用于Fragment容器",
+                "布局层次越深，性能越差，应该尽量扁平化",
+                "使用Android Studio的布局检查器可以查看布局层次"
+            ),
+            practiceTips = "建议优先使用ConstraintLayout，它性能最好且功能强大。避免过度嵌套布局，尽量保持布局层次扁平化。使用include标签复用常用布局，使用merge标签减少不必要的布局层次。对于简单的线性排列，可以使用LinearLayout；对于复杂的相对定位，使用ConstraintLayout。定期使用布局检查器检查布局性能。"
+        ),
+        
+        KnowledgeDetail(
+            id = "ui_components",
+            title = "常用UI组件（TextView、Button、RecyclerView等）",
+            overview = "Android提供了丰富的UI组件，包括TextView、Button、RecyclerView等。理解这些组件的使用方法和特性是构建用户界面的基础。",
+            keyPoints = listOf(
+                "TextView：显示文本，支持富文本、链接、自定义字体等",
+                "Button：按钮组件，支持点击事件和样式定制",
+                "RecyclerView：高效的列表组件，替代ListView，支持多种布局",
+                "EditText：文本输入框，支持输入验证和样式定制",
+                "ImageView：图片显示组件，支持缩放、裁剪等",
+                "ScrollView：可滚动的容器，用于内容超出屏幕的情况"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：TextView和Button",
+                    code = """
+                        <!-- TextView基础使用 -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="普通文本"
+                            android:textSize="16sp"
+                            android:textColor="@color/black" />
+                        
+                        <!-- TextView富文本 -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/rich_text" />
+                        
+                        // strings.xml
+                        // <string name="rich_text">
+                        //     <![CDATA[
+                        //         这是<font color="#FF0000">红色</font>文本，
+                        //         这是<b>粗体</b>，这是<i>斜体</i>
+                        //     ]]>
+                        // </string>
+                        
+                        <!-- Button使用 -->
+                        <Button
+                            android:id="@+id/button"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="点击按钮"
+                            android:onClick="onButtonClick" />
+                        
+                        // 在Activity中处理点击
+                        class MainActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                findViewById<Button>(R.id.button).setOnClickListener {
+                                    // 处理点击事件
+                                    Toast.makeText(this, "按钮被点击", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            
+                            // 或者使用XML中的onClick属性
+                            fun onButtonClick(view: View) {
+                                Toast.makeText(this, "按钮被点击", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "TextView用于显示文本，支持富文本和样式定制。Button用于触发操作，可以通过setOnClickListener或XML的onClick属性处理点击事件。"
+                ),
+                CodeExample(
+                    title = "示例2：RecyclerView使用",
+                    code = """
+                        // 数据类
+                        data class Item(val id: Int, val title: String, val description: String)
+                        
+                        // ViewHolder
+                        class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+                            private val titleView: TextView = itemView.findViewById(R.id.title)
+                            private val descView: TextView = itemView.findViewById(R.id.description)
+                            
+                            fun bind(item: Item) {
+                                titleView.text = item.title
+                                descView.text = item.description
+                            }
+                        }
+                        
+                        // Adapter
+                        class ItemAdapter(private val items: List<Item>) : 
+                            RecyclerView.Adapter<ItemViewHolder>() {
+                            
+                            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
+                                val view = LayoutInflater.from(parent.context)
+                                    .inflate(R.layout.item_layout, parent, false)
+                                return ItemViewHolder(view)
+                            }
+                            
+                            override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
+                                holder.bind(items[position])
+                            }
+                            
+                            override fun getItemCount() = items.size
+                        }
+                        
+                        // 在Activity中使用
+                        class MainActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+                                val items = listOf(
+                                    Item(1, "标题1", "描述1"),
+                                    Item(2, "标题2", "描述2")
+                                )
+                                
+                                recyclerView.layoutManager = LinearLayoutManager(this)
+                                recyclerView.adapter = ItemAdapter(items)
+                            }
+                        }
+                        
+                        // item_layout.xml
+                        // <LinearLayout>
+                        //     <TextView android:id="@+id/title" />
+                        //     <TextView android:id="@+id/description" />
+                        // </LinearLayout>
+                    """.trimIndent(),
+                    explanation = "RecyclerView是高效的列表组件，使用ViewHolder模式复用View，性能优于ListView。需要Adapter和LayoutManager配合使用。"
+                ),
+                CodeExample(
+                    title = "示例3：EditText和输入验证",
+                    code = """
+                        <EditText
+                            android:id="@+id/emailEditText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="请输入邮箱"
+                            android:inputType="textEmailAddress"
+                            android:maxLines="1" />
+                        
+                        <EditText
+                            android:id="@+id/passwordEditText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="请输入密码"
+                            android:inputType="textPassword"
+                            android:maxLines="1" />
+                        
+                        // 在Activity中验证输入
+                        class MainActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                val emailEditText = findViewById<EditText>(R.id.emailEditText)
+                                val passwordEditText = findViewById<EditText>(R.id.passwordEditText)
+                                
+                                // 输入验证
+                                emailEditText.addTextChangedListener(object : TextWatcher {
+                                    override fun afterTextChanged(s: Editable?) {
+                                        val email = s.toString()
+                                        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                                            emailEditText.error = "邮箱格式不正确"
+                                        }
+                                    }
+                                    // ... 其他方法
+                                })
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "EditText用于文本输入，inputType可以限制输入类型。使用TextWatcher可以监听输入变化并进行验证。"
+                ),
+                CodeExample(
+                    title = "示例4：ImageView和图片加载",
+                    code = """
+                        <ImageView
+                            android:id="@+id/imageView"
+                            android:layout_width="match_parent"
+                            android:layout_height="200dp"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/placeholder" />
+                        
+                        // 在代码中设置图片
+                        class MainActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                val imageView = findViewById<ImageView>(R.id.imageView)
+                                
+                                // 从资源加载
+                                imageView.setImageResource(R.drawable.image)
+                                
+                                // 从网络加载（使用Glide或Coil）
+                                // Glide.with(this).load("https://example.com/image.jpg").into(imageView)
+                                // Coil.load("https://example.com/image.jpg").into(imageView)
+                                
+                                // 从文件加载
+                                val bitmap = BitmapFactory.decodeFile("/path/to/image.jpg")
+                                imageView.setImageBitmap(bitmap)
+                            }
+                        }
+                        
+                        // scaleType说明：
+                        // - centerCrop：居中裁剪，保持宽高比
+                        // - centerInside：居中显示，完整显示图片
+                        // - fitCenter：居中缩放，保持宽高比
+                        // - fitXY：拉伸填充，不保持宽高比
+                    """.trimIndent(),
+                    explanation = "ImageView用于显示图片，scaleType控制图片的缩放方式。从网络加载图片应该使用Glide或Coil等图片加载库。"
+                )
+            ),
+            useCases = listOf(
+                "文本显示：使用TextView显示各种文本内容",
+                "用户交互：使用Button、EditText等组件实现用户交互",
+                "列表展示：使用RecyclerView展示列表数据",
+                "图片显示：使用ImageView显示图片，配合图片加载库从网络加载",
+                "表单输入：使用EditText实现各种输入需求"
+            ),
+            notes = listOf(
+                "RecyclerView性能优于ListView，推荐使用RecyclerView",
+                "EditText的inputType可以限制输入类型，提升用户体验",
+                "从网络加载图片应该使用Glide、Coil等图片加载库，不要直接使用BitmapFactory",
+                "TextView支持富文本，可以使用SpannableString实现复杂样式",
+                "Button的点击事件可以通过setOnClickListener或XML的onClick属性处理",
+                "RecyclerView需要设置LayoutManager，常用的有LinearLayoutManager、GridLayoutManager",
+                "ImageView的scaleType影响图片显示效果，需要根据需求选择"
+            ),
+            practiceTips = "建议使用RecyclerView替代ListView，性能更好且功能更强大。从网络加载图片使用Glide或Coil，它们提供了缓存、占位符等功能。EditText使用inputType限制输入类型，提升用户体验。TextView可以使用SpannableString实现富文本效果。注意组件的性能，避免在列表中使用复杂的布局。"
+        ),
+        
+        KnowledgeDetail(
+            id = "material_design",
+            title = "Material Design、Material Components",
+            overview = "Material Design是Google的设计语言，Material Components是Material Design的Android实现。使用Material Components可以快速构建符合Material Design规范的应用。",
+            keyPoints = listOf(
+                "Material Design：Google的设计语言，强调卡片、阴影、动画等视觉元素",
+                "Material Components：Material Design的Android组件库，提供Material风格的UI组件",
+                "主题系统：使用Theme和Style定义应用的外观，支持亮色和暗色主题",
+                "颜色系统：使用Material颜色系统定义主色、辅助色等",
+                "文字排版：使用Material文字排版系统定义文字样式",
+                "动画：使用Material动画提供流畅的交互体验"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Material Components使用",
+                    code = """
+                        // build.gradle
+                        // implementation 'com.google.android.material:material:1.9.0'
+                        
+                        <!-- MaterialButton -->
+                        <com.google.android.material.button.MaterialButton
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Material按钮"
+                            app:icon="@drawable/ic_add"
+                            style="@style/Widget.MaterialComponents.Button" />
+                        
+                        <!-- MaterialCardView -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardCornerRadius="8dp"
+                            app:cardElevation="4dp">
+                            
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="卡片内容" />
+                        </com.google.android.material.card.MaterialCardView>
+                        
+                        <!-- TextInputLayout -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:hintEnabled="true"
+                            app:hintAnimationEnabled="true">
+                            
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="请输入内容" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    """.trimIndent(),
+                    explanation = "Material Components提供了Material风格的UI组件，如MaterialButton、MaterialCardView、TextInputLayout等。这些组件符合Material Design规范。"
+                ),
+                CodeExample(
+                    title = "示例2：Material主题配置",
+                    code = """
+                        <!-- res/values/themes.xml -->
+                        <resources>
+                            <style name="Theme.MyApp" parent="Theme.MaterialComponents.DayNight">
+                                <!-- 主色 -->
+                                <item name="colorPrimary">@color/purple_500</item>
+                                <item name="colorPrimaryVariant">@color/purple_700</item>
+                                
+                                <!-- 辅助色 -->
+                                <item name="colorSecondary">@color/teal_200</item>
+                                <item name="colorSecondaryVariant">@color/teal_700</item>
+                                
+                                <!-- 背景色 -->
+                                <item name="colorSurface">@color/white</item>
+                                <item name="colorBackground">@color/white</item>
+                                
+                                <!-- 文字颜色 -->
+                                <item name="colorOnPrimary">@color/white</item>
+                                <item name="colorOnSecondary">@color/black</item>
+                                <item name="colorOnSurface">@color/black</item>
+                                
+                                <!-- 其他 -->
+                                <item name="android:statusBarColor">@color/purple_700</item>
+                            </style>
+                        </resources>
+                        
+                        <!-- AndroidManifest.xml -->
+                        // <application
+                        //     android:theme="@style/Theme.MyApp">
+                    """.trimIndent(),
+                    explanation = "Material主题使用Theme.MaterialComponents作为父主题，可以配置颜色、文字等样式。支持亮色和暗色主题。"
+                ),
+                CodeExample(
+                    title = "示例3：Material动画",
+                    code = """
+                        // 共享元素转场动画
+                        val intent = Intent(this, DetailActivity::class.java)
+                        val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                            this,
+                            Pair.create(imageView, "image_transition")
+                        )
+                        startActivity(intent, options.toBundle())
+                        
+                        // Material按钮波纹效果（自动支持）
+                        <com.google.android.material.button.MaterialButton
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="按钮"
+                            android:backgroundTint="@color/primary" />
+                        
+                        // FloatingActionButton
+                        <com.google.android.material.floatingactionbutton.FloatingActionButton
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_add"
+                            app:fabSize="normal" />
+                    """.trimIndent(),
+                    explanation = "Material Components自动支持Material动画，如波纹效果、共享元素转场等。这些动画提供了流畅的交互体验。"
+                )
+            ),
+            useCases = listOf(
+                "统一设计：使用Material Components实现统一的Material Design风格",
+                "主题定制：使用Material主题系统定制应用外观",
+                "用户体验：使用Material动画和交互提升用户体验",
+                "快速开发：使用Material Components快速构建符合规范的UI",
+                "暗色主题：使用Material主题系统支持暗色主题"
+            ),
+            notes = listOf(
+                "Material Components是Material Design的Android实现",
+                "使用Theme.MaterialComponents作为父主题",
+                "Material颜色系统定义了主色、辅助色等颜色角色",
+                "Material动画自动支持，如波纹效果、转场动画等",
+                "支持亮色和暗色主题，可以通过系统设置切换",
+                "Material Components提供了丰富的组件，如Button、Card、TextField等",
+                "使用Material Components可以快速构建符合Material Design规范的应用"
+            ),
+            practiceTips = "建议使用Material Components构建应用，它提供了符合Material Design规范的组件和主题系统。使用Material主题可以快速定制应用外观，支持亮色和暗色主题。注意颜色系统的使用，确保文字在背景上的可读性。使用Material动画可以提升用户体验，但要注意性能。"
+        ),
+        
+        KnowledgeDetail(
+            id = "resources",
+            title = "资源管理（资源类型、资源限定符）",
+            overview = "Android使用资源系统管理应用中的各种资源，包括布局、图片、字符串、颜色等。理解资源类型和资源限定符可以实现多屏幕适配和国际化。",
+            keyPoints = listOf(
+                "资源类型：布局、图片、字符串、颜色、尺寸、样式等不同类型的资源",
+                "资源限定符：使用限定符为不同配置提供不同资源，如屏幕尺寸、语言、方向等",
+                "多屏幕支持：使用资源限定符为不同屏幕尺寸提供不同布局和资源",
+                "国际化：使用语言限定符实现多语言支持",
+                "资源访问：在代码和XML中访问资源",
+                "资源命名：遵循资源命名规范，使用小写字母和下划线"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：资源类型",
+                    code = """
+                        <!-- res/layout/activity_main.xml - 布局资源 -->
+                        <LinearLayout>
+                            <TextView android:text="@string/app_name" />
+                        </LinearLayout>
+                        
+                        <!-- res/values/strings.xml - 字符串资源 -->
+                        <resources>
+                            <string name="app_name">我的应用</string>
+                            <string name="welcome_message">欢迎使用</string>
+                        </resources>
+                        
+                        <!-- res/values/colors.xml - 颜色资源 -->
+                        <resources>
+                            <color name="primary">#6200EE</color>
+                            <color name="primary_dark">#3700B3</color>
+                        </resources>
+                        
+                        <!-- res/values/dimens.xml - 尺寸资源 -->
+                        <resources>
+                            <dimen name="padding_small">8dp</dimen>
+                            <dimen name="padding_medium">16dp</dimen>
+                            <dimen name="padding_large">24dp</dimen>
+                        </resources>
+                        
+                        <!-- res/drawable/ic_launcher.xml - 可绘制资源 -->
+                        <vector xmlns:android="http://schemas.android.com/apk/res/android">
+                            <path android:fillColor="#FF000000"
+                                  android:pathData="M12,2L2,7v10c0,5.55 3.84,10.74 9,12 5.16,-1.26 9,-6.45 9,-12V7z"/>
+                        </vector>
+                    """.trimIndent(),
+                    explanation = "Android支持多种资源类型，包括布局、字符串、颜色、尺寸、可绘制资源等。资源文件放在res目录下的相应子目录中。"
+                ),
+                CodeExample(
+                    title = "示例2：资源限定符",
+                    code = """
+                        <!-- 默认布局：res/layout/activity_main.xml -->
+                        <LinearLayout>
+                            <TextView android:text="默认布局" />
+                        </LinearLayout>
+                        
+                        <!-- 横屏布局：res/layout-land/activity_main.xml -->
+                        <LinearLayout android:orientation="horizontal">
+                            <TextView android:text="横屏布局" />
+                        </LinearLayout>
+                        
+                        <!-- 大屏布局：res/layout-large/activity_main.xml -->
+                        <LinearLayout>
+                            <TextView android:text="大屏布局" />
+                        </LinearLayout>
+                        
+                        <!-- 平板布局：res/layout-sw600dp/activity_main.xml -->
+                        <LinearLayout>
+                            <TextView android:text="平板布局" />
+                        </LinearLayout>
+                        
+                        <!-- 不同密度图片 -->
+                        // res/drawable-mdpi/icon.png (中密度)
+                        // res/drawable-hdpi/icon.png (高密度)
+                        // res/drawable-xhdpi/icon.png (超高密度)
+                        // res/drawable-xxhdpi/icon.png (超超高密度)
+                        // res/drawable-xxxhdpi/icon.png (超超超高密度)
+                        
+                        <!-- 不同语言字符串 -->
+                        // res/values/strings.xml (默认，中文)
+                        // res/values-en/strings.xml (英文)
+                        // res/values-ja/strings.xml (日文)
+                    """.trimIndent(),
+                    explanation = "资源限定符用于为不同配置提供不同资源。常用限定符包括屏幕方向（land）、屏幕尺寸（large、sw600dp）、密度（mdpi、hdpi等）、语言（en、ja等）。"
+                ),
+                CodeExample(
+                    title = "示例3：在代码中访问资源",
+                    code = """
+                        class MainActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                // 访问字符串资源
+                                val appName = getString(R.string.app_name)
+                                
+                                // 访问颜色资源
+                                val primaryColor = getColor(R.color.primary)
+                                
+                                // 访问尺寸资源
+                                val padding = resources.getDimensionPixelSize(R.dimen.padding_medium)
+                                
+                                // 访问可绘制资源
+                                val drawable = getDrawable(R.drawable.ic_launcher)
+                                
+                                // 访问数组资源
+                                val stringArray = resources.getStringArray(R.array.items)
+                                
+                                // 设置资源
+                                findViewById<TextView>(R.id.textView).apply {
+                                    text = getString(R.string.welcome_message)
+                                    setTextColor(getColor(R.color.primary))
+                                    setPadding(padding, padding, padding, padding)
+                                    background = drawable
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "在代码中可以通过resources对象或Context的方法访问资源。getString访问字符串，getColor访问颜色，getDimensionPixelSize访问尺寸等。"
+                ),
+                CodeExample(
+                    title = "示例4：国际化（多语言）",
+                    code = """
+                        <!-- res/values/strings.xml (默认，中文) -->
+                        <resources>
+                            <string name="app_name">我的应用</string>
+                            <string name="welcome">欢迎</string>
+                        </resources>
+                        
+                        <!-- res/values-en/strings.xml (英文) -->
+                        <resources>
+                            <string name="app_name">My App</string>
+                            <string name="welcome">Welcome</string>
+                        </resources>
+                        
+                        <!-- res/values-ja/strings.xml (日文) -->
+                        <resources>
+                            <string name="app_name">私のアプリ</string>
+                            <string name="welcome">ようこそ</string>
+                        </resources>
+                        
+                        // 在代码中使用
+                        class MainActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                // 自动根据系统语言获取对应字符串
+                                findViewById<TextView>(R.id.textView).text = getString(R.string.welcome)
+                            }
+                        }
+                        
+                        // 语言代码：
+                        // - en: 英文
+                        // - zh: 中文
+                        // - ja: 日文
+                        // - fr: 法文
+                        // - de: 德文
+                        // 等等...
+                    """.trimIndent(),
+                    explanation = "国际化通过为不同语言提供不同的字符串资源实现。系统会根据用户的语言设置自动选择对应的资源。使用values-语言代码目录存放不同语言的资源。"
+                )
+            ),
+            useCases = listOf(
+                "多屏幕适配：使用资源限定符为不同屏幕尺寸提供不同布局",
+                "国际化：使用语言限定符实现多语言支持",
+                "横竖屏适配：使用方向限定符为横竖屏提供不同布局",
+                "不同密度适配：使用密度限定符为不同密度屏幕提供不同图片",
+                "主题定制：使用样式资源定制应用外观"
+            ),
+            notes = listOf(
+                "资源限定符可以组合使用，如layout-sw600dp-land表示宽度600dp且横屏",
+                "系统会根据设备配置自动选择最匹配的资源",
+                "如果没有匹配的资源，会使用默认资源（无限定符）",
+                "资源命名使用小写字母和下划线，如app_name、primary_color",
+                "字符串资源支持参数，使用%1\$s、%2\$d等占位符",
+                "颜色资源可以使用颜色值或颜色资源引用",
+                "尺寸资源使用dp、sp等单位，系统会根据密度自动转换"
+            ),
+            practiceTips = "建议使用资源系统管理所有资源，不要硬编码字符串、颜色等。使用资源限定符实现多屏幕适配和国际化。遵循资源命名规范，使用小写字母和下划线。为不同屏幕尺寸提供不同布局，提升用户体验。使用字符串资源支持国际化，避免硬编码文本。定期检查资源使用，避免未使用的资源增加APK体积。"
+        ),
+        
         // ========== Jetpack Compose ==========
         
         KnowledgeDetail(
