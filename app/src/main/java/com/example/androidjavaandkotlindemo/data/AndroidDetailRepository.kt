@@ -774,6 +774,408 @@ object AndroidDetailRepository {
             practiceTips = "建议使用Navigation Component管理Fragment导航，它简化了Fragment事务和参数传递。对于Fragment间通信，优先使用ViewModel或Fragment Result API，避免直接引用。使用ViewBinding可以简化Fragment中的视图访问。"
         ),
         
+        KnowledgeDetail(
+            id = "activity_fragment_advanced",
+            title = "Activity和Fragment高级特性",
+            overview = "Activity和Fragment的高级特性包括ViewModel集成、配置变更处理、状态保存和恢复、Fragment结果API、Navigation Component集成等。掌握这些特性可以构建更健壮和用户友好的应用。",
+            keyPoints = listOf(
+                "ViewModel集成：使用ViewModel在Activity和Fragment中管理数据，避免配置变更时数据丢失",
+                "配置变更处理：处理屏幕旋转等配置变更，使用ViewModel或onRetainNonConfigurationInstance",
+                "状态保存和恢复：使用onSaveInstanceState保存临时状态，使用ViewModel保存重要数据",
+                "Fragment结果API：使用Fragment Result API实现Fragment间通信，替代接口方式",
+                "Navigation Component：使用Navigation Component简化Activity和Fragment导航",
+                "生命周期感知：使用LifecycleObserver观察生命周期，在合适的时机执行操作",
+                "共享元素动画：实现Activity和Fragment间的共享元素转场动画"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：ViewModel在Activity和Fragment中的使用",
+                    code = """
+                        // ViewModel定义
+                        class UserViewModel : ViewModel() {
+                            private val _users = MutableStateFlow<List<User>>(emptyList())
+                            val users: StateFlow<List<User>> = _users.asStateFlow()
+                            
+                            fun loadUsers() {
+                                viewModelScope.launch {
+                                    _users.value = repository.getUsers()
+                                }
+                            }
+                        }
+                        
+                        // 在Activity中使用ViewModel
+                        class MainActivity : AppCompatActivity() {
+                            private lateinit var viewModel: UserViewModel
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                // 获取ViewModel（配置变更时不会重新创建）
+                                viewModel = ViewModelProvider(this)[UserViewModel::class.java]
+                                
+                                // 观察数据
+                                lifecycleScope.launch {
+                                    viewModel.users.collect { users ->
+                                        // 更新UI
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 在Fragment中使用ViewModel
+                        class UserListFragment : Fragment() {
+                            private lateinit var viewModel: UserViewModel
+                            
+                            override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+                                super.onViewCreated(view, savedInstanceState)
+                                
+                                // 获取ViewModel（与Activity共享）
+                                viewModel = ViewModelProvider(requireActivity())[UserViewModel::class.java]
+                                
+                                // 或者获取Fragment作用域的ViewModel
+                                // viewModel = ViewModelProvider(this)[UserViewModel::class.java]
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "ViewModel用于管理UI相关的数据，在配置变更（如屏幕旋转）时不会销毁，可以保存数据。Activity和Fragment可以共享同一个ViewModel实例。"
+                ),
+                CodeExample(
+                    title = "示例2：配置变更处理",
+                    code = """
+                        // 方式1：使用ViewModel（推荐）
+                        class MainActivity : AppCompatActivity() {
+                            private val viewModel: MyViewModel by viewModels()
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                // ViewModel在配置变更时自动保留
+                                viewModel.data.observe(this) { data ->
+                                    // 更新UI
+                                }
+                            }
+                        }
+                        
+                        // 方式2：使用onRetainNonConfigurationInstance（已过时，不推荐）
+                        class MainActivity : AppCompatActivity() {
+                            private var retainedData: RetainedData? = null
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                // 恢复保留的数据
+                                retainedData = lastNonConfigurationInstance as? RetainedData
+                                    ?: RetainedData()
+                            }
+                            
+                            override fun onRetainCustomNonConfigurationInstance(): Any? {
+                                return retainedData
+                            }
+                        }
+                        
+                        // 方式3：在AndroidManifest.xml中处理配置变更
+                        // <activity
+                        //     android:name=".MainActivity"
+                        //     android:configChanges="orientation|screenSize|keyboardHidden" />
+                        
+                        // 注意：不推荐使用configChanges，应该让系统正常处理配置变更
+                    """.trimIndent(),
+                    explanation = "配置变更（如屏幕旋转）会导致Activity重建。使用ViewModel可以自动保留数据，避免数据丢失。不推荐使用configChanges属性，应该让系统正常处理配置变更。"
+                ),
+                CodeExample(
+                    title = "示例3：状态保存和恢复（ViewModel + SavedStateHandle）",
+                    code = """
+                        // 使用SavedStateHandle保存和恢复状态
+                        class MyViewModel(
+                            private val savedStateHandle: SavedStateHandle
+                        ) : ViewModel() {
+                            
+                            // 保存状态
+                            var counter: Int
+                                get() = savedStateHandle.get<Int>("counter") ?: 0
+                                set(value) = savedStateHandle.set("counter", value)
+                            
+                            // 或者使用LiveData/StateFlow
+                            val counterFlow: StateFlow<Int> = savedStateHandle
+                                .getStateFlow("counter", 0)
+                        }
+                        
+                        // 在Activity中使用
+                        class MainActivity : AppCompatActivity() {
+                            private val viewModel: MyViewModel by viewModels()
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                // 状态自动恢复
+                                viewModel.counterFlow.observe(this) { count ->
+                                    // 更新UI
+                                }
+                            }
+                        }
+                        
+                        // 使用onSaveInstanceState保存临时状态（不推荐用于重要数据）
+                        class MainActivity : AppCompatActivity() {
+                            private var tempData: String? = null
+                            
+                            override fun onSaveInstanceState(outState: Bundle) {
+                                super.onSaveInstanceState(outState)
+                                outState.putString("temp_data", tempData)
+                            }
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                tempData = savedInstanceState?.getString("temp_data")
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "SavedStateHandle用于在进程被系统杀死后恢复状态，比onSaveInstanceState更强大。重要数据应该使用ViewModel + SavedStateHandle，临时数据可以使用onSaveInstanceState。"
+                ),
+                CodeExample(
+                    title = "示例4：Fragment Result API（推荐方式）",
+                    code = """
+                        // 发送Fragment（子Fragment）
+                        class ChildFragment : Fragment() {
+                            private fun sendResultToParent() {
+                                val result = "Hello from ChildFragment"
+                                parentFragmentManager.setFragmentResult(
+                                    "requestKey",
+                                    bundleOf("data" to result)
+                                )
+                            }
+                            
+                            // 或者发送给Activity
+                            private fun sendResultToActivity() {
+                                requireActivity().supportFragmentManager.setFragmentResult(
+                                    "requestKey",
+                                    bundleOf("data" to "result")
+                                )
+                            }
+                        }
+                        
+                        // 接收Fragment（父Fragment或Activity）
+                        class ParentFragment : Fragment() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                // 设置结果监听器
+                                parentFragmentManager.setFragmentResultListener(
+                                    "requestKey",
+                                    this
+                                ) { key, bundle ->
+                                    val data = bundle.getString("data")
+                                    // 处理结果
+                                }
+                            }
+                        }
+                        
+                        // 在Activity中接收
+                        class MainActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                supportFragmentManager.setFragmentResultListener(
+                                    "requestKey",
+                                    this
+                                ) { key, bundle ->
+                                    val data = bundle.getString("data")
+                                    // 处理结果
+                                }
+                            }
+                        }
+                        
+                        // Fragment Result API的优势：
+                        // 1. 不需要接口定义
+                        // 2. 类型安全
+                        // 3. 支持多个监听器
+                        // 4. 自动清理
+                    """.trimIndent(),
+                    explanation = "Fragment Result API是推荐的Fragment间通信方式，比接口方式更简洁和安全。支持Fragment到Fragment、Fragment到Activity的通信。"
+                ),
+                CodeExample(
+                    title = "示例5：Navigation Component与Fragment集成",
+                    code = """
+                        // 导航图（nav_graph.xml）
+                        // <navigation>
+                        //     <fragment
+                        //         android:id="@+id/homeFragment"
+                        //         android:name="com.example.HomeFragment" />
+                        //     <fragment
+                        //         android:id="@+id/detailFragment"
+                        //         android:name="com.example.DetailFragment">
+                        //         <argument
+                        //             android:name="itemId"
+                        //             app:argType="string" />
+                        //     </fragment>
+                        // </navigation>
+                        
+                        // 在Activity中使用Navigation
+                        class MainActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                val navController = findNavController(R.id.nav_host_fragment)
+                                
+                                // 导航到详情页
+                                navController.navigate(R.id.detailFragment)
+                                
+                                // 传递参数
+                                val bundle = bundleOf("itemId" to "123")
+                                navController.navigate(R.id.detailFragment, bundle)
+                            }
+                        }
+                        
+                        // 在Fragment中使用Navigation
+                        class HomeFragment : Fragment() {
+                            override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+                                super.onViewCreated(view, savedInstanceState)
+                                
+                                val navController = findNavController()
+                                
+                                button.setOnClickListener {
+                                    // 导航到详情页
+                                    navController.navigate(
+                                        HomeFragmentDirections.actionHomeFragmentToDetailFragment("123")
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // 接收参数
+                        class DetailFragment : Fragment() {
+                            override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+                                super.onViewCreated(view, savedInstanceState)
+                                
+                                val args = DetailFragmentArgs.fromBundle(requireArguments())
+                                val itemId = args.itemId
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Navigation Component简化了Fragment导航和参数传递。使用Safe Args插件可以生成类型安全的导航代码，避免参数传递错误。"
+                ),
+                CodeExample(
+                    title = "示例6：生命周期感知组件",
+                    code = """
+                        // 自定义生命周期感知组件
+                        class MyLifecycleObserver(
+                            private val lifecycle: Lifecycle
+                        ) : LifecycleObserver {
+                            
+                            @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+                            fun onResume() {
+                                // Activity/Fragment恢复时执行
+                                Log.d("Lifecycle", "onResume")
+                            }
+                            
+                            @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+                            fun onPause() {
+                                // Activity/Fragment暂停时执行
+                                Log.d("Lifecycle", "onPause")
+                            }
+                            
+                            @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+                            fun onDestroy() {
+                                // Activity/Fragment销毁时执行
+                                Log.d("Lifecycle", "onDestroy")
+                            }
+                        }
+                        
+                        // 在Activity中使用
+                        class MainActivity : AppCompatActivity() {
+                            private lateinit var observer: MyLifecycleObserver
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                observer = MyLifecycleObserver(lifecycle)
+                                lifecycle.addObserver(observer)
+                            }
+                        }
+                        
+                        // 在Fragment中使用
+                        class MyFragment : Fragment() {
+                            private lateinit var observer: MyLifecycleObserver
+                            
+                            override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+                                super.onViewCreated(view, savedInstanceState)
+                                
+                                observer = MyLifecycleObserver(viewLifecycleOwner.lifecycle)
+                                viewLifecycleOwner.lifecycle.addObserver(observer)
+                            }
+                        }
+                        
+                        // 注意：Fragment应该使用viewLifecycleOwner，而不是lifecycleOwner
+                        // viewLifecycleOwner的生命周期与Fragment视图绑定
+                    """.trimIndent(),
+                    explanation = "LifecycleObserver用于观察Activity和Fragment的生命周期。在Fragment中应该使用viewLifecycleOwner，它的生命周期与Fragment视图绑定，避免内存泄漏。"
+                ),
+                CodeExample(
+                    title = "示例7：共享元素动画",
+                    code = """
+                        // 启动Activity时使用共享元素动画
+                        val intent = Intent(this, DetailActivity::class.java)
+                        val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                            this,
+                            // 共享元素：view（共享的视图）和"transition_name"（过渡名称）
+                            Pair.create(imageView, "image_transition"),
+                            Pair.create(titleView, "title_transition")
+                        )
+                        startActivity(intent, options.toBundle())
+                        
+                        // 在目标Activity中设置过渡名称
+                        class DetailActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_detail)
+                                
+                                // 设置过渡名称（必须与启动Activity中的名称一致）
+                                detailImageView.transitionName = "image_transition"
+                                detailTitleView.transitionName = "title_transition"
+                            }
+                        }
+                        
+                        // Fragment间共享元素动画（使用Navigation Component）
+                        val extras = FragmentNavigator.Extras.Builder()
+                            .addSharedElement(imageView, "image_transition")
+                            .addSharedElement(titleView, "title_transition")
+                            .build()
+                        
+                        navController.navigate(
+                            R.id.detailFragment,
+                            null,
+                            null,
+                            extras
+                        )
+                    """.trimIndent(),
+                    explanation = "共享元素动画提供流畅的转场效果，提升用户体验。Activity和Fragment都支持共享元素动画，Fragment需要使用Navigation Component。"
+                )
+            ),
+            useCases = listOf(
+                "数据持久化：使用ViewModel在配置变更时保留数据，避免数据丢失",
+                "状态管理：使用SavedStateHandle保存和恢复状态，支持进程被杀死后的恢复",
+                "Fragment通信：使用Fragment Result API实现Fragment间通信，替代接口方式",
+                "导航管理：使用Navigation Component简化Activity和Fragment导航，支持类型安全的参数传递",
+                "生命周期管理：使用LifecycleObserver在合适的生命周期阶段执行操作",
+                "用户体验优化：使用共享元素动画提供流畅的转场效果",
+                "架构设计：遵循MVVM架构，使用ViewModel管理UI数据，Activity和Fragment只负责UI展示"
+            ),
+            notes = listOf(
+                "ViewModel在配置变更时不会销毁，但进程被杀死时会销毁，需要使用SavedStateHandle保存状态",
+                "Fragment应该使用viewLifecycleOwner而不是lifecycleOwner，避免内存泄漏",
+                "Fragment Result API是AndroidX Fragment 1.3.0+引入的新特性，推荐使用",
+                "Navigation Component使用Safe Args插件可以生成类型安全的导航代码",
+                "不推荐使用configChanges属性处理配置变更，应该使用ViewModel",
+                "共享元素动画需要设置transitionName，且启动和目标Activity/Fragment中的名称必须一致",
+                "避免在Activity和Fragment中直接持有对方引用，使用接口、ViewModel或Fragment Result API通信"
+            ),
+            practiceTips = "建议使用ViewModel + SavedStateHandle管理所有UI数据，Activity和Fragment只负责UI展示。使用Navigation Component简化导航，使用Fragment Result API实现Fragment间通信。遵循MVVM架构，将业务逻辑放在ViewModel中，保持Activity和Fragment的简洁。使用LifecycleObserver观察生命周期，在合适的时机执行操作。对于复杂的转场动画，考虑使用共享元素动画提升用户体验。"
+        ),
+        
         // ========== Jetpack Compose ==========
         
         KnowledgeDetail(
