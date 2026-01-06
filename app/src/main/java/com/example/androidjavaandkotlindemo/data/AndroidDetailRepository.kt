@@ -8519,6 +8519,1727 @@ object AndroidDetailRepository {
                 "流媒体播放需要处理网络状态和缓冲"
             ),
             practiceTips = "建议使用ExoPlayer进行视频播放和流媒体播放，它功能强大且可扩展。对于简单的音频播放，可以使用MediaPlayer。注意管理播放器的生命周期，及时释放资源。使用PlayerView显示视频，提供良好的用户体验。处理播放错误和网络状态，提升稳定性。"
+        ),
+        
+        // ========== 性能优化 ==========
+        
+        KnowledgeDetail(
+            id = "startup_opt",
+            title = "启动性能优化",
+            overview = "应用启动性能直接影响用户体验。优化启动时间可以减少冷启动、温启动和热启动的时间，提升应用响应速度。",
+            keyPoints = listOf(
+                "启动类型：冷启动、温启动、热启动",
+                "启动流程：Application.onCreate()、Activity.onCreate()、布局加载、数据初始化",
+                "优化策略：延迟初始化、异步加载、减少启动任务",
+                "启动监控：使用启动时间监控工具，如App Startup库",
+                "懒加载：延迟非关键组件的初始化",
+                "多进程优化：优化多进程应用的启动顺序"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：延迟初始化",
+                    code = """
+                        class MyApplication : Application() {
+                            
+                            override fun onCreate() {
+                                super.onCreate()
+                                
+                                // 不好的做法：在Application中初始化所有组件
+                                // initAllComponents()
+                                
+                                // 好的做法：延迟初始化非关键组件
+                                initCriticalComponents()
+                                
+                                // 使用App Startup延迟初始化
+                                // 在AndroidManifest.xml中配置
+                            }
+                            
+                            private fun initCriticalComponents() {
+                                // 只初始化关键组件
+                                // 如崩溃报告、日志等
+                            }
+                            
+                            // 延迟初始化非关键组件
+                            fun initNonCriticalComponents() {
+                                // 在需要时再初始化
+                                // 如第三方SDK、数据库等
+                            }
+                        }
+                        
+                        // 使用App Startup库延迟初始化
+                        // 1. 添加依赖
+                        // implementation "androidx.startup:startup-runtime:1.1.1"
+                        
+                        // 2. 创建Initializer
+                        class MyInitializer : Initializer<Unit> {
+                            override fun create(context: Context): Unit {
+                                // 初始化逻辑
+                                return Unit
+                            }
+                            
+                            override fun dependencies(): List<Class<out Initializer<*>>> {
+                                return emptyList()
+                            }
+                        }
+                        
+                        // 3. 在AndroidManifest.xml中配置
+                        // <provider
+                        //     android:name="androidx.startup.InitializationProvider"
+                        //     android:authorities="${'$'}{applicationId}.androidx-startup"
+                        //     android:exported="false"
+                        //     tools:node="merge">
+                        //     <meta-data
+                        //         android:name="com.example.MyInitializer"
+                        //         android:value="androidx.startup" />
+                        // </provider>
+                    """.trimIndent(),
+                    explanation = "延迟初始化可以减少启动时间。在Application中只初始化关键组件，非关键组件延迟到需要时再初始化。使用App Startup库可以更好地管理初始化顺序。"
+                ),
+                CodeExample(
+                    title = "示例2：异步加载数据",
+                    code = """
+                        class MainActivity : AppCompatActivity() {
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                // 不好的做法：在主线程加载数据
+                                // val data = loadDataFromDatabase()
+                                
+                                // 好的做法：异步加载数据
+                                setContentView(R.layout.activity_main)
+                                
+                                // 显示加载状态
+                                showLoading()
+                                
+                                // 异步加载数据
+                                lifecycleScope.launch {
+                                    val data = withContext(Dispatchers.IO) {
+                                        loadDataFromDatabase()
+                                    }
+                                    
+                                    // 更新UI
+                                    updateUI(data)
+                                    hideLoading()
+                                }
+                            }
+                            
+                            private suspend fun loadDataFromDatabase(): List<Data> {
+                                return withContext(Dispatchers.IO) {
+                                    // 从数据库加载数据
+                                    database.dataDao().getAll()
+                                }
+                            }
+                            
+                            // 使用ViewBinding延迟初始化
+                            private val binding by lazy {
+                                ActivityMainBinding.inflate(layoutInflater)
+                            }
+                        }
+                        
+                        // 优化布局加载
+                        class OptimizedActivity : AppCompatActivity() {
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                // 使用ViewBinding，延迟初始化
+                                val binding = ActivityMainBinding.inflate(layoutInflater)
+                                setContentView(binding.root)
+                                
+                                // 异步加载数据，不阻塞UI
+                                loadDataAsync()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "异步加载数据可以避免阻塞主线程，提升启动速度。使用协程或线程池异步加载数据，在数据加载完成后再更新UI。"
+                ),
+                CodeExample(
+                    title = "示例3：启动时间监控",
+                    code = """
+                        class StartupMonitor {
+                            
+                            companion object {
+                                private var appStartTime: Long = 0
+                                private var activityStartTime: Long = 0
+                                
+                                fun recordAppStart() {
+                                    appStartTime = System.currentTimeMillis()
+                                }
+                                
+                                fun recordActivityStart() {
+                                    activityStartTime = System.currentTimeMillis()
+                                }
+                                
+                                fun recordActivityReady() {
+                                    val totalTime = System.currentTimeMillis() - appStartTime
+                                    val activityTime = System.currentTimeMillis() - activityStartTime
+                                    
+                                    Log.d("Startup", "总启动时间: ${'$'}totalTime ms")
+                                    Log.d("Startup", "Activity启动时间: ${'$'}activityTime ms")
+                                    
+                                    // 上报到分析平台
+                                    // Analytics.logEvent("app_startup", mapOf(
+                                    //     "total_time" to totalTime,
+                                    //     "activity_time" to activityTime
+                                    // ))
+                                }
+                            }
+                        }
+                        
+                        // 在Application中使用
+                        class MyApplication : Application() {
+                            override fun onCreate() {
+                                StartupMonitor.recordAppStart()
+                                super.onCreate()
+                            }
+                        }
+                        
+                        // 在Activity中使用
+                        class MainActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                StartupMonitor.recordActivityStart()
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                // 在UI准备好后记录
+                                binding.root.post {
+                                    StartupMonitor.recordActivityReady()
+                                }
+                            }
+                        }
+                        
+                        // 使用Android Vitals监控启动时间
+                        // 在Google Play Console中查看启动性能数据
+                    """.trimIndent(),
+                    explanation = "监控启动时间可以帮助识别性能瓶颈。记录Application启动时间、Activity启动时间等关键指标，上报到分析平台进行分析。"
+                ),
+                CodeExample(
+                    title = "示例4：优化启动流程",
+                    code = """
+                        class OptimizedMainActivity : AppCompatActivity() {
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                // 1. 设置主题（避免白屏）
+                                setTheme(R.style.AppTheme)
+                                
+                                // 2. 快速显示布局
+                                setContentView(R.layout.activity_main)
+                                
+                                // 3. 延迟非关键初始化
+                                binding.root.post {
+                                    initNonCriticalComponents()
+                                }
+                                
+                                // 4. 异步加载数据
+                                loadDataAsync()
+                            }
+                            
+                            private fun initNonCriticalComponents() {
+                                // 初始化非关键组件
+                                // 如第三方SDK、分析工具等
+                            }
+                            
+                            private fun loadDataAsync() {
+                                lifecycleScope.launch {
+                                    val data = withContext(Dispatchers.IO) {
+                                        loadData()
+                                    }
+                                    updateUI(data)
+                                }
+                            }
+                        }
+                        
+                        // 优化Application启动
+                        class OptimizedApplication : Application() {
+                            
+                            override fun onCreate() {
+                                super.onCreate()
+                                
+                                // 使用StrictMode检测主线程操作
+                                if (BuildConfig.DEBUG) {
+                                    StrictMode.setThreadPolicy(
+                                        StrictMode.ThreadPolicy.Builder()
+                                            .detectAll()
+                                            .penaltyLog()
+                                            .build()
+                                    )
+                                }
+                                
+                                // 只初始化关键组件
+                                initCriticalComponents()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "优化启动流程包括设置主题避免白屏、快速显示布局、延迟非关键初始化、异步加载数据等。使用StrictMode可以检测主线程操作。"
+                )
+            ),
+            useCases = listOf(
+                "冷启动优化：减少应用冷启动时间",
+                "温启动优化：优化应用温启动速度",
+                "热启动优化：提升应用热启动响应",
+                "启动监控：监控和分析启动性能",
+                "延迟初始化：延迟非关键组件初始化"
+            ),
+            notes = listOf(
+                "启动性能直接影响用户体验，需要重点关注",
+                "延迟初始化可以减少启动时间",
+                "异步加载数据可以避免阻塞主线程",
+                "使用App Startup库管理初始化顺序",
+                "监控启动时间，识别性能瓶颈",
+                "优化Application和Activity的onCreate方法",
+                "使用StrictMode检测主线程操作"
+            ),
+            practiceTips = "建议延迟初始化非关键组件，使用异步加载数据。监控启动时间，识别性能瓶颈。优化Application和Activity的onCreate方法，减少主线程操作。使用App Startup库管理初始化顺序。设置主题避免白屏，快速显示布局。"
+        ),
+        
+        KnowledgeDetail(
+            id = "memory_opt",
+            title = "内存优化",
+            overview = "内存优化是Android性能优化的重要部分。合理管理内存可以避免OOM（Out of Memory）错误，提升应用性能和稳定性。",
+            keyPoints = listOf(
+                "内存泄漏：避免内存泄漏，及时释放资源",
+                "内存监控：使用工具监控内存使用情况",
+                "图片优化：优化图片加载，避免内存溢出",
+                "对象池：使用对象池复用对象，减少GC",
+                "内存缓存：合理使用内存缓存，控制缓存大小",
+                "大对象：避免创建大对象，使用流式处理"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：避免内存泄漏",
+                    code = """
+                        class MainActivity : AppCompatActivity() {
+                            
+                            // 不好的做法：持有Activity引用
+                            private var handler = object : Handler(Looper.getMainLooper()) {
+                                override fun handleMessage(msg: Message) {
+                                    // 持有Activity引用，可能导致内存泄漏
+                                }
+                            }
+                            
+                            // 好的做法：使用弱引用或静态内部类
+                            private class MyHandler(activity: MainActivity) : Handler(Looper.getMainLooper()) {
+                                private val activityRef = WeakReference(activity)
+                                
+                                override fun handleMessage(msg: Message) {
+                                    val activity = activityRef.get() ?: return
+                                    // 处理消息
+                                }
+                            }
+                            
+                            // 更好的做法：使用Lifecycle-aware组件
+                            private val handler = Handler(Looper.getMainLooper())
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                // 使用LifecycleObserver
+                                lifecycle.addObserver(object : LifecycleObserver {
+                                    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+                                    fun onDestroy() {
+                                        handler.removeCallbacksAndMessages(null)
+                                    }
+                                })
+                            }
+                            
+                            // 避免静态引用Activity
+                            companion object {
+                                // 不好的做法
+                                // var instance: MainActivity? = null
+                                
+                                // 好的做法：使用WeakReference
+                                private var instanceRef: WeakReference<MainActivity>? = null
+                            }
+                            
+                            // 及时释放资源
+                            override fun onDestroy() {
+                                super.onDestroy()
+                                // 取消网络请求
+                                // 释放监听器
+                                // 清理资源
+                            }
+                        }
+                        
+                        // 避免Context泄漏
+                        class MySingleton private constructor(context: Context) {
+                            // 不好的做法：持有Activity Context
+                            // private val context: Context = context
+                            
+                            // 好的做法：使用Application Context
+                            private val context: Context = context.applicationContext
+                            
+                            companion object {
+                                @Volatile
+                                private var INSTANCE: MySingleton? = null
+                                
+                                fun getInstance(context: Context): MySingleton {
+                                    return INSTANCE ?: synchronized(this) {
+                                        INSTANCE ?: MySingleton(context).also { INSTANCE = it }
+                                    }
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "避免内存泄漏是内存优化的关键。避免持有Activity引用，使用弱引用或静态内部类。使用Lifecycle-aware组件管理资源。使用Application Context而不是Activity Context。"
+                ),
+                CodeExample(
+                    title = "示例2：图片内存优化",
+                    code = """
+                        class ImageMemoryOptimizer {
+                            
+                            // 使用Glide加载图片，自动管理内存
+                            fun loadImage(imageView: ImageView, url: String) {
+                                Glide.with(context)
+                                    .load(url)
+                                    .override(800, 600) // 指定尺寸
+                                    .format(DecodeFormat.PREFER_RGB_565) // 使用RGB_565减少内存
+                                    .into(imageView)
+                            }
+                            
+                            // 压缩Bitmap
+                            fun compressBitmap(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
+                                val width = bitmap.width
+                                val height = bitmap.height
+                                
+                                if (width <= maxWidth && height <= maxHeight) {
+                                    return bitmap
+                                }
+                                
+                                val scale = minOf(
+                                    maxWidth.toFloat() / width,
+                                    maxHeight.toFloat() / height
+                                )
+                                
+                                val newWidth = (width * scale).toInt()
+                                val newHeight = (height * scale).toInt()
+                                
+                                return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+                            }
+                            
+                            // 使用inSampleSize加载大图
+                            fun decodeSampledBitmapFromResource(
+                                res: Resources,
+                                resId: Int,
+                                reqWidth: Int,
+                                reqHeight: Int
+                            ): Bitmap {
+                                return BitmapFactory.Options().run {
+                                    inJustDecodeBounds = true
+                                    BitmapFactory.decodeResource(res, resId, this)
+                                    
+                                    inSampleSize = calculateInSampleSize(this, reqWidth, reqHeight)
+                                    
+                                    inJustDecodeBounds = false
+                                    BitmapFactory.decodeResource(res, resId, this)
+                                }
+                            }
+                            
+                            private fun calculateInSampleSize(
+                                options: BitmapFactory.Options,
+                                reqWidth: Int,
+                                reqHeight: Int
+                            ): Int {
+                                val (height: Int, width: Int) = options.run { outHeight to outWidth }
+                                var inSampleSize = 1
+                                
+                                if (height > reqHeight || width > reqWidth) {
+                                    val halfHeight: Int = height / 2
+                                    val halfWidth: Int = width / 2
+                                    
+                                    while (halfHeight / inSampleSize >= reqHeight &&
+                                        halfWidth / inSampleSize >= reqWidth) {
+                                        inSampleSize *= 2
+                                    }
+                                }
+                                
+                                return inSampleSize
+                            }
+                            
+                            // 及时回收Bitmap
+                            fun recycleBitmap(bitmap: Bitmap?) {
+                                if (bitmap != null && !bitmap.isRecycled) {
+                                    bitmap.recycle()
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "图片是内存消耗的主要来源。使用Glide等库自动管理内存，压缩Bitmap减少内存占用，使用inSampleSize加载大图，及时回收不需要的Bitmap。"
+                ),
+                CodeExample(
+                    title = "示例3：对象池和缓存",
+                    code = """
+                        // 使用对象池复用对象
+                        class ObjectPool<T>(private val factory: () -> T, private val maxSize: Int = 10) {
+                            private val pool = mutableListOf<T>()
+                            
+                            fun acquire(): T {
+                                return synchronized(pool) {
+                                    if (pool.isNotEmpty()) {
+                                        pool.removeAt(pool.size - 1)
+                                    } else {
+                                        factory()
+                                    }
+                                }
+                            }
+                            
+                            fun release(obj: T) {
+                                synchronized(pool) {
+                                    if (pool.size < maxSize) {
+                                        pool.add(obj)
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 使用LruCache控制内存缓存
+                        class ImageCache(context: Context) {
+                            private val cache = object : LruCache<String, Bitmap>(
+                                (Runtime.getRuntime().maxMemory() / 8).toInt()
+                            ) {
+                                override fun sizeOf(key: String, bitmap: Bitmap): Int {
+                                    return bitmap.byteCount
+                                }
+                                
+                                override fun entryRemoved(
+                                    evicted: Boolean,
+                                    key: String,
+                                    oldValue: Bitmap,
+                                    newValue: Bitmap?
+                                ) {
+                                    if (evicted && !oldValue.isRecycled) {
+                                        oldValue.recycle()
+                                    }
+                                }
+                            }
+                            
+                            fun get(key: String): Bitmap? = cache.get(key)
+                            
+                            fun put(key: String, bitmap: Bitmap) {
+                                cache.put(key, bitmap)
+                            }
+                            
+                            fun clear() {
+                                cache.evictAll()
+                            }
+                        }
+                        
+                        // 使用WeakReference缓存
+                        class WeakCache<K, V> {
+                            private val cache = mutableMapOf<K, WeakReference<V>>()
+                            
+                            fun get(key: K): V? {
+                                val ref = cache[key]
+                                val value = ref?.get()
+                                if (value == null) {
+                                    cache.remove(key)
+                                }
+                                return value
+                            }
+                            
+                            fun put(key: K, value: V) {
+                                cache[key] = WeakReference(value)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "使用对象池可以复用对象，减少GC压力。使用LruCache控制内存缓存大小，避免内存溢出。使用WeakReference缓存，允许GC回收不需要的对象。"
+                ),
+                CodeExample(
+                    title = "示例4：内存监控",
+                    code = """
+                        class MemoryMonitor {
+                            
+                            fun getMemoryInfo(): String {
+                                val runtime = Runtime.getRuntime()
+                                val totalMemory = runtime.totalMemory()
+                                val freeMemory = runtime.freeMemory()
+                                val usedMemory = totalMemory - freeMemory
+                                val maxMemory = runtime.maxMemory()
+                                
+                                return ${'$'}{'"'}${'$'}{'"'}${'$'}{'"'}
+                                    Total Memory: ${'$'}{totalMemory / 1024 / 1024} MB
+                                    Free Memory: ${'$'}{freeMemory / 1024 / 1024} MB
+                                    Used Memory: ${'$'}{usedMemory / 1024 / 1024} MB
+                                    Max Memory: ${'$'}{maxMemory / 1024 / 1024} MB
+                                ${'$'}{'"'}${'$'}{'"'}${'$'}{'"'}.trimIndent()
+                            }
+                            
+                            // 监控内存使用
+                            fun monitorMemory() {
+                                val memoryInfo = ActivityManager.MemoryInfo()
+                                val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                                activityManager.getMemoryInfo(memoryInfo)
+                                
+                                val availableMemory = memoryInfo.availMem
+                                val totalMemory = memoryInfo.totalMem
+                                val threshold = memoryInfo.threshold
+                                
+                                if (availableMemory < threshold) {
+                                    // 内存不足，清理缓存
+                                    clearCache()
+                                }
+                            }
+                            
+                            // 使用LeakCanary检测内存泄漏
+                            // 1. 添加依赖
+                            // debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.12'
+                            
+                            // 2. 在Application中初始化（自动完成）
+                            // LeakCanary会自动检测内存泄漏
+                        }
+                        
+                        // 在Application中监控内存
+                        class MyApplication : Application() {
+                            
+                            override fun onCreate() {
+                                super.onCreate()
+                                
+                                // 监控内存使用
+                                if (BuildConfig.DEBUG) {
+                                    registerComponentCallbacks(object : ComponentCallbacks2 {
+                                        override fun onTrimMemory(level: Int) {
+                                            when (level) {
+                                                ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL -> {
+                                                    // 内存严重不足，清理所有缓存
+                                                    clearAllCache()
+                                                }
+                                                ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW -> {
+                                                    // 内存不足，清理部分缓存
+                                                    clearPartialCache()
+                                                }
+                                            }
+                                        }
+                                        
+                                        override fun onConfigurationChanged(newConfig: Configuration) {}
+                                        override fun onLowMemory() {
+                                            clearAllCache()
+                                        }
+                                    })
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "监控内存使用可以帮助识别内存问题。使用Runtime获取内存信息，使用ActivityManager监控系统内存，使用LeakCanary检测内存泄漏。在内存不足时清理缓存。"
+                )
+            ),
+            useCases = listOf(
+                "避免内存泄漏：及时释放资源，避免内存泄漏",
+                "图片优化：优化图片加载，减少内存占用",
+                "对象复用：使用对象池复用对象，减少GC",
+                "内存缓存：合理使用内存缓存，控制缓存大小",
+                "内存监控：监控内存使用，识别内存问题"
+            ),
+            notes = listOf(
+                "内存优化是性能优化的重要部分",
+                "避免内存泄漏，及时释放资源",
+                "图片是内存消耗的主要来源，需要优化",
+                "使用对象池可以复用对象，减少GC压力",
+                "使用LruCache控制内存缓存大小",
+                "监控内存使用，识别内存问题",
+                "使用LeakCanary检测内存泄漏"
+            ),
+            practiceTips = "建议避免内存泄漏，及时释放资源。优化图片加载，使用Glide等库自动管理内存。使用对象池复用对象，减少GC压力。合理使用内存缓存，控制缓存大小。监控内存使用，使用LeakCanary检测内存泄漏。在内存不足时清理缓存。"
+        ),
+        
+        KnowledgeDetail(
+            id = "ui_opt",
+            title = "UI性能优化",
+            overview = "UI性能优化可以提升应用的流畅度和响应速度。优化布局、减少过度绘制、优化动画等可以显著提升用户体验。",
+            keyPoints = listOf(
+                "布局优化：优化布局层次，减少嵌套",
+                "过度绘制：减少过度绘制，使用GPU渲染分析",
+                "RecyclerView优化：优化RecyclerView性能",
+                "动画优化：优化动画性能，使用硬件加速",
+                "视图复用：复用视图，减少创建开销",
+                "异步加载：异步加载数据，避免阻塞UI线程"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：布局优化",
+                    code = """
+                        // 不好的做法：嵌套过多
+                        // <LinearLayout>
+                        //     <LinearLayout>
+                        //         <LinearLayout>
+                        //             <TextView />
+                        //         </LinearLayout>
+                        //     </LinearLayout>
+                        // </LinearLayout>
+                        
+                        // 好的做法：使用ConstraintLayout减少嵌套
+                        // <androidx.constraintlayout.widget.ConstraintLayout>
+                        //     <TextView
+                        //         app:layout_constraintTop_toTopOf="parent"
+                        //         app:layout_constraintStart_toStartOf="parent" />
+                        // </androidx.constraintlayout.widget.ConstraintLayout>
+                        
+                        // 使用ViewStub延迟加载
+                        class MainActivity : AppCompatActivity() {
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                // ViewStub延迟加载
+                                val viewStub = findViewById<ViewStub>(R.id.viewStub)
+                                viewStub?.inflate()
+                            }
+                        }
+                        
+                        // 布局文件：activity_main.xml
+                        // <ViewStub
+                        //     android:id="@+id/viewStub"
+                        //     android:layout_width="match_parent"
+                        //     android:layout_height="wrap_content"
+                        //     android:layout="@layout/inflated_layout" />
+                        
+                        // 使用include复用布局
+                        // <include
+                        //     android:id="@+id/includedLayout"
+                        //     layout="@layout/common_layout" />
+                        
+                        // 使用merge减少布局层次
+                        // <merge xmlns:android="http://schemas.android.com/apk/res/android">
+                        //     <TextView />
+                        //     <Button />
+                        // </merge>
+                    """.trimIndent(),
+                    explanation = "布局优化可以减少布局层次，提升渲染性能。使用ConstraintLayout减少嵌套，使用ViewStub延迟加载，使用include复用布局，使用merge减少布局层次。"
+                ),
+                CodeExample(
+                    title = "示例2：RecyclerView优化",
+                    code = """
+                        class OptimizedRecyclerViewAdapter : RecyclerView.Adapter<ViewHolder>() {
+                            
+                            // 使用ViewHolder复用
+                            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+                                val view = LayoutInflater.from(parent.context)
+                                    .inflate(R.layout.item_layout, parent, false)
+                                return ViewHolder(view)
+                            }
+                            
+                            override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+                                val item = items[position]
+                                
+                                // 避免在onBindViewHolder中创建对象
+                                // 不好的做法：
+                                // holder.textView.text = "Item ${'$'}position"
+                                
+                                // 好的做法：预加载数据
+                                holder.bind(item)
+                            }
+                            
+                            // 使用DiffUtil优化更新
+                            fun updateItems(newItems: List<Item>) {
+                                val diffCallback = ItemDiffCallback(items, newItems)
+                                val diffResult = DiffUtil.calculateDiff(diffCallback)
+                                items = newItems
+                                diffResult.dispatchUpdatesTo(this)
+                            }
+                            
+                            // 设置RecyclerView优化
+                            fun setupRecyclerView(recyclerView: RecyclerView) {
+                                recyclerView.setHasFixedSize(true) // 固定大小
+                                recyclerView.setItemViewCacheSize(20) // 增加缓存
+                                recyclerView.isDrawingCacheEnabled = true // 启用绘制缓存
+                                
+                                // 使用LinearLayoutManager
+                                recyclerView.layoutManager = LinearLayoutManager(context)
+                                
+                                // 预加载
+                                (recyclerView.layoutManager as? LinearLayoutManager)?.apply {
+                                    initialPrefetchItemCount = 4
+                                }
+                            }
+                        }
+                        
+                        // DiffUtil回调
+                        class ItemDiffCallback(
+                            private val oldList: List<Item>,
+                            private val newList: List<Item>
+                        ) : DiffUtil.Callback() {
+                            
+                            override fun getOldListSize(): Int = oldList.size
+                            
+                            override fun getNewListSize(): Int = newList.size
+                            
+                            override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                                return oldList[oldItemPosition].id == newList[newItemPosition].id
+                            }
+                            
+                            override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                                return oldList[oldItemPosition] == newList[newItemPosition]
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "RecyclerView优化包括使用ViewHolder复用、使用DiffUtil优化更新、设置固定大小、增加缓存等。避免在onBindViewHolder中创建对象，预加载数据。"
+                ),
+                CodeExample(
+                    title = "示例3：减少过度绘制",
+                    code = """
+                        // 在开发者选项中启用"显示过度绘制"
+                        // Settings > Developer options > Show layout bounds
+                        
+                        // 减少过度绘制的方法：
+                        
+                        // 1. 移除不必要的背景
+                        // 不好的做法：
+                        // <LinearLayout
+                        //     android:background="@color/white">
+                        //     <TextView
+                        //         android:background="@color/white" />
+                        // </LinearLayout>
+                        
+                        // 好的做法：
+                        // <LinearLayout>
+                        //     <TextView
+                        //         android:background="@color/white" />
+                        // </LinearLayout>
+                        
+                        // 2. 使用clipToPadding和clipChildren
+                        class OptimizedActivity : AppCompatActivity() {
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+                                
+                                // 裁剪padding区域
+                                recyclerView.clipToPadding = false
+                                
+                                // 裁剪子视图
+                                recyclerView.clipChildren = false
+                            }
+                        }
+                        
+                        // 3. 使用View的willNotDraw优化
+                        class OptimizedView @JvmOverloads constructor(
+                            context: Context,
+                            attrs: AttributeSet? = null
+                        ) : View(context, attrs) {
+                            
+                            init {
+                                // 如果View不需要绘制，设置为true可以优化性能
+                                setWillNotDraw(true)
+                            }
+                        }
+                        
+                        // 4. 使用硬件加速
+                        // 在AndroidManifest.xml中启用
+                        // <activity
+                        //     android:hardwareAccelerated="true" />
+                        
+                        // 或在代码中启用
+                        view.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                    """.trimIndent(),
+                    explanation = "减少过度绘制可以提升渲染性能。移除不必要的背景，使用clipToPadding和clipChildren，使用View的willNotDraw优化，使用硬件加速。"
+                ),
+                CodeExample(
+                    title = "示例4：动画优化",
+                    code = """
+                        class OptimizedAnimationActivity : AppCompatActivity() {
+                            
+                            private fun animateView(view: View) {
+                                // 使用硬件加速
+                                view.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                                
+                                // 使用ObjectAnimator
+                                val animator = ObjectAnimator.ofFloat(view, "alpha", 0f, 1f)
+                                animator.duration = 300
+                                animator.start()
+                                
+                                // 动画结束后恢复
+                                animator.addListener(object : AnimatorListenerAdapter() {
+                                    override fun onAnimationEnd(animation: Animator) {
+                                        view.setLayerType(View.LAYER_TYPE_NONE, null)
+                                    }
+                                })
+                            }
+                            
+                            // 使用ViewPropertyAnimator（推荐）
+                            private fun animateViewOptimized(view: View) {
+                                view.animate()
+                                    .alpha(1f)
+                                    .scaleX(1f)
+                                    .scaleY(1f)
+                                    .setDuration(300)
+                                    .start()
+                            }
+                            
+                            // 使用Transition动画
+                            private fun transitionAnimation() {
+                                val transition = TransitionInflater.from(this)
+                                    .inflateTransition(R.transition.fade_transition)
+                                
+                                TransitionManager.beginDelayedTransition(binding.root, transition)
+                                
+                                // 改变视图属性
+                                view.visibility = View.VISIBLE
+                            }
+                        }
+                        
+                        // 在Compose中使用动画
+                        @Composable
+                        fun AnimatedContent() {
+                            var visible by remember { mutableStateOf(false) }
+                            
+                            AnimatedVisibility(visible = visible) {
+                                Text("Hello")
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "动画优化包括使用硬件加速、使用ViewPropertyAnimator、使用Transition动画等。在动画期间启用硬件加速，动画结束后恢复。在Compose中使用AnimatedVisibility等组件。"
+                )
+            ),
+            useCases = listOf(
+                "布局优化：优化布局层次，减少嵌套",
+                "RecyclerView优化：优化RecyclerView性能",
+                "减少过度绘制：减少过度绘制，提升渲染性能",
+                "动画优化：优化动画性能，使用硬件加速",
+                "视图复用：复用视图，减少创建开销"
+            ),
+            notes = listOf(
+                "UI性能优化可以提升应用的流畅度",
+                "优化布局层次，减少嵌套",
+                "使用ConstraintLayout减少嵌套",
+                "优化RecyclerView性能，使用DiffUtil",
+                "减少过度绘制，移除不必要的背景",
+                "优化动画性能，使用硬件加速",
+                "使用ViewStub延迟加载"
+            ),
+            practiceTips = "建议优化布局层次，使用ConstraintLayout减少嵌套。优化RecyclerView性能，使用DiffUtil优化更新。减少过度绘制，移除不必要的背景。优化动画性能，使用硬件加速。使用ViewStub延迟加载，使用include复用布局。"
+        ),
+        
+        KnowledgeDetail(
+            id = "network_opt",
+            title = "网络性能优化",
+            overview = "网络性能优化可以减少网络请求时间，提升应用响应速度。优化网络请求、使用缓存、压缩数据等可以显著提升用户体验。",
+            keyPoints = listOf(
+                "请求优化：减少请求次数，合并请求",
+                "缓存策略：使用HTTP缓存和本地缓存",
+                "数据压缩：压缩请求和响应数据",
+                "连接复用：复用HTTP连接，减少连接开销",
+                "请求优先级：设置请求优先级，优先加载关键数据",
+                "离线策略：实现离线缓存，支持离线访问"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：请求优化",
+                    code = """
+                        // 使用Retrofit进行网络请求优化
+                        interface ApiService {
+                            
+                            // 不好的做法：多次请求
+                            // @GET("user/{id}")
+                            // suspend fun getUser(@Path("id") String): User
+                            //
+                            // @GET("user/{id}/posts")
+                            // suspend fun getUserPosts(@Path("id") String): List<Post>
+                            
+                            // 好的做法：合并请求
+                            @GET("user/{id}/data")
+                            suspend fun getUserData(@Path("id") String): UserData
+                            
+                            // 使用@QueryMap传递多个参数
+                            @GET("search")
+                            suspend fun search(@QueryMap params: Map<String, String>): SearchResult
+                            
+                            // 使用@Body传递复杂对象
+                            @POST("batch")
+                            suspend fun batchRequest(@Body requests: List<Request>): BatchResponse
+                        }
+                        
+                        // 使用OkHttp拦截器优化请求
+                        class OptimizedOkHttpClient {
+                            
+                            fun createClient(): OkHttpClient {
+                                return OkHttpClient.Builder()
+                                    .addInterceptor(LoggingInterceptor())
+                                    .addInterceptor(CacheInterceptor())
+                                    .addInterceptor(CompressionInterceptor())
+                                    .connectTimeout(10, TimeUnit.SECONDS)
+                                    .readTimeout(10, TimeUnit.SECONDS)
+                                    .writeTimeout(10, TimeUnit.SECONDS)
+                                    .build()
+                            }
+                            
+                            // 缓存拦截器
+                            class CacheInterceptor : Interceptor {
+                                override fun intercept(chain: Interceptor.Chain): Response {
+                                    val request = chain.request()
+                                    val response = chain.proceed(request)
+                                    
+                                    // 设置缓存
+                                    return response.newBuilder()
+                                        .header("Cache-Control", "public, max-age=3600")
+                                        .build()
+                                }
+                            }
+                            
+                            // 压缩拦截器
+                            class CompressionInterceptor : Interceptor {
+                                override fun intercept(chain: Interceptor.Chain): Response {
+                                    val request = chain.request().newBuilder()
+                                        .header("Accept-Encoding", "gzip")
+                                        .build()
+                                    
+                                    return chain.proceed(request)
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "请求优化包括减少请求次数、合并请求、使用拦截器优化请求等。使用Retrofit的@QueryMap和@Body传递参数，使用OkHttp拦截器实现缓存和压缩。"
+                ),
+                CodeExample(
+                    title = "示例2：缓存策略",
+                    code = """
+                        // HTTP缓存
+                        class CacheManager {
+                            
+                            fun createOkHttpClient(context: Context): OkHttpClient {
+                                val cacheSize = 10 * 1024 * 1024L // 10MB
+                                val cache = Cache(context.cacheDir, cacheSize)
+                                
+                                return OkHttpClient.Builder()
+                                    .cache(cache)
+                                    .addInterceptor(CacheInterceptor())
+                                    .addNetworkInterceptor(NetworkCacheInterceptor())
+                                    .build()
+                            }
+                            
+                            // 缓存拦截器（离线缓存）
+                            class CacheInterceptor : Interceptor {
+                                override fun intercept(chain: Interceptor.Chain): Response {
+                                    var request = chain.request()
+                                    
+                                    // 检查网络连接
+                                    if (!isNetworkAvailable()) {
+                                        // 离线时，使用缓存
+                                        request = request.newBuilder()
+                                            .cacheControl(CacheControl.FORCE_CACHE)
+                                            .build()
+                                    }
+                                    
+                                    val response = chain.proceed(request)
+                                    
+                                    return if (isNetworkAvailable()) {
+                                        // 在线时，缓存响应
+                                        response.newBuilder()
+                                            .header("Cache-Control", "public, max-age=3600")
+                                            .removeHeader("Pragma")
+                                            .build()
+                                    } else {
+                                        // 离线时，使用缓存
+                                        response.newBuilder()
+                                            .header("Cache-Control", "public, only-if-cached, max-stale=86400")
+                                            .removeHeader("Pragma")
+                                            .build()
+                                    }
+                                }
+                            }
+                            
+                            // 网络缓存拦截器（在线缓存）
+                            class NetworkCacheInterceptor : Interceptor {
+                                override fun intercept(chain: Interceptor.Chain): Response {
+                                    val response = chain.proceed(chain.request())
+                                    
+                                    return response.newBuilder()
+                                        .header("Cache-Control", "public, max-age=3600")
+                                        .build()
+                                }
+                            }
+                        }
+                        
+                        // 本地缓存（Room数据库）
+                        @Entity
+                        data class CacheEntity(
+                            @PrimaryKey val key: String,
+                            val data: String,
+                            val timestamp: Long
+                        )
+                        
+                        @Dao
+                        interface CacheDao {
+                            @Query("SELECT * FROM cache WHERE key = :key AND timestamp > :expireTime")
+                            suspend fun get(key: String, expireTime: Long): CacheEntity?
+                            
+                            @Insert(onConflict = OnConflictStrategy.REPLACE)
+                            suspend fun insert(cache: CacheEntity)
+                            
+                            @Query("DELETE FROM cache WHERE timestamp < :expireTime")
+                            suspend fun deleteExpired(expireTime: Long)
+                        }
+                    """.trimIndent(),
+                    explanation = "缓存策略包括HTTP缓存和本地缓存。使用OkHttp的Cache实现HTTP缓存，使用拦截器控制缓存策略。使用Room数据库实现本地缓存，支持离线访问。"
+                ),
+                CodeExample(
+                    title = "示例3：数据压缩和连接复用",
+                    code = """
+                        // 使用Gzip压缩
+                        class CompressionInterceptor : Interceptor {
+                            override fun intercept(chain: Interceptor.Chain): Response {
+                                val request = chain.request()
+                                
+                                // 请求压缩
+                                val compressedRequest = request.newBuilder()
+                                    .header("Accept-Encoding", "gzip")
+                                    .build()
+                                
+                                val response = chain.proceed(compressedRequest)
+                                
+                                // 解压响应
+                                if (response.headers["Content-Encoding"] == "gzip") {
+                                    val gzipSource = GzipSource(response.body!!.source())
+                                    val decompressedBody = ResponseBody.create(
+                                        response.body!!.contentType(),
+                                        -1,
+                                        gzipSource.buffer()
+                                    )
+                                    return response.newBuilder()
+                                        .body(decompressedBody)
+                                        .removeHeader("Content-Encoding")
+                                        .removeHeader("Content-Length")
+                                        .build()
+                                }
+                                
+                                return response
+                            }
+                        }
+                        
+                        // 连接复用（OkHttp自动处理）
+                        class ConnectionReuse {
+                            
+                            fun createClient(): OkHttpClient {
+                                return OkHttpClient.Builder()
+                                    .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
+                                    .build()
+                            }
+                            
+                            // OkHttp自动复用连接，无需手动处理
+                            // ConnectionPool管理连接池，自动复用连接
+                        }
+                        
+                        // 使用Protobuf减少数据大小
+                        data class User(
+                            val id: Int,
+                            val name: String,
+                            val email: String
+                        )
+                        
+                        // Protobuf定义
+                        // syntax = "proto3";
+                        // message User {
+                        //     int32 id = 1;
+                        //     string name = 2;
+                        //     string email = 3;
+                        // }
+                        
+                        // 使用Retrofit转换器
+                        // val retrofit = Retrofit.Builder()
+                        //     .baseUrl("https://api.example.com/")
+                        //     .addConverterFactory(ProtoConverterFactory.create())
+                        //     .build()
+                    """.trimIndent(),
+                    explanation = "数据压缩可以减少传输数据量，使用Gzip压缩请求和响应。OkHttp自动复用连接，使用ConnectionPool管理连接池。使用Protobuf可以减少数据大小。"
+                ),
+                CodeExample(
+                    title = "示例4：请求优先级和离线策略",
+                    code = """
+                        // 请求优先级
+                        class PriorityInterceptor : Interceptor {
+                            override fun intercept(chain: Interceptor.Chain): Response {
+                                val request = chain.request()
+                                
+                                // 根据请求类型设置优先级
+                                val priority = when {
+                                    request.url.encodedPath.contains("/user") -> Priority.HIGH
+                                    request.url.encodedPath.contains("/image") -> Priority.LOW
+                                    else -> Priority.NORMAL
+                                }
+                                
+                                val newRequest = request.newBuilder()
+                                    .header("X-Priority", priority.name)
+                                    .build()
+                                
+                                return chain.proceed(newRequest)
+                            }
+                        }
+                        
+                        // 离线策略
+                        class OfflineStrategy {
+                            
+                            suspend fun loadData(forceRefresh: Boolean = false): Result<Data> {
+                                // 先尝试从缓存加载
+                                if (!forceRefresh) {
+                                    val cachedData = getCachedData()
+                                    if (cachedData != null) {
+                                        return Result.success(cachedData)
+                                    }
+                                }
+                                
+                                // 从网络加载
+                                return try {
+                                    val networkData = loadFromNetwork()
+                                    
+                                    // 保存到缓存
+                                    saveToCache(networkData)
+                                    
+                                    Result.success(networkData)
+                                } catch (e: Exception) {
+                                    // 网络失败，使用缓存
+                                    val cachedData = getCachedData()
+                                    if (cachedData != null) {
+                                        Result.success(cachedData)
+                                    } else {
+                                        Result.failure(e)
+                                    }
+                                }
+                            }
+                            
+                            // 使用WorkManager后台同步
+                            class SyncWorker(context: Context, params: WorkerParameters) : 
+                                CoroutineWorker(context, params) {
+                                
+                                override suspend fun doWork(): Result {
+                                    return try {
+                                        // 同步数据
+                                        syncData()
+                                        Result.success()
+                                    } catch (e: Exception) {
+                                        Result.retry()
+                                    }
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "请求优先级可以根据请求类型设置优先级，优先加载关键数据。离线策略包括先使用缓存、网络失败时使用缓存、使用WorkManager后台同步等。"
+                )
+            ),
+            useCases = listOf(
+                "请求优化：减少请求次数，合并请求",
+                "缓存策略：使用HTTP缓存和本地缓存",
+                "数据压缩：压缩请求和响应数据",
+                "连接复用：复用HTTP连接，减少连接开销",
+                "离线策略：实现离线缓存，支持离线访问"
+            ),
+            notes = listOf(
+                "网络性能优化可以减少网络请求时间",
+                "减少请求次数，合并请求",
+                "使用HTTP缓存和本地缓存",
+                "压缩数据可以减少传输数据量",
+                "OkHttp自动复用连接",
+                "设置请求优先级，优先加载关键数据",
+                "实现离线缓存，支持离线访问"
+            ),
+            practiceTips = "建议减少请求次数，合并请求。使用HTTP缓存和本地缓存，提升响应速度。压缩数据，减少传输数据量。OkHttp自动复用连接，无需手动处理。设置请求优先级，优先加载关键数据。实现离线缓存，支持离线访问。"
+        ),
+        
+        KnowledgeDetail(
+            id = "battery_opt",
+            title = "电池优化",
+            overview = "电池优化可以延长设备电池寿命，提升用户体验。优化后台任务、减少唤醒、使用JobScheduler等可以显著减少电池消耗。",
+            keyPoints = listOf(
+                "后台任务：优化后台任务，减少电池消耗",
+                "唤醒锁：减少唤醒锁使用，及时释放",
+                "JobScheduler：使用JobScheduler管理后台任务",
+                "WorkManager：使用WorkManager管理后台工作",
+                "定位优化：优化定位使用，减少定位频率",
+                "网络优化：优化网络使用，减少网络请求"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：后台任务优化",
+                    code = """
+                        // 使用WorkManager管理后台任务
+                        class DataSyncWorker(context: Context, params: WorkerParameters) :
+                            CoroutineWorker(context, params) {
+                            
+                            override suspend fun doWork(): Result {
+                                return try {
+                                    // 执行后台任务
+                                    syncData()
+                                    Result.success()
+                                } catch (e: Exception) {
+                                    // 失败时重试
+                                    if (runAttemptCount < 3) {
+                                        Result.retry()
+                                    } else {
+                                        Result.failure()
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 调度后台任务
+                        class TaskScheduler {
+                            
+                            fun scheduleSyncWork(context: Context) {
+                                val constraints = Constraints.Builder()
+                                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                                    .setRequiresBatteryNotLow(true)
+                                    .setRequiresCharging(false)
+                                    .build()
+                                
+                                val workRequest = PeriodicWorkRequestBuilder<DataSyncWorker>(
+                                    15, TimeUnit.MINUTES
+                                )
+                                    .setConstraints(constraints)
+                                    .build()
+                                
+                                WorkManager.getInstance(context).enqueue(workRequest)
+                            }
+                            
+                            // 一次性任务
+                            fun scheduleOneTimeWork(context: Context) {
+                                val workRequest = OneTimeWorkRequestBuilder<DataSyncWorker>()
+                                    .setConstraints(constraints)
+                                    .build()
+                                
+                                WorkManager.getInstance(context).enqueue(workRequest)
+                            }
+                        }
+                        
+                        // 使用JobScheduler（Android 5.0+）
+                        class JobSchedulerExample {
+                            
+                            fun scheduleJob(context: Context) {
+                                val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) 
+                                    as JobScheduler
+                                
+                                val jobInfo = JobInfo.Builder(1, ComponentName(context, MyJobService::class.java))
+                                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                                    .setRequiresCharging(false)
+                                    .setRequiresDeviceIdle(false)
+                                    .setPeriodic(15 * 60 * 1000) // 15分钟
+                                    .build()
+                                
+                                jobScheduler.schedule(jobInfo)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "使用WorkManager或JobScheduler管理后台任务，可以优化电池使用。设置约束条件，如网络连接、电池状态等，避免在不合适的时机执行任务。"
+                ),
+                CodeExample(
+                    title = "示例2：唤醒锁优化",
+                    code = """
+                        class WakeLockManager {
+                            
+                            private var wakeLock: PowerManager.WakeLock? = null
+                            
+                            fun acquireWakeLock(context: Context) {
+                                val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+                                
+                                // 使用PARTIAL_WAKE_LOCK，最小化电池消耗
+                                wakeLock = powerManager.newWakeLock(
+                                    PowerManager.PARTIAL_WAKE_LOCK,
+                                    "MyApp::WakeLock"
+                                )
+                                
+                                // 设置超时，自动释放
+                                wakeLock?.acquire(10 * 60 * 1000L) // 10分钟
+                            }
+                            
+                            fun releaseWakeLock() {
+                                wakeLock?.let {
+                                    if (it.isHeld) {
+                                        it.release()
+                                    }
+                                }
+                                wakeLock = null
+                            }
+                            
+                            // 使用WakefulBroadcastReceiver（已废弃，使用WorkManager替代）
+                            // 或使用ForegroundService
+                        }
+                        
+                        // 避免长时间持有WakeLock
+                        class OptimizedWakeLock {
+                            
+                            fun performTask(context: Context) {
+                                val wakeLock = acquireWakeLock(context)
+                                
+                                try {
+                                    // 执行任务
+                                    performTask()
+                                } finally {
+                                    // 确保释放WakeLock
+                                    releaseWakeLock(wakeLock)
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "唤醒锁会消耗电池，需要优化使用。使用PARTIAL_WAKE_LOCK最小化电池消耗，设置超时自动释放，及时释放不需要的WakeLock。"
+                ),
+                CodeExample(
+                    title = "示例3：定位优化",
+                    code = """
+                        class LocationManager {
+                            
+                            private val locationClient: FusedLocationProviderClient
+                            
+                            init {
+                                locationClient = LocationServices.getFusedLocationProviderClient(context)
+                            }
+                            
+                            // 优化定位请求
+                            fun requestLocationUpdates() {
+                                val locationRequest = LocationRequest.Builder(
+                                    Priority.PRIORITY_BALANCED_POWER_ACCURACY, // 平衡精度和电池
+                                    10000L // 10秒
+                                )
+                                    .setMaxUpdateDelayMillis(20000) // 最大延迟20秒
+                                    .setWaitForAccurateLocation(false) // 不等待高精度定位
+                                    .build()
+                                
+                                val locationCallback = object : LocationCallback() {
+                                    override fun onLocationResult(result: LocationResult) {
+                                        // 处理定位结果
+                                        val location = result.lastLocation
+                                    }
+                                }
+                                
+                                if (ActivityCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.ACCESS_FINE_LOCATION
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    locationClient.requestLocationUpdates(
+                                        locationRequest,
+                                        locationCallback,
+                                        Looper.getMainLooper()
+                                    )
+                                }
+                            }
+                            
+                            // 停止定位更新
+                            fun stopLocationUpdates() {
+                                locationClient.removeLocationUpdates(locationCallback)
+                            }
+                            
+                            // 使用单次定位
+                            fun getLastLocation() {
+                                locationClient.lastLocation.addOnSuccessListener { location ->
+                                    // 使用最后已知位置
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "定位是电池消耗的主要来源。使用PRIORITY_BALANCED_POWER_ACCURACY平衡精度和电池，设置合理的更新间隔，及时停止定位更新，使用单次定位替代持续定位。"
+                ),
+                CodeExample(
+                    title = "示例4：网络和传感器优化",
+                    code = """
+                        // 网络优化
+                        class NetworkOptimizer {
+                            
+                            // 批量网络请求
+                            fun batchNetworkRequests() {
+                                // 合并多个请求为一个
+                                // 减少网络唤醒次数
+                            }
+                            
+                            // 使用推送替代轮询
+                            fun usePushInsteadOfPolling() {
+                                // 使用FCM推送替代定时轮询
+                                // 减少网络请求，节省电池
+                            }
+                        }
+                        
+                        // 传感器优化
+                        class SensorOptimizer {
+                            
+                            private var sensorManager: SensorManager? = null
+                            private var sensor: Sensor? = null
+                            
+                            fun registerSensor() {
+                                sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+                                sensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+                                
+                                // 设置采样率，减少电池消耗
+                                sensorManager?.registerListener(
+                                    sensorListener,
+                                    sensor,
+                                    SensorManager.SENSOR_DELAY_NORMAL // 正常延迟
+                                )
+                            }
+                            
+                            fun unregisterSensor() {
+                                sensorManager?.unregisterListener(sensorListener)
+                            }
+                            
+                            private val sensorListener = object : SensorEventListener {
+                                override fun onSensorChanged(event: SensorEvent) {
+                                    // 处理传感器数据
+                                }
+                                
+                                override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
+                                    // 精度变化
+                                }
+                            }
+                        }
+                        
+                        // 使用Battery Historian分析电池使用
+                        // adb shell dumpsys batterystats > batterystats.txt
+                        // 使用Battery Historian工具分析
+                    """.trimIndent(),
+                    explanation = "网络和传感器优化可以减少电池消耗。批量网络请求，使用推送替代轮询，优化传感器采样率，及时注销传感器监听器。使用Battery Historian分析电池使用情况。"
+                )
+            ),
+            useCases = listOf(
+                "后台任务优化：优化后台任务，减少电池消耗",
+                "唤醒锁优化：减少唤醒锁使用，及时释放",
+                "定位优化：优化定位使用，减少定位频率",
+                "网络优化：优化网络使用，减少网络请求",
+                "传感器优化：优化传感器使用，减少电池消耗"
+            ),
+            notes = listOf(
+                "电池优化可以延长设备电池寿命",
+                "使用WorkManager或JobScheduler管理后台任务",
+                "减少唤醒锁使用，及时释放",
+                "优化定位使用，减少定位频率",
+                "批量网络请求，使用推送替代轮询",
+                "优化传感器采样率，及时注销监听器",
+                "使用Battery Historian分析电池使用"
+            ),
+            practiceTips = "建议使用WorkManager或JobScheduler管理后台任务，设置约束条件。减少唤醒锁使用，及时释放。优化定位使用，使用PRIORITY_BALANCED_POWER_ACCURACY。批量网络请求，使用推送替代轮询。优化传感器采样率，及时注销监听器。使用Battery Historian分析电池使用情况。"
+        ),
+        
+        KnowledgeDetail(
+            id = "apk_size",
+            title = "包体积优化",
+            overview = "包体积优化可以减少APK大小，提升下载和安装速度。优化资源、代码混淆、使用App Bundle等可以显著减小APK体积。",
+            keyPoints = listOf(
+                "资源优化：优化图片、音频等资源文件",
+                "代码优化：移除未使用的代码，使用ProGuard/R8",
+                "App Bundle：使用Android App Bundle减小包体积",
+                "动态加载：使用动态加载，按需加载功能",
+                "资源压缩：压缩资源文件，减少体积",
+                "多APK：使用多APK支持不同架构"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：资源优化",
+                    code = """
+                        // 1. 优化图片资源
+                        // - 使用WebP格式替代PNG/JPG
+                        // - 使用Vector Drawable替代位图
+                        // - 移除未使用的图片资源
+                        
+                        // 2. 使用Vector Drawable
+                        // res/drawable/ic_arrow.xml
+                        // <vector xmlns:android="http://schemas.android.com/apk/res/android"
+                        //     android:width="24dp"
+                        //     android:height="24dp"
+                        //     android:viewportWidth="24"
+                        //     android:viewportHeight="24">
+                        //     <path
+                        //         android:fillColor="#FF000000"
+                        //         android:pathData="M12,4l-1.41,1.41L16.17,11H4v2h12.17l-5.58,5.59L12,20l8,-8z"/>
+                        // </vector>
+                        
+                        // 3. 移除未使用的资源
+                        // 在build.gradle中启用资源清理
+                        android {
+                            buildTypes {
+                                release {
+                                    shrinkResources = true // 移除未使用的资源
+                                    minifyEnabled = true
+                                }
+                            }
+                        }
+                        
+                        // 4. 使用资源别名
+                        // res/values/strings.xml
+                        // <string name="app_name">MyApp</string>
+                        // res/values-zh/strings.xml
+                        // <string name="app_name">我的应用</string>
+                        
+                        // 5. 优化音频资源
+                        // - 使用压缩格式（如MP3）
+                        // - 降低采样率
+                        // - 移除未使用的音频
+                    """.trimIndent(),
+                    explanation = "资源优化包括优化图片、使用Vector Drawable、移除未使用的资源、使用资源别名等。启用shrinkResources可以自动移除未使用的资源。"
+                ),
+                CodeExample(
+                    title = "示例2：代码优化",
+                    code = """
+                        // 1. 使用ProGuard/R8混淆和优化
+                        android {
+                            buildTypes {
+                                release {
+                                    minifyEnabled = true // 启用代码混淆
+                                    shrinkResources = true // 移除未使用的资源
+                                    proguardFiles(
+                                        getDefaultProguardFile("proguard-android-optimize.txt"),
+                                        "proguard-rules.pro"
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // 2. ProGuard规则
+                        // proguard-rules.pro
+                        # 保留必要的类
+                        -keep class com.example.MyClass { *; }
+                        
+                        # 移除日志
+                        -assumenosideeffects class android.util.Log {
+                            public static *** d(...);
+                            public static *** v(...);
+                        }
+                        
+                        # 优化
+                        -optimizationpasses 5
+                        -dontusemixedcaseclassnames
+                        -dontskipnonpubliclibraryclasses
+                        
+                        // 3. 移除未使用的依赖
+                        // 使用Android Studio的Analyze > Inspect Code
+                        // 或使用工具检查未使用的依赖
+                        
+                        // 4. 使用代码分析工具
+                        // - Lint检查未使用的代码
+                        // - 使用ProGuard/R8自动移除未使用的代码
+                        
+                        // 5. 使用Kotlin的优化
+                        // - 使用inline函数减少方法数
+                        // - 使用data class减少代码量
+                    """.trimIndent(),
+                    explanation = "代码优化包括使用ProGuard/R8混淆和优化、移除未使用的依赖、使用代码分析工具等。启用minifyEnabled可以自动移除未使用的代码。"
+                ),
+                CodeExample(
+                    title = "示例3：App Bundle和动态加载",
+                    code = """
+                        // 1. 使用Android App Bundle
+                        // build.gradle
+                        android {
+                            bundle {
+                                language {
+                                    enableSplit = true // 按语言拆分
+                                }
+                                density {
+                                    enableSplit = true // 按密度拆分
+                                }
+                                abi {
+                                    enableSplit = true // 按架构拆分
+                                }
+                            }
+                        }
+                        
+                        // 2. 构建App Bundle
+                        // ./gradlew bundleRelease
+                        // 生成app-release.aab文件
+                        
+                        // 3. 使用Dynamic Feature Modules
+                        // 创建动态功能模块
+                        // File > New > New Module > Dynamic Feature Module
+                        
+                        // 4. 动态加载功能
+                        class DynamicFeatureLoader {
+                            
+                            suspend fun loadFeature(moduleName: String): Boolean {
+                                val splitInstallManager = SplitInstallManagerFactory.create(context)
+                                
+                                val request = SplitInstallRequest.newBuilder()
+                                    .addModule(moduleName)
+                                    .build()
+                                
+                                return try {
+                                    splitInstallManager.startInstall(request)
+                                    true
+                                } catch (e: Exception) {
+                                    false
+                                }
+                            }
+                            
+                            fun checkFeatureInstalled(moduleName: String): Boolean {
+                                val splitInstallManager = SplitInstallManagerFactory.create(context)
+                                return splitInstallManager.installedModules.contains(moduleName)
+                            }
+                        }
+                        
+                        // 5. 使用Play Core Library
+                        // implementation "com.google.android.play:core:1.10.3"
+                        // implementation "com.google.android.play:core-ktx:1.8.1"
+                    """.trimIndent(),
+                    explanation = "使用Android App Bundle可以减小包体积，Google Play会根据设备特性只下载需要的资源。使用Dynamic Feature Modules可以按需加载功能模块。"
+                ),
+                CodeExample(
+                    title = "示例4：多APK和资源压缩",
+                    code = """
+                        // 1. 使用多APK支持不同架构
+                        android {
+                            splits {
+                                abi {
+                                    isEnable = true
+                                    reset()
+                                    include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+                                    isUniversalApk = false
+                                }
+                            }
+                        }
+                        
+                        // 2. 资源压缩
+                        android {
+                            aaptOptions {
+                                // 压缩PNG文件
+                                cruncherEnabled = true
+                                
+                                // 不压缩特定文件
+                                noCompress("tflite", "lite")
+                            }
+                        }
+                        
+                        // 3. 使用资源压缩工具
+                        // - pngquant: 压缩PNG
+                        // - zopflipng: 压缩PNG
+                        // - webp: 转换为WebP
+                        
+                        // 4. 分析APK大小
+                        // Android Studio > Build > Analyze APK
+                        // 查看APK各部分大小
+                        
+                        // 5. 使用APK Analyzer
+                        // Tools > Android > APK Analyzer
+                        // 分析APK组成，找出占用空间大的文件
+                        
+                        // 6. 移除调试信息
+                        android {
+                            buildTypes {
+                                release {
+                                    // 移除调试信息
+                                    debuggable = false
+                                    
+                                    // 移除行号信息
+                                    minifyEnabled = true
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "使用多APK可以支持不同架构，减小单个APK大小。使用资源压缩工具压缩资源文件。使用APK Analyzer分析APK大小，找出占用空间大的文件。"
+                )
+            ),
+            useCases = listOf(
+                "资源优化：优化图片、音频等资源文件",
+                "代码优化：移除未使用的代码，使用ProGuard/R8",
+                "App Bundle：使用Android App Bundle减小包体积",
+                "动态加载：使用动态加载，按需加载功能",
+                "多APK：使用多APK支持不同架构"
+            ),
+            notes = listOf(
+                "包体积优化可以减少APK大小",
+                "优化资源，使用WebP和Vector Drawable",
+                "使用ProGuard/R8移除未使用的代码",
+                "使用Android App Bundle减小包体积",
+                "使用Dynamic Feature Modules按需加载功能",
+                "使用多APK支持不同架构",
+                "使用APK Analyzer分析APK大小"
+            ),
+            practiceTips = "建议优化资源，使用WebP和Vector Drawable。使用ProGuard/R8移除未使用的代码。使用Android App Bundle减小包体积，Google Play会根据设备特性只下载需要的资源。使用Dynamic Feature Modules按需加载功能。使用多APK支持不同架构。使用APK Analyzer分析APK大小，找出占用空间大的文件。"
         )
     )
 }
