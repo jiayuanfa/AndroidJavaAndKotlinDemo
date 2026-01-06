@@ -51,6 +51,8 @@
 - [ ] 产品风味（Product Flavors）
 - [ ] 签名配置（Signing Configs）
 
+📖 **详细文档**：[Gradle构建系统详解](./GRADLE_BUILD_SYSTEM.md)
+
 ---
 
 ## Activity和Fragment

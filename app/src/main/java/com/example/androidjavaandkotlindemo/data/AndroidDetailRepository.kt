@@ -195,6 +195,267 @@ object AndroidDetailRepository {
             practiceTips = "建议使用版本管理工具（如Git）管理版本号，使用密钥管理工具（如Android Keystore）安全存储签名密钥。发布前务必测试不同Android版本的兼容性。"
         ),
         
+        KnowledgeDetail(
+            id = "gradle",
+            title = "Gradle构建系统",
+            overview = "Gradle是Android项目的构建工具，负责编译代码、打包资源、管理依赖等。理解Gradle的配置和构建流程是Android开发的基础。",
+            keyPoints = listOf(
+                "build.gradle文件：项目级和模块级的构建配置文件，定义构建规则和依赖",
+                "依赖管理：使用dependencies块声明项目依赖，支持implementation、api、kapt等配置",
+                "构建变体（Build Variants）：构建类型（Build Types）和产品风味（Product Flavors）的组合",
+                "构建类型：Debug和Release等不同类型，用于区分开发和生产环境",
+                "产品风味：用于创建同一应用的不同版本（如免费版、付费版）",
+                "签名配置：配置应用签名，Release版本必须使用正式签名",
+                "版本目录（Version Catalogs）：统一管理依赖版本，提供类型安全的依赖访问"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：项目级build.gradle配置",
+                    code = """
+                        // 项目根目录的build.gradle
+                        plugins {
+                            alias(libs.plugins.android.application) apply false
+                            alias(libs.plugins.kotlin.android) apply false
+                            alias(libs.plugins.kotlin.compose) apply false
+                            alias(libs.plugins.kotlin.kapt) apply false
+                            alias(libs.plugins.hilt) apply false
+                        }
+                        
+                        // apply false表示插件在项目级声明但不立即应用
+                        // 子模块可以选择性地应用这些插件
+                    """.trimIndent(),
+                    explanation = "项目级build.gradle用于配置所有子模块共用的插件和设置。使用alias引用版本目录中定义的插件，便于统一管理版本。"
+                ),
+                CodeExample(
+                    title = "示例2：模块级build.gradle基础配置",
+                    code = """
+                        plugins {
+                            alias(libs.plugins.android.application)
+                            alias(libs.plugins.kotlin.android)
+                            alias(libs.plugins.kotlin.compose)
+                            alias(libs.plugins.kotlin.kapt)
+                            alias(libs.plugins.hilt)
+                        }
+                        
+                        android {
+                            namespace 'com.example.myapp'
+                            
+                            compileSdk {
+                                version = release(36)  // 编译SDK版本
+                            }
+                            
+                            defaultConfig {
+                                applicationId "com.example.myapp"
+                                minSdk 24              // 最低支持Android 7.0
+                                targetSdk 36           // 目标Android 16
+                                versionCode 1
+                                versionName "1.0"
+                                
+                                testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+                            }
+                            
+                            buildTypes {
+                                debug {
+                                    debuggable true
+                                    minifyEnabled false
+                                }
+                                release {
+                                    minifyEnabled true
+                                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                                                  'proguard-rules.pro'
+                                }
+                            }
+                            
+                            compileOptions {
+                                sourceCompatibility JavaVersion.VERSION_11
+                                targetCompatibility JavaVersion.VERSION_11
+                            }
+                            
+                            kotlinOptions {
+                                jvmTarget = '11'
+                            }
+                            
+                            buildFeatures {
+                                compose true
+                                buildConfig true
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "模块级build.gradle配置特定模块的构建选项。defaultConfig定义默认配置，buildTypes定义构建类型，compileOptions和kotlinOptions配置编译选项。"
+                ),
+                CodeExample(
+                    title = "示例3：依赖管理",
+                    code = """
+                        dependencies {
+                            // implementation：编译时和运行时依赖，不暴露给其他模块
+                            implementation libs.androidx.core.ktx
+                            implementation libs.androidx.compose.ui
+                            
+                            // kapt：Kotlin注解处理器（用于Room、Hilt等）
+                            kapt libs.androidx.room.compiler
+                            kapt libs.hilt.compiler
+                            
+                            // platform：BOM（Bill of Materials），统一管理版本
+                            implementation platform(libs.androidx.compose.bom)
+                            implementation libs.androidx.compose.material3
+                            
+                            // testImplementation：单元测试依赖
+                            testImplementation libs.junit
+                            
+                            // androidTestImplementation：Android集成测试依赖
+                            androidTestImplementation libs.androidx.junit
+                            
+                            // debugImplementation：仅在Debug构建中使用
+                            debugImplementation libs.androidx.compose.ui.tooling
+                        }
+                        
+                        // 依赖配置类型说明：
+                        // - implementation：推荐使用，依赖不暴露给其他模块
+                        // - api：依赖会暴露给其他模块（不推荐，会增加构建时间）
+                        // - compileOnly：仅在编译时需要
+                        // - runtimeOnly：仅在运行时需要
+                        // - kapt：Kotlin注解处理（可考虑迁移到KSP，性能更好）
+                    """.trimIndent(),
+                    explanation = "dependencies块用于声明项目依赖。implementation是最常用的配置类型，kapt用于注解处理，platform用于统一管理版本。"
+                ),
+                CodeExample(
+                    title = "示例4：构建变体和产品风味",
+                    code = """
+                        android {
+                            // 构建类型
+                            buildTypes {
+                                debug {
+                                    applicationIdSuffix ".debug"
+                                    versionNameSuffix "-debug"
+                                }
+                                release {
+                                    minifyEnabled true
+                                    signingConfig signingConfigs.release
+                                }
+                            }
+                            
+                            // 产品风味维度
+                            flavorDimensions += "version"
+                            
+                            productFlavors {
+                                create("free") {
+                                    dimension = "version"
+                                    applicationIdSuffix = ".free"
+                                    versionNameSuffix = "-free"
+                                    resValue("string", "app_name", "MyApp Free")
+                                }
+                                
+                                create("paid") {
+                                    dimension = "version"
+                                    applicationIdSuffix = ".paid"
+                                    versionNameSuffix = "-paid"
+                                    resValue("string", "app_name", "MyApp Pro")
+                                }
+                            }
+                        }
+                        
+                        // 生成的构建变体：
+                        // - freeDebug
+                        // - freeRelease
+                        // - paidDebug
+                        // - paidRelease
+                    """.trimIndent(),
+                    explanation = "构建变体是构建类型和产品风味的组合。产品风味用于创建同一应用的不同版本，如免费版和付费版。"
+                ),
+                CodeExample(
+                    title = "示例5：版本目录（Version Catalogs）",
+                    code = """
+                        // gradle/libs.versions.toml
+                        [versions]
+                        agp = "8.13.2"
+                        kotlin = "2.0.21"
+                        composeBom = "2024.09.00"
+                        
+                        [libraries]
+                        androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+                        androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+                        
+                        [plugins]
+                        android-application = { id = "com.android.application", version.ref = "agp" }
+                        kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+                        
+                        // 在build.gradle中使用
+                        plugins {
+                            alias(libs.plugins.android.application)
+                        }
+                        
+                        dependencies {
+                            implementation libs.androidx.core.ktx
+                            implementation platform(libs.androidx.compose.bom)
+                        }
+                        
+                        // Version Catalog的优势：
+                        // 1. 统一版本管理
+                        // 2. 类型安全（IDE自动补全）
+                        // 3. 易于维护（更新版本只需修改一处）
+                    """.trimIndent(),
+                    explanation = "Version Catalog是Gradle 7.0+引入的功能，用于统一管理依赖版本。使用TOML文件定义版本和库，在build.gradle中通过libs引用，提供类型安全的依赖访问。"
+                ),
+                CodeExample(
+                    title = "示例6：签名配置",
+                    code = """
+                        android {
+                            signingConfigs {
+                                create("release") {
+                                    // 方式1：直接在build.gradle中配置（不推荐，密钥暴露）
+                                    // storeFile = file("release.keystore")
+                                    // storePassword = "password"
+                                    // keyAlias = "release"
+                                    // keyPassword = "password"
+                                    
+                                    // 方式2：从gradle.properties读取（推荐）
+                                    storeFile = file(project.findProperty("RELEASE_STORE_FILE") as String)
+                                    storePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String
+                                    keyAlias = project.findProperty("RELEASE_KEY_ALIAS") as String
+                                    keyPassword = project.findProperty("RELEASE_KEY_PASSWORD") as String
+                                }
+                            }
+                            
+                            buildTypes {
+                                getByName("release") {
+                                    signingConfig = signingConfigs.getByName("release")
+                                }
+                            }
+                        }
+                        
+                        // gradle.properties（不提交到版本控制）
+                        // RELEASE_STORE_FILE=release.keystore
+                        // RELEASE_STORE_PASSWORD=your_store_password
+                        // RELEASE_KEY_ALIAS=your_key_alias
+                        // RELEASE_KEY_PASSWORD=your_key_password
+                        
+                        // 生成签名密钥：
+                        // keytool -genkey -v -keystore release.keystore -alias release 
+                        //         -keyalg RSA -keysize 2048 -validity 10000
+                    """.trimIndent(),
+                    explanation = "签名配置用于Release版本的签名。推荐从gradle.properties读取密钥信息，避免密钥暴露在代码中。签名密钥必须妥善保管，丢失后无法更新应用。"
+                )
+            ),
+            useCases = listOf(
+                "项目构建：配置Gradle构建脚本，实现自动化构建和打包",
+                "依赖管理：统一管理项目依赖，确保版本兼容性",
+                "多版本发布：使用产品风味创建免费版、付费版等不同版本",
+                "构建优化：配置构建缓存、并行构建等优化构建速度",
+                "版本管理：使用Version Catalog统一管理依赖版本",
+                "签名管理：配置应用签名，确保Release版本正确签名"
+            ),
+            notes = listOf(
+                "build.gradle文件使用Groovy或Kotlin DSL编写，Kotlin DSL提供更好的类型安全",
+                "implementation比api更推荐，因为它不会暴露依赖给其他模块，构建更快",
+                "kapt正在被KSP（Kotlin Symbol Processing）替代，KSP性能更好",
+                "Version Catalog是管理依赖版本的最佳实践，建议使用",
+                "签名密钥丢失后无法更新应用，必须妥善保管并备份",
+                "构建变体数量 = 构建类型数量 × 产品风味数量，避免创建过多变体",
+                "使用Gradle Wrapper确保所有开发者使用相同的Gradle版本"
+            ),
+            practiceTips = "建议使用Version Catalog统一管理依赖版本，使用implementation而非api配置依赖。对于注解处理，考虑迁移到KSP替代kapt。签名密钥应该从gradle.properties或环境变量读取，不要硬编码在代码中。使用构建缓存和并行构建优化构建速度。定期更新Gradle和AGP版本以获得最新特性和性能改进。"
+        ),
+        
         // ========== Activity和Fragment ==========
         
         KnowledgeDetail(
