@@ -5701,6 +5701,1114 @@ object AndroidDetailRepository {
                 "记录网络请求日志，便于调试和监控"
             ),
             practiceTips = "建议实现统一的错误处理机制，简化错误处理逻辑。使用重试机制处理临时网络故障，使用指数退避策略。实现缓存策略减少网络请求。优化网络性能，使用连接池、压缩等。使用HTTPS保证安全性。记录网络请求日志，便于调试和监控。"
+        ),
+        
+        // ========== 架构组件 ==========
+        
+        KnowledgeDetail(
+            id = "viewmodel",
+            title = "ViewModel（生命周期、状态管理）",
+            overview = "ViewModel是Android架构组件的核心，用于存储和管理UI相关的数据。ViewModel在配置变更（如屏幕旋转）时不会销毁，可以保存数据。",
+            keyPoints = listOf(
+                "生命周期：ViewModel的生命周期与Activity/Fragment不同，在配置变更时不会销毁",
+                "数据保存：ViewModel可以保存UI数据，避免配置变更时数据丢失",
+                "作用域：ViewModel可以绑定到Activity、Fragment或Navigation图",
+                "状态管理：使用StateFlow或LiveData在ViewModel中管理状态",
+                "协程支持：使用viewModelScope执行协程任务，自动取消",
+                "依赖注入：使用Hilt等框架注入ViewModel"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：ViewModel基础使用",
+                    code = """
+                        class UserViewModel : ViewModel() {
+                            
+                            // 使用StateFlow管理状态
+                            private val _users = MutableStateFlow<List<User>>(emptyList())
+                            val users: StateFlow<List<User>> = _users.asStateFlow()
+                            
+                            private val _isLoading = MutableStateFlow(false)
+                            val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+                            
+                            // 加载数据
+                            fun loadUsers() {
+                                viewModelScope.launch {
+                                    _isLoading.value = true
+                                    try {
+                                        val userList = repository.getUsers()
+                                        _users.value = userList
+                                    } catch (e: Exception) {
+                                        // 处理错误
+                                    } finally {
+                                        _isLoading.value = false
+                                    }
+                                }
+                            }
+                            
+                            // 添加用户
+                            fun addUser(user: User) {
+                                viewModelScope.launch {
+                                    repository.insertUser(user)
+                                    loadUsers() // 重新加载
+                                }
+                            }
+                        }
+                        
+                        // 在Activity中使用
+                        class MainActivity : AppCompatActivity() {
+                            private val viewModel: UserViewModel by viewModels()
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                // 观察状态
+                                lifecycleScope.launch {
+                                    viewModel.users.collect { users ->
+                                        // 更新UI
+                                    }
+                                }
+                                
+                                lifecycleScope.launch {
+                                    viewModel.isLoading.collect { isLoading ->
+                                        // 显示/隐藏加载指示器
+                                    }
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "ViewModel使用StateFlow管理状态，使用viewModelScope执行协程任务。在Activity中使用viewModels()委托获取ViewModel实例，观察StateFlow更新UI。"
+                ),
+                CodeExample(
+                    title = "示例2：ViewModel生命周期",
+                    code = """
+                        class MyViewModel : ViewModel() {
+                            
+                            init {
+                                // ViewModel创建时执行
+                                Log.d("ViewModel", "ViewModel created")
+                            }
+                            
+                            override fun onCleared() {
+                                super.onCleared()
+                                // ViewModel销毁时执行（Activity真正finish时）
+                                Log.d("ViewModel", "ViewModel cleared")
+                                // 清理资源
+                            }
+                        }
+                        
+                        // ViewModel生命周期说明：
+                        // 1. ViewModel在Activity/Fragment创建时创建
+                        // 2. 配置变更（如屏幕旋转）时，ViewModel不会销毁
+                        // 3. Activity真正finish时，ViewModel才会销毁
+                        // 4. Fragment的ViewModel在Fragment销毁时销毁
+                        
+                        // 在Fragment中使用
+                        class MyFragment : Fragment() {
+                            // Fragment作用域的ViewModel
+                            private val viewModel: MyViewModel by viewModels()
+                            
+                            // 或者Activity作用域的ViewModel（多个Fragment共享）
+                            private val sharedViewModel: MyViewModel by activityViewModels()
+                        }
+                    """.trimIndent(),
+                    explanation = "ViewModel的生命周期与Activity/Fragment不同。配置变更时ViewModel不会销毁，只有在Activity真正finish时才会销毁。Fragment可以使用viewModels()或activityViewModels()获取不同作用域的ViewModel。"
+                ),
+                CodeExample(
+                    title = "示例3：ViewModel与SavedStateHandle",
+                    code = """
+                        class MyViewModel(
+                            private val savedStateHandle: SavedStateHandle
+                        ) : ViewModel() {
+                            
+                            // 保存和恢复状态
+                            var userName: String
+                                get() = savedStateHandle.get<String>("user_name") ?: ""
+                                set(value) = savedStateHandle.set("user_name", value)
+                            
+                            // 使用StateFlow
+                            val userNameFlow: StateFlow<String> = savedStateHandle
+                                .getStateFlow("user_name", "")
+                            
+                            // 保存复杂对象
+                            var user: User?
+                                get() = savedStateHandle.get<User>("user")
+                                set(value) = savedStateHandle.set("user", value)
+                        }
+                        
+                        // SavedStateHandle的优势：
+                        // 1. 在配置变更时保存状态
+                        // 2. 在进程被杀死后恢复状态
+                        // 3. 支持StateFlow，自动响应状态变化
+                    """.trimIndent(),
+                    explanation = "SavedStateHandle用于保存和恢复ViewModel的状态。支持在配置变更和进程被杀死后恢复状态。可以使用getStateFlow创建StateFlow，自动响应状态变化。"
+                ),
+                CodeExample(
+                    title = "示例4：ViewModel与Hilt集成",
+                    code = """
+                        // 使用@HiltViewModel注解
+                        @HiltViewModel
+                        class UserViewModel @Inject constructor(
+                            private val userRepository: UserRepository
+                        ) : ViewModel() {
+                            
+                            private val _users = MutableStateFlow<List<User>>(emptyList())
+                            val users: StateFlow<List<User>> = _users.asStateFlow()
+                            
+                            fun loadUsers() {
+                                viewModelScope.launch {
+                                    _users.value = userRepository.getUsers()
+                                }
+                            }
+                        }
+                        
+                        // 在Activity中使用（需要@AndroidEntryPoint）
+                        @AndroidEntryPoint
+                        class MainActivity : AppCompatActivity() {
+                            private val viewModel: UserViewModel by viewModels()
+                            // 直接使用，无需手动创建
+                        }
+                        
+                        // 在Fragment中使用
+                        @AndroidEntryPoint
+                        class MyFragment : Fragment() {
+                            private val viewModel: UserViewModel by viewModels()
+                        }
+                    """.trimIndent(),
+                    explanation = "使用Hilt可以自动注入ViewModel的依赖。使用@HiltViewModel注解ViewModel，使用@Inject构造函数注入依赖。在Activity/Fragment中使用@AndroidEntryPoint，然后直接使用viewModels()获取ViewModel。"
+                )
+            ),
+            useCases = listOf(
+                "数据管理：使用ViewModel管理UI相关的数据",
+                "配置变更：在配置变更时保存数据，避免数据丢失",
+                "状态管理：使用StateFlow或LiveData管理UI状态",
+                "业务逻辑：在ViewModel中处理业务逻辑，保持Activity/Fragment简洁",
+                "数据共享：使用Activity作用域的ViewModel在Fragment间共享数据"
+            ),
+            notes = listOf(
+                "ViewModel在配置变更时不会销毁，可以保存数据",
+                "ViewModel的生命周期与Activity/Fragment不同",
+                "使用viewModelScope执行协程任务，自动取消",
+                "使用StateFlow或LiveData管理状态",
+                "SavedStateHandle可以保存和恢复状态，支持进程被杀死后恢复",
+                "使用Hilt可以自动注入ViewModel的依赖",
+                "ViewModel不应该持有Activity/Fragment的引用，避免内存泄漏"
+            ),
+            practiceTips = "建议使用ViewModel管理所有UI相关的数据，Activity/Fragment只负责UI展示。使用StateFlow或LiveData管理状态，在UI中观察状态变化。使用viewModelScope执行协程任务。使用SavedStateHandle保存需要恢复的状态。使用Hilt注入ViewModel的依赖。注意ViewModel的生命周期，不要在ViewModel中持有Activity/Fragment的引用。"
+        ),
+        
+        KnowledgeDetail(
+            id = "livedata",
+            title = "LiveData（观察、转换）",
+            overview = "LiveData是Android架构组件提供的可观察数据持有者，具有生命周期感知能力。LiveData会在观察者处于活动状态时更新UI，自动处理生命周期。",
+            keyPoints = listOf(
+                "生命周期感知：LiveData自动感知生命周期，只在观察者处于活动状态时更新",
+                "数据观察：使用observe方法观察LiveData的变化",
+                "数据转换：使用Transformations.map和switchMap转换LiveData",
+                "MediatorLiveData：组合多个LiveData源",
+                "与ViewModel集成：在ViewModel中暴露LiveData",
+                "与StateFlow对比：理解LiveData和StateFlow的区别"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：LiveData基础使用",
+                    code = """
+                        class UserViewModel : ViewModel() {
+                            
+                            // MutableLiveData：可变的LiveData
+                            private val _users = MutableLiveData<List<User>>()
+                            val users: LiveData<List<User>> = _users
+                            
+                            private val _isLoading = MutableLiveData<Boolean>()
+                            val isLoading: LiveData<Boolean> = _isLoading
+                            
+                            fun loadUsers() {
+                                _isLoading.value = true
+                                viewModelScope.launch {
+                                    try {
+                                        val userList = repository.getUsers()
+                                        _users.postValue(userList)  // 后台线程使用postValue
+                                        // 或 _users.value = userList  // 主线程使用value
+                                    } finally {
+                                        _isLoading.value = false
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 在Activity中观察
+                        class MainActivity : AppCompatActivity() {
+                            private val viewModel: UserViewModel by viewModels()
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                // 观察LiveData
+                                viewModel.users.observe(this) { users ->
+                                    // 更新UI（自动在主线程执行）
+                                    updateUI(users)
+                                }
+                                
+                                viewModel.isLoading.observe(this) { isLoading ->
+                                    // 显示/隐藏加载指示器
+                                    showLoading(isLoading)
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "LiveData使用MutableLiveData创建可变LiveData，在ViewModel中暴露不可变的LiveData。使用observe方法观察LiveData，自动在主线程更新UI。"
+                ),
+                CodeExample(
+                    title = "示例2：LiveData转换",
+                    code = """
+                        class UserViewModel : ViewModel() {
+                            private val _userId = MutableLiveData<Long>()
+                            val userId: LiveData<Long> = _userId
+                            
+                            // 使用Transformations.map转换数据
+                            val userName: LiveData<String> = Transformations.map(_userId) { id ->
+                                // 根据ID获取用户名
+                                repository.getUserName(id)
+                            }
+                            
+                            // 使用Transformations.switchMap切换LiveData源
+                            val userPosts: LiveData<List<Post>> = Transformations.switchMap(_userId) { id ->
+                                // 当userId变化时，切换到一个新的LiveData
+                                repository.getUserPosts(id)
+                            }
+                            
+                            fun setUserId(id: Long) {
+                                _userId.value = id
+                            }
+                        }
+                        
+                        // 自定义转换函数
+                        fun <X, Y> LiveData<X>.map(transform: (X) -> Y): LiveData<Y> {
+                            val result = MutableLiveData<Y>()
+                            this.observeForever { x ->
+                                result.value = transform(x)
+                            }
+                            return result
+                        }
+                    """.trimIndent(),
+                    explanation = "Transformations.map用于转换LiveData的值，Transformations.switchMap用于切换LiveData源。这些转换函数返回新的LiveData，可以链式调用。"
+                ),
+                CodeExample(
+                    title = "示例3：MediatorLiveData",
+                    code = """
+                        class UserViewModel : ViewModel() {
+                            private val _users = MutableLiveData<List<User>>()
+                            val users: LiveData<List<User>> = _users
+                            
+                            private val _filter = MutableLiveData<String>()
+                            val filter: LiveData<String> = _filter
+                            
+                            // 使用MediatorLiveData组合多个LiveData
+                            val filteredUsers: LiveData<List<User>> = MediatorLiveData<List<User>>().apply {
+                                // 添加users源
+                                addSource(_users) { userList ->
+                                    value = filterUsers(userList, _filter.value)
+                                }
+                                
+                                // 添加filter源
+                                addSource(_filter) { filterText ->
+                                    value = filterUsers(_users.value, filterText)
+                                }
+                            }
+                            
+                            private fun filterUsers(users: List<User>?, filter: String?): List<User> {
+                                if (users == null || filter.isNullOrEmpty()) {
+                                    return users ?: emptyList()
+                                }
+                                return users.filter { it.name.contains(filter, ignoreCase = true) }
+                            }
+                            
+                            fun setFilter(filter: String) {
+                                _filter.value = filter
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "MediatorLiveData用于组合多个LiveData源。当任何一个源发生变化时，MediatorLiveData都会重新计算值。适合需要组合多个数据源的场景。"
+                ),
+                CodeExample(
+                    title = "示例4：LiveData vs StateFlow",
+                    code = """
+                        // LiveData特点：
+                        // 1. 生命周期感知，自动取消观察
+                        // 2. 只在观察者处于活动状态时更新
+                        // 3. 只能在主线程设置值
+                        // 4. 不支持协程
+                        
+                        class LiveDataViewModel : ViewModel() {
+                            private val _users = MutableLiveData<List<User>>()
+                            val users: LiveData<List<User>> = _users
+                            
+                            fun loadUsers() {
+                                viewModelScope.launch {
+                                    val userList = repository.getUsers()
+                                    _users.postValue(userList)  // 后台线程使用postValue
+                                }
+                            }
+                        }
+                        
+                        // StateFlow特点：
+                        // 1. 支持协程，可以使用collect
+                        // 2. 支持冷流和热流
+                        // 3. 可以在任何线程设置值
+                        // 4. 需要手动管理生命周期
+                        
+                        class StateFlowViewModel : ViewModel() {
+                            private val _users = MutableStateFlow<List<User>>(emptyList())
+                            val users: StateFlow<List<User>> = _users.asStateFlow()
+                            
+                            fun loadUsers() {
+                                viewModelScope.launch {
+                                    val userList = repository.getUsers()
+                                    _users.value = userList  // 任何线程都可以设置
+                                }
+                            }
+                        }
+                        
+                        // 在Compose中使用StateFlow
+                        @Composable
+                        fun UserScreen(viewModel: StateFlowViewModel) {
+                            val users by viewModel.users.collectAsState()
+                            // 使用users更新UI
+                        }
+                        
+                        // 选择建议：
+                        // - 新项目推荐使用StateFlow
+                        // - 已有LiveData的项目可以继续使用
+                        // - Compose项目推荐使用StateFlow
+                    """.trimIndent(),
+                    explanation = "LiveData和StateFlow都可以用于状态管理。LiveData具有生命周期感知能力，StateFlow支持协程和Compose。新项目推荐使用StateFlow，特别是使用Compose的项目。"
+                )
+            ),
+            useCases = listOf(
+                "状态管理：使用LiveData管理UI状态",
+                "数据观察：观察数据变化，自动更新UI",
+                "数据转换：使用Transformations转换LiveData",
+                "数据组合：使用MediatorLiveData组合多个数据源",
+                "生命周期感知：自动处理生命周期，避免内存泄漏"
+            ),
+            notes = listOf(
+                "LiveData具有生命周期感知能力，只在观察者处于活动状态时更新",
+                "使用MutableLiveData创建可变LiveData，暴露不可变的LiveData",
+                "使用observe方法观察LiveData，自动在主线程更新UI",
+                "使用postValue在后台线程设置值，使用value在主线程设置值",
+                "Transformations.map和switchMap用于转换LiveData",
+                "MediatorLiveData用于组合多个LiveData源",
+                "StateFlow是更现代的选择，推荐在新项目中使用"
+            ),
+            practiceTips = "建议在新项目中使用StateFlow替代LiveData，特别是使用Compose的项目。如果使用LiveData，注意生命周期感知的特性，只在观察者处于活动状态时更新。使用Transformations转换LiveData，使用MediatorLiveData组合多个数据源。注意线程安全，使用postValue在后台线程设置值。"
+        ),
+        
+        KnowledgeDetail(
+            id = "data_binding",
+            title = "数据绑定（Data Binding）",
+            overview = "Data Binding是Android的数据绑定库，允许在布局文件中直接绑定数据，减少findViewById的使用。Data Binding支持双向绑定，可以自动更新UI。",
+            keyPoints = listOf(
+                "布局绑定：在布局文件中使用表达式绑定数据",
+                "双向绑定：支持双向数据绑定，自动同步数据",
+                "事件绑定：在布局文件中绑定事件处理",
+                "BindingAdapter：自定义属性绑定",
+                "可观察性：支持LiveData、Observable等可观察对象",
+                "性能优化：编译时生成绑定类，性能优于findViewById"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Data Binding基础配置",
+                    code = """
+                        // build.gradle
+                        android {
+                            buildFeatures {
+                                dataBinding = true
+                            }
+                        }
+                        
+                        // 布局文件：activity_main.xml
+                        // <layout xmlns:android="http://schemas.android.com/apk/res/android">
+                        //     <data>
+                        //         <variable
+                        //             name="user"
+                        //             type="com.example.User" />
+                        //         <variable
+                        //             name="viewModel"
+                        //             type="com.example.UserViewModel" />
+                        //     </data>
+                        //     
+                        //     <LinearLayout>
+                        //         <TextView
+                        //             android:text="@{user.name}" />
+                        //         <TextView
+                        //             android:text="@{String.valueOf(user.age)}" />
+                        //         <Button
+                        //             android:onClick="@{() -> viewModel.onButtonClick()}" />
+                        //     </LinearLayout>
+                        // </layout>
+                        
+                        // 在Activity中使用
+                        class MainActivity : AppCompatActivity() {
+                            private lateinit var binding: ActivityMainBinding
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+                                
+                                val user = User("John", 25)
+                                binding.user = user
+                                
+                                val viewModel = ViewModelProvider(this)[UserViewModel::class.java]
+                                binding.viewModel = viewModel
+                                binding.lifecycleOwner = this  // 支持LiveData
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Data Binding需要在build.gradle中启用，在布局文件中使用<layout>标签和<data>标签定义变量。使用DataBindingUtil.setContentView获取绑定类，设置数据。"
+                ),
+                CodeExample(
+                    title = "示例2：双向数据绑定",
+                    code = """
+                        // 布局文件
+                        // <layout>
+                        //     <data>
+                        //         <variable name="user" type="com.example.User" />
+                        //     </data>
+                        //     
+                        //     <LinearLayout>
+                        //         <!-- 单向绑定：数据 -> UI -->
+                        //         <TextView android:text="@{user.name}" />
+                        //         
+                        //         <!-- 双向绑定：数据 <-> UI -->
+                        //         <EditText
+                        //             android:text="@={user.name}" />
+                        //         
+                        //         <!-- 注意：@= 表示双向绑定 -->
+                        //     </LinearLayout>
+                        // </layout>
+                        
+                        // User类需要实现Observable
+                        class User : BaseObservable() {
+                            @get:Bindable
+                            var name: String = ""
+                                set(value) {
+                                    field = value
+                                    notifyPropertyChanged(BR.name)
+                                }
+                            
+                            @get:Bindable
+                            var age: Int = 0
+                                set(value) {
+                                    field = value
+                                    notifyPropertyChanged(BR.age)
+                                }
+                        }
+                        
+                        // 或者使用ObservableField
+                        class User {
+                            val name = ObservableField<String>("")
+                            val age = ObservableField<Int>(0)
+                        }
+                    """.trimIndent(),
+                    explanation = "双向绑定使用@=语法，数据变化时UI自动更新，UI变化时数据自动更新。需要实现Observable接口或使用ObservableField。"
+                ),
+                CodeExample(
+                    title = "示例3：BindingAdapter自定义属性",
+                    code = """
+                        // 自定义BindingAdapter
+                        object ImageBindingAdapters {
+                            
+                            @JvmStatic
+                            @BindingAdapter("imageUrl")
+                            fun setImageUrl(imageView: ImageView, url: String?) {
+                                url?.let {
+                                    // 使用Glide或Coil加载图片
+                                    Glide.with(imageView.context)
+                                        .load(it)
+                                        .into(imageView)
+                                }
+                            }
+                            
+                            @JvmStatic
+                            @BindingAdapter("imageUrl", "placeholder")
+                            fun setImageUrlWithPlaceholder(
+                                imageView: ImageView,
+                                url: String?,
+                                placeholder: Drawable?
+                            ) {
+                                Glide.with(imageView.context)
+                                    .load(url)
+                                    .placeholder(placeholder)
+                                    .into(imageView)
+                            }
+                            
+                            @JvmStatic
+                            @BindingAdapter("visible")
+                            fun setVisible(view: View, visible: Boolean) {
+                                view.visibility = if (visible) View.VISIBLE else View.GONE
+                            }
+                        }
+                        
+                        // 在布局文件中使用
+                        // <ImageView
+                        //     app:imageUrl="@{user.avatarUrl}"
+                        //     app:placeholder="@drawable/placeholder" />
+                        // 
+                        // <TextView
+                        //     app:visible="@{user.isVisible}" />
+                    """.trimIndent(),
+                    explanation = "BindingAdapter用于自定义属性绑定。使用@BindingAdapter注解定义自定义属性，可以在布局文件中使用这些属性。支持多个参数和条件绑定。"
+                ),
+                CodeExample(
+                    title = "示例4：Data Binding与LiveData集成",
+                    code = """
+                        class UserViewModel : ViewModel() {
+                            private val _user = MutableLiveData<User>()
+                            val user: LiveData<User> = _user
+                            
+                            fun loadUser() {
+                                viewModelScope.launch {
+                                    _user.value = repository.getUser()
+                                }
+                            }
+                        }
+                        
+                        // 在Activity中使用
+                        class MainActivity : AppCompatActivity() {
+                            private lateinit var binding: ActivityMainBinding
+                            private val viewModel: UserViewModel by viewModels()
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+                                binding.viewModel = viewModel
+                                binding.lifecycleOwner = this  // 重要：设置lifecycleOwner
+                            }
+                        }
+                        
+                        // 布局文件
+                        // <layout>
+                        //     <data>
+                        //         <variable name="viewModel" type="com.example.UserViewModel" />
+                        //     </data>
+                        //     
+                        //     <LinearLayout>
+                        //         <!-- LiveData自动观察，无需手动observe -->
+                        //         <TextView
+                        //             android:text="@{viewModel.user.name}" />
+                        //     </LinearLayout>
+                        // </layout>
+                    """.trimIndent(),
+                    explanation = "Data Binding支持LiveData，设置lifecycleOwner后，LiveData会自动观察，数据变化时UI自动更新。无需手动调用observe方法。"
+                )
+            ),
+            useCases = listOf(
+                "减少样板代码：减少findViewById的使用，简化代码",
+                "双向绑定：实现UI和数据之间的双向同步",
+                "自定义属性：使用BindingAdapter创建自定义属性",
+                "LiveData集成：与LiveData集成，自动更新UI",
+                "表达式支持：在布局文件中使用表达式"
+            ),
+            notes = listOf(
+                "Data Binding需要在build.gradle中启用",
+                "布局文件需要使用<layout>标签包裹",
+                "双向绑定使用@=语法，需要实现Observable",
+                "BindingAdapter用于自定义属性绑定",
+                "设置lifecycleOwner后，LiveData会自动观察",
+                "编译时生成绑定类，性能优于findViewById",
+                "Data Binding适合传统View系统，Compose项目不需要"
+            ),
+            practiceTips = "建议在传统View系统中使用Data Binding，可以减少findViewById的使用。使用双向绑定实现UI和数据同步。使用BindingAdapter创建自定义属性。设置lifecycleOwner支持LiveData。注意Data Binding的表达式语法，避免复杂逻辑。对于Compose项目，不需要Data Binding。"
+        ),
+        
+        KnowledgeDetail(
+            id = "view_binding",
+            title = "视图绑定（View Binding）",
+            overview = "View Binding是Android提供的视图绑定功能，可以替代findViewById，提供类型安全的视图访问。View Binding比Data Binding更轻量，只提供视图绑定，不提供数据绑定。",
+            keyPoints = listOf(
+                "类型安全：编译时生成绑定类，提供类型安全的视图访问",
+                "空安全：自动处理空值，避免NullPointerException",
+                "性能优化：编译时生成代码，性能优于findViewById",
+                "简化代码：减少findViewById的使用，简化代码",
+                "自动生成：根据布局文件自动生成绑定类",
+                "与findViewById对比：理解View Binding的优势"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：View Binding基础使用",
+                    code = """
+                        // build.gradle（Android Studio 3.6+默认启用）
+                        android {
+                            buildFeatures {
+                                viewBinding = true
+                            }
+                        }
+                        
+                        // 布局文件：activity_main.xml
+                        // <LinearLayout>
+                        //     <TextView android:id="@+id/title" />
+                        //     <Button android:id="@+id/button" />
+                        // </LinearLayout>
+                        
+                        // 在Activity中使用
+                        class MainActivity : AppCompatActivity() {
+                            private lateinit var binding: ActivityMainBinding
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                binding = ActivityMainBinding.inflate(layoutInflater)
+                                setContentView(binding.root)
+                                
+                                // 访问视图（类型安全）
+                                binding.title.text = "Hello"
+                                binding.button.setOnClickListener {
+                                    // 处理点击
+                                }
+                            }
+                        }
+                        
+                        // 在Fragment中使用
+                        class MyFragment : Fragment() {
+                            private var _binding: FragmentMyBinding? = null
+                            private val binding get() = _binding!!
+                            
+                            override fun onCreateView(
+                                inflater: LayoutInflater,
+                                container: ViewGroup?,
+                                savedInstanceState: Bundle?
+                            ): View {
+                                _binding = FragmentMyBinding.inflate(inflater, container, false)
+                                return binding.root
+                            }
+                            
+                            override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+                                super.onViewCreated(view, savedInstanceState)
+                                
+                                binding.title.text = "Hello"
+                                binding.button.setOnClickListener {
+                                    // 处理点击
+                                }
+                            }
+                            
+                            override fun onDestroyView() {
+                                super.onDestroyView()
+                                _binding = null  // 避免内存泄漏
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "View Binding使用Binding类访问视图，提供类型安全。在Activity中使用inflate方法，在Fragment中需要在onDestroyView中置空binding避免内存泄漏。"
+                ),
+                CodeExample(
+                    title = "示例2：View Binding与findViewById对比",
+                    code = """
+                        // 使用findViewById（旧方式）
+                        class MainActivity : AppCompatActivity() {
+                            private lateinit var titleTextView: TextView
+                            private lateinit var button: Button
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                titleTextView = findViewById(R.id.title)
+                                button = findViewById(R.id.button)
+                                
+                                titleTextView.text = "Hello"
+                                button.setOnClickListener { }
+                            }
+                        }
+                        
+                        // 使用View Binding（新方式）
+                        class MainActivity : AppCompatActivity() {
+                            private lateinit var binding: ActivityMainBinding
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                binding = ActivityMainBinding.inflate(layoutInflater)
+                                setContentView(binding.root)
+                                
+                                binding.title.text = "Hello"
+                                binding.button.setOnClickListener { }
+                            }
+                        }
+                        
+                        // View Binding的优势：
+                        // 1. 类型安全，编译时检查
+                        // 2. 空安全，自动处理空值
+                        // 3. 性能更好，编译时生成代码
+                        // 4. 代码更简洁
+                    """.trimIndent(),
+                    explanation = "View Binding相比findViewById具有类型安全、空安全、性能更好等优势。编译时生成绑定类，避免运行时错误。"
+                ),
+                CodeExample(
+                    title = "示例3：View Binding与include标签",
+                    code = """
+                        // 主布局：activity_main.xml
+                        // <LinearLayout>
+                        //     <include
+                        //         android:id="@+id/header"
+                        //         layout="@layout/layout_header" />
+                        //     <TextView android:id="@+id/content" />
+                        // </LinearLayout>
+                        
+                        // 子布局：layout_header.xml
+                        // <LinearLayout>
+                        //     <TextView android:id="@+id/headerTitle" />
+                        //     <Button android:id="@+id/headerButton" />
+                        // </LinearLayout>
+                        
+                        // 在Activity中使用
+                        class MainActivity : AppCompatActivity() {
+                            private lateinit var binding: ActivityMainBinding
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                binding = ActivityMainBinding.inflate(layoutInflater)
+                                setContentView(binding.root)
+                                
+                                // 访问主布局的视图
+                                binding.content.text = "Content"
+                                
+                                // 访问include布局的视图
+                                binding.header.headerTitle.text = "Header"
+                                binding.header.headerButton.setOnClickListener { }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "View Binding支持include标签，可以通过binding.includeId访问include布局中的视图。每个include布局都会生成对应的绑定类。"
+                ),
+                CodeExample(
+                    title = "示例4：View Binding与Data Binding对比",
+                    code = """
+                        // View Binding特点：
+                        // 1. 只提供视图绑定，不提供数据绑定
+                        // 2. 更轻量，性能更好
+                        // 3. 类型安全，编译时检查
+                        // 4. 适合不需要数据绑定的场景
+                        
+                        // Data Binding特点：
+                        // 1. 提供视图绑定和数据绑定
+                        // 2. 支持表达式和双向绑定
+                        // 3. 功能更强大，但更重
+                        // 4. 适合需要数据绑定的场景
+                        
+                        // 选择建议：
+                        // - 只需要视图绑定：使用View Binding
+                        // - 需要数据绑定：使用Data Binding
+                        // - 使用Compose：不需要View Binding或Data Binding
+                        
+                        // View Binding示例
+                        class MainActivity : AppCompatActivity() {
+                            private lateinit var binding: ActivityMainBinding
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                binding = ActivityMainBinding.inflate(layoutInflater)
+                                setContentView(binding.root)
+                                
+                                // 手动设置数据
+                                binding.title.text = viewModel.title.value
+                            }
+                        }
+                        
+                        // Data Binding示例
+                        class MainActivity : AppCompatActivity() {
+                            private lateinit var binding: ActivityMainBinding
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+                                binding.viewModel = viewModel
+                                binding.lifecycleOwner = this
+                                // 自动绑定数据
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "View Binding只提供视图绑定，Data Binding提供视图绑定和数据绑定。根据需求选择：只需要视图绑定使用View Binding，需要数据绑定使用Data Binding。"
+                )
+            ),
+            useCases = listOf(
+                "替代findViewById：使用View Binding替代findViewById",
+                "类型安全：提供类型安全的视图访问",
+                "简化代码：减少样板代码，简化视图访问",
+                "性能优化：编译时生成代码，性能更好",
+                "空安全：自动处理空值，避免NullPointerException"
+            ),
+            notes = listOf(
+                "View Binding需要在build.gradle中启用（Android Studio 3.6+默认启用）",
+                "编译时自动生成绑定类，类名基于布局文件名",
+                "在Fragment中使用时，需要在onDestroyView中置空binding",
+                "支持include标签，可以通过binding.includeId访问",
+                "只提供视图绑定，不提供数据绑定",
+                "比findViewById性能更好，类型安全",
+                "使用Compose的项目不需要View Binding"
+            ),
+            practiceTips = "建议使用View Binding替代findViewById，它提供类型安全和更好的性能。在Fragment中使用时，注意在onDestroyView中置空binding避免内存泄漏。如果只需要视图绑定，使用View Binding；如果需要数据绑定，使用Data Binding。对于Compose项目，不需要View Binding。"
+        ),
+        
+        KnowledgeDetail(
+            id = "lifecycle",
+            title = "生命周期感知组件",
+            overview = "Lifecycle是Android架构组件的核心，用于管理组件的生命周期。理解Lifecycle的使用可以实现生命周期感知的组件，在合适的时机执行操作。",
+            keyPoints = listOf(
+                "LifecycleOwner：提供生命周期的组件，如Activity、Fragment",
+                "LifecycleObserver：观察生命周期的观察者",
+                "生命周期状态：CREATED、STARTED、RESUMED、DESTROYED等状态",
+                "生命周期事件：ON_CREATE、ON_START、ON_RESUME等事件",
+                "自定义LifecycleOwner：创建自定义的LifecycleOwner",
+                "生命周期感知：在合适的生命周期阶段执行操作"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：LifecycleObserver基础使用",
+                    code = """
+                        // 实现LifecycleObserver
+                        class MyLifecycleObserver : LifecycleObserver {
+                            
+                            @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
+                            fun onCreate() {
+                                Log.d("Lifecycle", "onCreate")
+                            }
+                            
+                            @OnLifecycleEvent(Lifecycle.Event.ON_START)
+                            fun onStart() {
+                                Log.d("Lifecycle", "onStart")
+                            }
+                            
+                            @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+                            fun onResume() {
+                                Log.d("Lifecycle", "onResume")
+                            }
+                            
+                            @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+                            fun onPause() {
+                                Log.d("Lifecycle", "onPause")
+                            }
+                            
+                            @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+                            fun onStop() {
+                                Log.d("Lifecycle", "onStop")
+                            }
+                            
+                            @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+                            fun onDestroy() {
+                                Log.d("Lifecycle", "onDestroy")
+                            }
+                        }
+                        
+                        // 在Activity中使用
+                        class MainActivity : AppCompatActivity() {
+                            private val observer = MyLifecycleObserver()
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                // 添加观察者
+                                lifecycle.addObserver(observer)
+                            }
+                        }
+                        
+                        // 在Fragment中使用
+                        class MyFragment : Fragment() {
+                            private val observer = MyLifecycleObserver()
+                            
+                            override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+                                super.onViewCreated(view, savedInstanceState)
+                                
+                                // 使用viewLifecycleOwner（推荐）
+                                viewLifecycleOwner.lifecycle.addObserver(observer)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "LifecycleObserver用于观察生命周期。使用@OnLifecycleEvent注解标记生命周期方法。在Activity中使用lifecycle，在Fragment中使用viewLifecycleOwner。"
+                ),
+                CodeExample(
+                    title = "示例2：生命周期状态和事件",
+                    code = """
+                        class LifecycleStateObserver : LifecycleObserver {
+                            
+                            @OnLifecycleEvent(Lifecycle.Event.ON_ANY)
+                            fun onLifecycleChanged(
+                                source: LifecycleOwner,
+                                event: Lifecycle.Event
+                            ) {
+                                when (event) {
+                                    Lifecycle.Event.ON_CREATE -> {
+                                        Log.d("Lifecycle", "State: ${'$'}{source.lifecycle.currentState}")
+                                    }
+                                    Lifecycle.Event.ON_START -> {
+                                        Log.d("Lifecycle", "State: ${'$'}{source.lifecycle.currentState}")
+                                    }
+                                    Lifecycle.Event.ON_RESUME -> {
+                                        Log.d("Lifecycle", "State: ${'$'}{source.lifecycle.currentState}")
+                                    }
+                                    Lifecycle.Event.ON_PAUSE -> {
+                                        Log.d("Lifecycle", "State: ${'$'}{source.lifecycle.currentState}")
+                                    }
+                                    Lifecycle.Event.ON_STOP -> {
+                                        Log.d("Lifecycle", "State: ${'$'}{source.lifecycle.currentState}")
+                                    }
+                                    Lifecycle.Event.ON_DESTROY -> {
+                                        Log.d("Lifecycle", "State: ${'$'}{source.lifecycle.currentState}")
+                                    }
+                                    Lifecycle.Event.ON_ANY -> {
+                                        // 任何事件
+                                    }
+                                }
+                            }
+                            
+                            // 生命周期状态：
+                            // INITIALIZED -> CREATED -> STARTED -> RESUMED
+                            // RESUMED -> STARTED -> CREATED -> DESTROYED
+                            
+                            // 检查当前状态
+                            fun checkState(lifecycle: Lifecycle) {
+                                if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                                    // 组件已启动
+                                }
+                                
+                                if (lifecycle.currentState == Lifecycle.State.RESUMED) {
+                                    // 组件已恢复
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "生命周期状态包括INITIALIZED、CREATED、STARTED、RESUMED、DESTROYED。生命周期事件包括ON_CREATE、ON_START、ON_RESUME等。可以使用currentState检查当前状态。"
+                ),
+                CodeExample(
+                    title = "示例3：自定义LifecycleOwner",
+                    code = """
+                        class MyLifecycleOwner : LifecycleOwner {
+                            private val lifecycleRegistry = LifecycleRegistry(this)
+                            
+                            init {
+                                lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
+                            }
+                            
+                            override fun getLifecycle(): Lifecycle {
+                                return lifecycleRegistry
+                            }
+                            
+                            fun start() {
+                                lifecycleRegistry.currentState = Lifecycle.State.STARTED
+                            }
+                            
+                            fun resume() {
+                                lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+                            }
+                            
+                            fun pause() {
+                                lifecycleRegistry.currentState = Lifecycle.State.STARTED
+                            }
+                            
+                            fun stop() {
+                                lifecycleRegistry.currentState = Lifecycle.State.CREATED
+                            }
+                            
+                            fun destroy() {
+                                lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
+                            }
+                        }
+                        
+                        // 使用自定义LifecycleOwner
+                        class MyComponent {
+                            private val lifecycleOwner = MyLifecycleOwner()
+                            private val observer = MyLifecycleObserver()
+                            
+                            init {
+                                lifecycleOwner.lifecycle.addObserver(observer)
+                            }
+                            
+                            fun start() {
+                                lifecycleOwner.start()
+                            }
+                            
+                            fun stop() {
+                                lifecycleOwner.stop()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "可以创建自定义LifecycleOwner，使用LifecycleRegistry管理生命周期状态。适合需要在非Activity/Fragment组件中管理生命周期的场景。"
+                ),
+                CodeExample(
+                    title = "示例4：生命周期感知的实际应用",
+                    code = """
+                        // 生命周期感知的定位管理器
+                        class LocationManager(
+                            private val lifecycle: Lifecycle,
+                            private val context: Context
+                        ) : LifecycleObserver {
+                            
+                            private var locationCallback: LocationCallback? = null
+                            
+                            init {
+                                lifecycle.addObserver(this)
+                            }
+                            
+                            @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+                            fun startLocationUpdates() {
+                                // 组件恢复时开始定位
+                                locationCallback = object : LocationCallback() {
+                                    override fun onLocationResult(result: LocationResult) {
+                                        // 处理位置更新
+                                    }
+                                }
+                                // 开始定位
+                            }
+                            
+                            @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+                            fun stopLocationUpdates() {
+                                // 组件暂停时停止定位
+                                locationCallback?.let {
+                                    // 停止定位
+                                    locationCallback = null
+                                }
+                            }
+                            
+                            @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+                            fun cleanup() {
+                                // 组件销毁时清理资源
+                                lifecycle.removeObserver(this)
+                            }
+                        }
+                        
+                        // 在Activity中使用
+                        class MainActivity : AppCompatActivity() {
+                            private lateinit var locationManager: LocationManager
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                
+                                locationManager = LocationManager(lifecycle, this)
+                                // 自动在ON_RESUME时开始定位，ON_PAUSE时停止
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "生命周期感知组件可以在合适的生命周期阶段自动执行操作。例如定位管理器在组件恢复时开始定位，暂停时停止定位，避免资源浪费。"
+                )
+            ),
+            useCases = listOf(
+                "资源管理：在合适的生命周期阶段管理资源（如定位、传感器）",
+                "自动操作：根据生命周期自动执行操作，无需手动调用",
+                "内存优化：在组件销毁时自动清理资源，避免内存泄漏",
+                "状态管理：根据生命周期状态管理组件状态",
+                "自定义组件：创建生命周期感知的自定义组件"
+            ),
+            notes = listOf(
+                "LifecycleOwner提供生命周期，LifecycleObserver观察生命周期",
+                "使用@OnLifecycleEvent注解标记生命周期方法",
+                "生命周期状态包括INITIALIZED、CREATED、STARTED、RESUMED、DESTROYED",
+                "在Fragment中使用viewLifecycleOwner，它的生命周期与Fragment视图绑定",
+                "可以创建自定义LifecycleOwner管理非Activity/Fragment组件的生命周期",
+                "生命周期感知组件可以自动管理资源，避免内存泄漏",
+                "ViewModel、LiveData等都是生命周期感知的组件"
+            ),
+            practiceTips = "建议使用生命周期感知组件管理资源，在合适的生命周期阶段自动执行操作。在Fragment中使用viewLifecycleOwner，它的生命周期与Fragment视图绑定。创建生命周期感知的自定义组件，自动管理资源。注意生命周期状态和事件的区别，状态是持续的状态，事件是瞬间的事件。"
         )
     )
 }
