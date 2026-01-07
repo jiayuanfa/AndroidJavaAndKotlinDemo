@@ -94,10 +94,10 @@ object AndroidFeaturesData {
                 title = "依赖注入",
                 description = "Android依赖注入框架",
                 items = listOf(
-                    AndroidFeatureItem("di_concept", "依赖注入概念"),
-                    AndroidFeatureItem("hilt", "Hilt（配置、模块、注入）"),
-                    AndroidFeatureItem("dagger", "Dagger基础"),
-                    AndroidFeatureItem("koin", "Koin（Kotlin原生DI框架）")
+                    AndroidFeatureItem("di_basics", "依赖注入基础概念"),
+                    AndroidFeatureItem("hilt_di", "Hilt依赖注入框架"),
+                    AndroidFeatureItem("di_methods", "依赖注入的三种方式"),
+                    AndroidFeatureItem("di_best_practices", "依赖注入最佳实践")
                 )
             ),
             AndroidFeature(

@@ -10240,6 +10240,686 @@ object AndroidDetailRepository {
                 "使用APK Analyzer分析APK大小"
             ),
             practiceTips = "建议优化资源，使用WebP和Vector Drawable。使用ProGuard/R8移除未使用的代码。使用Android App Bundle减小包体积，Google Play会根据设备特性只下载需要的资源。使用Dynamic Feature Modules按需加载功能。使用多APK支持不同架构。使用APK Analyzer分析APK大小，找出占用空间大的文件。"
+        ),
+        
+        // ========== 依赖注入 ==========
+        
+        KnowledgeDetail(
+            id = "di_basics",
+            title = "依赖注入基础概念",
+            overview = "依赖注入（Dependency Injection，DI）是一种设计模式，通过外部提供依赖对象，而不是在类内部创建。这种模式可以降低类之间的耦合度，提高代码的可测试性和可维护性。",
+            keyPoints = listOf(
+                "依赖注入的核心思想：控制反转（IoC），将依赖的创建和管理交给外部容器",
+                "依赖注入的优势：降低耦合度、提高可测试性、便于维护和扩展",
+                "依赖注入的三种方式：构造函数注入、字段注入、方法注入",
+                "依赖注入容器：负责创建和管理依赖对象的生命周期",
+                "依赖注入框架：如Dagger、Hilt、Koin等，简化依赖注入的实现"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：不使用依赖注入的问题",
+                    code = """
+                        // 问题：类内部直接创建依赖，耦合度高
+                        class UserService {
+                            private val userRepository = UserRepository() // 硬编码依赖
+                            
+                            fun getUser(id: String): User {
+                                return userRepository.getUser(id)
+                            }
+                        }
+                        
+                        // 问题：
+                        // 1. 无法替换UserRepository的实现（如用于测试）
+                        // 2. UserService和UserRepository紧密耦合
+                        // 3. 难以进行单元测试
+                    """.trimIndent(),
+                    explanation = "直接在类内部创建依赖会导致高耦合，难以测试和扩展。"
+                ),
+                CodeExample(
+                    title = "示例2：使用依赖注入",
+                    code = """
+                        // 解决方案：通过构造函数注入依赖
+                        class UserService(
+                            private val userRepository: UserRepository // 依赖注入
+                        ) {
+                            fun getUser(id: String): User {
+                                return userRepository.getUser(id)
+                            }
+                        }
+                        
+                        // 使用：
+                        val userRepository = UserRepository()
+                        val userService = UserService(userRepository) // 注入依赖
+                        
+                        // 优势：
+                        // 1. 可以轻松替换UserRepository的实现
+                        // 2. 便于单元测试（可以注入Mock对象）
+                        // 3. UserService和UserRepository解耦
+                    """.trimIndent(),
+                    explanation = "通过构造函数注入依赖，将依赖的创建交给外部，降低耦合度。"
+                ),
+                CodeExample(
+                    title = "示例3：接口抽象进一步解耦",
+                    code = """
+                        // 定义接口
+                        interface UserRepository {
+                            fun getUser(id: String): User
+                        }
+                        
+                        // 实现类
+                        class DatabaseUserRepository : UserRepository {
+                            override fun getUser(id: String): User {
+                                // 从数据库获取用户
+                                return database.getUser(id)
+                            }
+                        }
+                        
+                        class NetworkUserRepository : UserRepository {
+                            override fun getUser(id: String): User {
+                                // 从网络获取用户
+                                return api.getUser(id)
+                            }
+                        }
+                        
+                        // 使用接口注入
+                        class UserService(
+                            private val userRepository: UserRepository // 依赖接口，不依赖具体实现
+                        ) {
+                            fun getUser(id: String): User {
+                                return userRepository.getUser(id)
+                            }
+                        }
+                        
+                        // 可以轻松切换实现
+                        val dbRepo = DatabaseUserRepository()
+                        val networkRepo = NetworkUserRepository()
+                        val service1 = UserService(dbRepo)      // 使用数据库实现
+                        val service2 = UserService(networkRepo) // 使用网络实现
+                    """.trimIndent(),
+                    explanation = "使用接口抽象可以进一步解耦，允许在不同实现之间切换。"
+                )
+            ),
+            useCases = listOf(
+                "降低耦合度：通过依赖注入减少类之间的直接依赖",
+                "提高可测试性：可以轻松注入Mock对象进行单元测试",
+                "便于维护：修改依赖实现不影响使用它的类",
+                "支持多态：通过接口注入，可以在运行时切换不同的实现",
+                "生命周期管理：依赖注入框架可以管理对象的生命周期"
+            ),
+            notes = listOf(
+                "依赖注入不是银弹，过度使用会增加代码复杂度",
+                "对于简单的依赖，手动注入即可，不需要框架",
+                "依赖注入框架会增加编译时间和代码生成",
+                "构造函数注入是推荐的方式，字段注入要谨慎使用",
+                "注意循环依赖问题，避免A依赖B，B依赖A的情况"
+            ),
+            practiceTips = "建议优先使用构造函数注入，它最清晰且便于测试。对于Android开发，推荐使用Hilt（基于Dagger），它专门为Android设计，简化了配置。在小型项目中，手动依赖注入就足够了，不需要引入框架。"
+        ),
+        
+        KnowledgeDetail(
+            id = "hilt_di",
+            title = "Hilt依赖注入框架",
+            overview = "Hilt是Google官方推荐的Android依赖注入框架，基于Dagger构建，专门为Android设计。Hilt简化了Dagger的配置，提供了标准的Android组件作用域，让依赖注入在Android开发中更加简单易用。",
+            keyPoints = listOf(
+                "Hilt基于Dagger：使用Dagger的注解处理器，但简化了配置",
+                "Application级别注入：使用@HiltAndroidApp标记Application类",
+                "组件作用域：@Singleton（应用级）、@ActivityRetainedScope（ViewModel级）等",
+                "模块提供依赖：使用@Module和@Provides注解提供依赖",
+                "自动注入：使用@AndroidEntryPoint标记Activity、Fragment等，自动注入依赖"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Hilt基础配置",
+                    code = """
+                        // 1. 在Application类上添加@HiltAndroidApp
+                        @HiltAndroidApp
+                        class MyApplication : Application() {
+                            override fun onCreate() {
+                                super.onCreate()
+                            }
+                        }
+                        
+                        // 2. 在AndroidManifest.xml中注册
+                        // <application
+                        //     android:name=".MyApplication"
+                        //     ...>
+                        
+                        // 3. 创建Module提供依赖
+                        @Module
+                        @InstallIn(SingletonComponent::class)
+                        object AppModule {
+                            @Provides
+                            @Singleton
+                            fun provideUserRepository(): UserRepository {
+                                return UserRepository()
+                            }
+                        }
+                        
+                        // 4. 在Activity中使用
+                        @AndroidEntryPoint
+                        class MainActivity : AppCompatActivity() {
+                            @Inject
+                            lateinit var userRepository: UserRepository
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                // userRepository已经被自动注入
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Hilt的基本配置包括：标记Application、创建Module、在Activity中使用@AndroidEntryPoint和@Inject。"
+                ),
+                CodeExample(
+                    title = "示例2：构造函数注入",
+                    code = """
+                        // 使用@Inject标记构造函数，Hilt会自动提供依赖
+                        class UserRepository @Inject constructor(
+                            private val api: ApiService,
+                            private val database: AppDatabase
+                        ) {
+                            fun getUser(id: String): User {
+                                // 使用注入的依赖
+                                return api.getUser(id)
+                            }
+                        }
+                        
+                        // Hilt会自动创建UserRepository实例
+                        // 并注入ApiService和AppDatabase
+                        
+                        // 在Activity中使用
+                        @AndroidEntryPoint
+                        class MainActivity : AppCompatActivity() {
+                            @Inject
+                            lateinit var userRepository: UserRepository
+                            
+                            // userRepository已经包含了注入的api和database
+                        }
+                    """.trimIndent(),
+                    explanation = "使用@Inject标记构造函数，Hilt会自动解析依赖并创建实例。"
+                ),
+                CodeExample(
+                    title = "示例3：接口绑定",
+                    code = """
+                        // 定义接口
+                        interface ApiService {
+                            fun getUser(id: String): User
+                        }
+                        
+                        // 实现类
+                        class RetrofitApiService @Inject constructor(
+                            private val retrofit: Retrofit
+                        ) : ApiService {
+                            override fun getUser(id: String): User {
+                                return retrofit.create(ApiService::class.java).getUser(id)
+                            }
+                        }
+                        
+                        // 使用@Binds绑定接口和实现
+                        @Module
+                        @InstallIn(SingletonComponent::class)
+                        abstract class ApiModule {
+                            @Binds
+                            @Singleton
+                            abstract fun bindApiService(
+                                retrofitApiService: RetrofitApiService
+                            ): ApiService
+                        }
+                        
+                        // 使用：注入接口类型
+                        class UserRepository @Inject constructor(
+                            private val apiService: ApiService // 注入接口
+                        ) {
+                            // Hilt会自动提供RetrofitApiService实例
+                        }
+                    """.trimIndent(),
+                    explanation = "使用@Binds可以将接口绑定到具体实现，注入时使用接口类型。"
+                ),
+                CodeExample(
+                    title = "示例4：ViewModel注入",
+                    code = """
+                        // 使用@HiltViewModel标记ViewModel
+                        @HiltViewModel
+                        class UserViewModel @Inject constructor(
+                            private val userRepository: UserRepository
+                        ) : ViewModel() {
+                            private val _users = MutableStateFlow<List<User>>(emptyList())
+                            val users: StateFlow<List<User>> = _users
+                            
+                            fun loadUsers() {
+                                viewModelScope.launch {
+                                    _users.value = userRepository.getAllUsers()
+                                }
+                            }
+                        }
+                        
+                        // 在Activity或Fragment中使用
+                        @AndroidEntryPoint
+                        class MainActivity : AppCompatActivity() {
+                            private val viewModel: UserViewModel by viewModels()
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                viewModel.loadUsers()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "使用@HiltViewModel标记ViewModel，Hilt会自动注入依赖，然后使用by viewModels()获取实例。"
+                )
+            ),
+            useCases = listOf(
+                "Android应用开发：Hilt是Android官方推荐的依赖注入框架",
+                "大型项目：管理复杂的依赖关系，提高代码可维护性",
+                "单元测试：可以轻松注入Mock对象进行测试",
+                "多环境配置：可以为不同环境提供不同的依赖实现",
+                "生命周期管理：Hilt自动管理依赖的生命周期，避免内存泄漏"
+            ),
+            notes = listOf(
+                "Hilt需要Kapt或KSP支持，会增加编译时间",
+                "使用@Singleton时要小心，确保对象是线程安全的",
+                "@AndroidEntryPoint只能用于Android组件（Activity、Fragment等）",
+                "Hilt不支持注入私有字段，字段必须是public或internal",
+                "注意作用域，不同作用域的依赖不能相互注入"
+            ),
+            practiceTips = "建议在项目开始时就引入Hilt，而不是后期重构。使用@Singleton要谨慎，确保对象确实是单例且线程安全。优先使用构造函数注入，字段注入只用于Android组件。使用接口绑定提高灵活性，便于测试和切换实现。"
+        ),
+        
+        KnowledgeDetail(
+            id = "di_methods",
+            title = "依赖注入的三种方式",
+            overview = "依赖注入有三种主要方式：构造函数注入、字段注入和方法注入。每种方式都有其适用场景，理解它们的区别和优缺点有助于选择合适的方式。",
+            keyPoints = listOf(
+                "构造函数注入：通过构造函数参数注入依赖，最推荐的方式",
+                "字段注入：直接注入到字段中，适用于Android组件",
+                "方法注入：通过方法参数注入依赖，适用于需要动态注入的场景",
+                "选择原则：优先使用构造函数注入，字段注入用于Android组件，方法注入用于特殊场景"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：构造函数注入（推荐）",
+                    code = """
+                        // 构造函数注入：通过构造函数参数注入依赖
+                        class UserService @Inject constructor(
+                            private val userRepository: UserRepository,
+                            private val logger: Logger
+                        ) {
+                            fun getUser(id: String): User {
+                                logger.log("Getting user: ${'$'}id")
+                                return userRepository.getUser(id)
+                            }
+                        }
+                        
+                        // 优点：
+                        // 1. 依赖关系明确，一目了然
+                        // 2. 不可变（使用val），线程安全
+                        // 3. 便于单元测试
+                        // 4. 编译时就能发现依赖缺失
+                        
+                        // 缺点：
+                        // 1. 构造函数参数过多时不够优雅
+                        // 2. 不能用于Android组件（Activity、Fragment等）
+                    """.trimIndent(),
+                    explanation = "构造函数注入是最推荐的方式，依赖关系清晰，便于测试。"
+                ),
+                CodeExample(
+                    title = "示例2：字段注入（Android组件）",
+                    code = """
+                        // 字段注入：直接注入到字段中
+                        @AndroidEntryPoint
+                        class MainActivity : AppCompatActivity() {
+                            @Inject
+                            lateinit var userRepository: UserRepository
+                            
+                            @Inject
+                            lateinit var apiService: ApiService
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                // 此时userRepository和apiService已经被注入
+                                
+                                // 注意：必须在super.onCreate()之后使用
+                                // 因为Hilt在super.onCreate()中完成注入
+                            }
+                            
+                            private fun loadData() {
+                                // 使用注入的依赖
+                                viewModelScope.launch {
+                                    val user = userRepository.getUser("123")
+                                }
+                            }
+                        }
+                        
+                        // 优点：
+                        // 1. 适用于Android组件（Activity、Fragment等）
+                        // 2. 不需要修改构造函数
+                        
+                        // 缺点：
+                        // 1. 字段必须是lateinit var，不够安全
+                        // 2. 运行时才能发现依赖缺失
+                        // 3. 不能使用val，不够不可变
+                    """.trimIndent(),
+                    explanation = "字段注入适用于Android组件，但要注意在super.onCreate()之后才能使用。"
+                ),
+                CodeExample(
+                    title = "示例3：方法注入（特殊场景）",
+                    code = """
+                        // 方法注入：通过方法参数注入依赖
+                        class DataProcessor {
+                            private lateinit var formatter: DataFormatter
+                            private lateinit var validator: DataValidator
+                            
+                            // 方法注入：通过方法参数注入
+                            @Inject
+                            fun initialize(
+                                formatter: DataFormatter,
+                                validator: DataValidator
+                            ) {
+                                this.formatter = formatter
+                                this.validator = validator
+                            }
+                            
+                            fun process(data: String): String {
+                                // 使用注入的依赖
+                                if (validator.isValid(data)) {
+                                    return formatter.format(data)
+                                }
+                                return ""
+                            }
+                        }
+                        
+                        // 使用场景：
+                        // 1. 需要在对象创建后动态注入依赖
+                        // 2. 需要根据条件注入不同的依赖
+                        // 3. 循环依赖的解决方案之一
+                        
+                        // 注意：方法注入不常用，优先考虑其他方式
+                    """.trimIndent(),
+                    explanation = "方法注入适用于特殊场景，如需要动态注入或解决循环依赖。"
+                ),
+                CodeExample(
+                    title = "示例4：混合使用",
+                    code = """
+                        // 实际开发中，可以混合使用多种注入方式
+                        class UserViewModel @Inject constructor(
+                            // 构造函数注入：必需的依赖
+                            private val userRepository: UserRepository
+                        ) : ViewModel() {
+                            
+                            // 字段注入：可选的依赖（使用@Inject lateinit var）
+                            @Inject
+                            lateinit var analytics: AnalyticsService
+                            
+                            // 方法注入：需要延迟初始化的依赖
+                            @Inject
+                            fun setupLogger(logger: Logger) {
+                                // 在特定条件下初始化
+                                if (BuildConfig.DEBUG) {
+                                    logger.enableDebugMode()
+                                }
+                            }
+                            
+                            fun loadUser(id: String) {
+                                // 使用构造函数注入的依赖
+                                viewModelScope.launch {
+                                    val user = userRepository.getUser(id)
+                                    
+                                    // 使用字段注入的依赖
+                                    analytics.trackEvent("user_loaded", user.id)
+                                }
+                            }
+                        }
+                        
+                        // 最佳实践：
+                        // 1. 优先使用构造函数注入
+                        // 2. Android组件使用字段注入
+                        // 3. 特殊场景使用方法注入
+                    """.trimIndent(),
+                    explanation = "实际开发中可以混合使用多种注入方式，但要遵循最佳实践。"
+                )
+            ),
+            useCases = listOf(
+                "构造函数注入：适用于大多数普通类，最推荐的方式",
+                "字段注入：适用于Android组件（Activity、Fragment、Service等）",
+                "方法注入：适用于需要动态注入或解决循环依赖的特殊场景",
+                "混合使用：根据实际需求选择合适的注入方式"
+            ),
+            notes = listOf(
+                "构造函数注入是最安全、最清晰的方式，优先使用",
+                "字段注入的字段必须是lateinit var，运行时才能发现缺失",
+                "方法注入不常用，优先考虑重构代码结构",
+                "Android组件必须使用字段注入，因为无法修改构造函数",
+                "注意注入时机，字段注入在super.onCreate()之后才可用"
+            ),
+            practiceTips = "建议优先使用构造函数注入，它最清晰且安全。Android组件（Activity、Fragment）必须使用字段注入。方法注入只用于特殊场景，如需要动态注入或解决循环依赖。在实际开发中，大多数情况下构造函数注入就足够了。"
+        ),
+        
+        KnowledgeDetail(
+            id = "di_best_practices",
+            title = "依赖注入最佳实践",
+            overview = "依赖注入的最佳实践包括：合理使用作用域、避免循环依赖、正确管理生命周期、编写可测试的代码等。遵循这些实践可以让依赖注入发挥最大作用，提高代码质量。",
+            keyPoints = listOf(
+                "作用域管理：合理使用@Singleton、@ActivityRetainedScope等作用域注解",
+                "避免循环依赖：通过接口抽象、延迟初始化等方式解决循环依赖",
+                "生命周期管理：确保依赖的生命周期与使用它的组件匹配",
+                "可测试性：使用接口抽象，便于注入Mock对象进行测试",
+                "性能优化：避免不必要的单例，合理使用作用域"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：合理使用作用域",
+                    code = """
+                        // 应用级单例：整个应用生命周期内只有一个实例
+                        @Module
+                        @InstallIn(SingletonComponent::class)
+                        object AppModule {
+                            @Provides
+                            @Singleton
+                            fun provideDatabase(): AppDatabase {
+                                return Room.databaseBuilder(...).build()
+                            }
+                            
+                            @Provides
+                            @Singleton
+                            fun provideApiService(): ApiService {
+                                return Retrofit.Builder(...).build()
+                            }
+                        }
+                        
+                        // Activity级作用域：每个Activity一个实例
+                        @Module
+                        @InstallIn(ActivityComponent::class)
+                        object ActivityModule {
+                            @Provides
+                            fun provideActivityScopedData(): ActivityData {
+                                return ActivityData() // 每个Activity一个实例
+                            }
+                        }
+                        
+                        // ViewModel级作用域：配置变更后仍然存在
+                        @Module
+                        @InstallIn(ViewModelComponent::class)
+                        object ViewModelModule {
+                            @Provides
+                            @ViewModelScoped
+                            fun provideViewModelData(): ViewModelData {
+                                return ViewModelData() // ViewModel生命周期内存在
+                            }
+                        }
+                        
+                        // 注意：
+                        // 1. 不要过度使用@Singleton
+                        // 2. 确保单例对象是线程安全的
+                        // 3. 根据实际需求选择合适的作用域
+                    """.trimIndent(),
+                    explanation = "合理使用作用域可以优化内存使用，确保对象的生命周期与使用它的组件匹配。"
+                ),
+                CodeExample(
+                    title = "示例2：避免循环依赖",
+                    code = """
+                        // 问题：循环依赖
+                        class ServiceA @Inject constructor(
+                            private val serviceB: ServiceB // A依赖B
+                        )
+                        
+                        class ServiceB @Inject constructor(
+                            private val serviceA: ServiceA // B依赖A，形成循环
+                        )
+                        
+                        // 解决方案1：使用接口抽象
+                        interface IServiceA {
+                            fun doSomething()
+                        }
+                        
+                        interface IServiceB {
+                            fun doSomething()
+                        }
+                        
+                        class ServiceA @Inject constructor(
+                            private val serviceB: IServiceB // 依赖接口
+                        ) : IServiceA {
+                            override fun doSomething() {
+                                serviceB.doSomething()
+                            }
+                        }
+                        
+                        class ServiceB @Inject constructor(
+                            private val serviceA: IServiceA // 依赖接口
+                        ) : IServiceB {
+                            override fun doSomething() {
+                                serviceA.doSomething()
+                            }
+                        }
+                        
+                        // 解决方案2：延迟初始化
+                        class ServiceA @Inject constructor() {
+                            @Inject
+                            lateinit var serviceB: ServiceB // 延迟注入
+                        }
+                        
+                        class ServiceB @Inject constructor(
+                            private val serviceA: ServiceA
+                        )
+                    """.trimIndent(),
+                    explanation = "通过接口抽象或延迟初始化可以解决循环依赖问题。"
+                ),
+                CodeExample(
+                    title = "示例3：编写可测试的代码",
+                    code = """
+                        // 使用接口抽象，便于测试
+                        interface UserRepository {
+                            suspend fun getUser(id: String): User
+                        }
+                        
+                        class DatabaseUserRepository @Inject constructor(
+                            private val database: AppDatabase
+                        ) : UserRepository {
+                            override suspend fun getUser(id: String): User {
+                                return database.userDao().getUser(id)
+                            }
+                        }
+                        
+                        // 生产代码使用真实实现
+                        @Module
+                        @InstallIn(SingletonComponent::class)
+                        object RepositoryModule {
+                            @Provides
+                            @Singleton
+                            fun provideUserRepository(
+                                database: AppDatabase
+                            ): UserRepository {
+                                return DatabaseUserRepository(database)
+                            }
+                        }
+                        
+                        // 测试代码使用Mock实现
+                        class UserViewModelTest {
+                            @Test
+                            fun testLoadUser() {
+                                val mockRepository = mock<UserRepository>()
+                                whenever(mockRepository.getUser("123")).thenReturn(User("123", "Test"))
+                                
+                                val viewModel = UserViewModel(mockRepository)
+                                viewModel.loadUser("123")
+                                
+                                // 验证行为
+                                verify(mockRepository).getUser("123")
+                            }
+                        }
+                        
+                        // 优势：
+                        // 1. 可以轻松注入Mock对象
+                        // 2. 不依赖真实数据库或网络
+                        // 3. 测试速度快，可重复
+                    """.trimIndent(),
+                    explanation = "使用接口抽象可以让代码更容易测试，可以轻松注入Mock对象。"
+                ),
+                CodeExample(
+                    title = "示例4：性能优化",
+                    code = """
+                        // 避免不必要的单例
+                        // 错误：每个请求都创建新实例，但标记为单例
+                        @Singleton
+                        class RequestProcessor @Inject constructor() {
+                            fun process(request: Request) {
+                                // 处理请求
+                            }
+                        }
+                        
+                        // 正确：如果不需要单例，不要使用@Singleton
+                        class RequestProcessor @Inject constructor() {
+                            fun process(request: Request) {
+                                // 处理请求
+                            }
+                        }
+                        
+                        // 使用Lazy延迟初始化
+                        class HeavyService @Inject constructor() {
+                            init {
+                                // 初始化很耗时
+                                Thread.sleep(1000)
+                            }
+                        }
+                        
+                        class UserService @Inject constructor(
+                            private val heavyService: Lazy<HeavyService> // 延迟初始化
+                        ) {
+                            fun doSomething() {
+                                // 只有在真正需要时才初始化
+                                val service = heavyService.get()
+                                service.process()
+                            }
+                        }
+                        
+                        // 使用Provider按需创建
+                        class UserService @Inject constructor(
+                            private val processorProvider: Provider<RequestProcessor>
+                        ) {
+                            fun processMultipleRequests(requests: List<Request>) {
+                                requests.forEach { request ->
+                                    // 每次创建新实例
+                                    val processor = processorProvider.get()
+                                    processor.process(request)
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "合理使用作用域、Lazy和Provider可以优化性能，避免不必要的对象创建。"
+                )
+            ),
+            useCases = listOf(
+                "大型项目：管理复杂的依赖关系，提高代码质量",
+                "团队协作：统一的依赖注入规范，提高代码可维护性",
+                "单元测试：通过依赖注入轻松进行单元测试",
+                "性能优化：合理使用作用域和延迟初始化优化性能",
+                "代码重构：依赖注入使代码更容易重构和扩展"
+            ),
+            notes = listOf(
+                "不要过度使用@Singleton，确保对象确实是单例且线程安全",
+                "避免循环依赖，通过接口抽象或延迟初始化解决",
+                "使用接口抽象提高可测试性，便于注入Mock对象",
+                "注意依赖的生命周期，确保与使用它的组件匹配",
+                "合理使用Lazy和Provider优化性能，避免不必要的对象创建"
+            ),
+            practiceTips = "建议在项目开始时制定依赖注入规范，统一使用方式。优先使用构造函数注入和接口抽象，提高代码可测试性。合理使用作用域，不要过度使用@Singleton。注意避免循环依赖，通过接口抽象解决。使用Lazy和Provider优化性能，避免不必要的对象创建。"
         )
     )
 }
