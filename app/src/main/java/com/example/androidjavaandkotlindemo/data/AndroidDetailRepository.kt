@@ -10920,6 +10920,710 @@ object AndroidDetailRepository {
                 "合理使用Lazy和Provider优化性能，避免不必要的对象创建"
             ),
             practiceTips = "建议在项目开始时制定依赖注入规范，统一使用方式。优先使用构造函数注入和接口抽象，提高代码可测试性。合理使用作用域，不要过度使用@Singleton。注意避免循环依赖，通过接口抽象解决。使用Lazy和Provider优化性能，避免不必要的对象创建。"
+        ),
+        
+        // ========== 导航 ==========
+        
+        KnowledgeDetail(
+            id = "navigation_basic",
+            title = "Navigation Component基础",
+            overview = "Navigation Component是Android Jetpack组件库的一部分，用于简化应用内的导航。它提供了一个统一的框架，用于处理Fragment、Activity和Compose之间的导航，支持类型安全的参数传递、深层链接和动画转场。",
+            keyPoints = listOf(
+                "导航图（Navigation Graph）：定义应用的所有导航路径和目标",
+                "NavController：管理导航状态，控制页面跳转和返回栈",
+                "NavHost：显示当前导航目标，是导航的容器",
+                "Safe Args：类型安全的参数传递，避免运行时错误",
+                "导航操作（Navigation Actions）：定义从一个目标到另一个目标的导航路径"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：基础导航配置",
+                    code = """
+                        // 1. 添加依赖（build.gradle）
+                        dependencies {
+                            implementation "androidx.navigation:navigation-fragment-ktx:2.7.6"
+                            implementation "androidx.navigation:navigation-ui-ktx:2.7.6"
+                        }
+                        
+                        // 2. 创建导航图（res/navigation/nav_graph.xml）
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <navigation xmlns:android="http://schemas.android.com/apk/res/android"
+                            xmlns:app="http://schemas.android.com/apk/res-auto"
+                            android:id="@+id/nav_graph"
+                            app:startDestination="@id/homeFragment">
+                            
+                            <!-- 定义导航目标 -->
+                            <fragment
+                                android:id="@+id/homeFragment"
+                                android:name="com.example.HomeFragment"
+                                android:label="Home">
+                                <!-- 定义导航操作 -->
+                                <action
+                                    android:id="@+id/action_home_to_detail"
+                                    app:destination="@id/detailFragment" />
+                            </fragment>
+                            
+                            <fragment
+                                android:id="@+id/detailFragment"
+                                android:name="com.example.DetailFragment"
+                                android:label="Detail" />
+                        </navigation>
+                        
+                        // 3. 在Activity中设置NavHost
+                        class MainActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                val navController = findNavController(R.id.nav_host_fragment)
+                                // 使用NavController进行导航
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Navigation Component的基础配置包括：添加依赖、创建导航图、在Activity中设置NavHost。"
+                ),
+                CodeExample(
+                    title = "示例2：Fragment间导航",
+                    code = """
+                        // 在Fragment中使用Navigation
+                        class HomeFragment : Fragment() {
+                            override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+                                super.onViewCreated(view, savedInstanceState)
+                                
+                                // 获取NavController
+                                val navController = findNavController()
+                                
+                                // 导航到详情页
+                                button.setOnClickListener {
+                                    navController.navigate(R.id.action_home_to_detail)
+                                }
+                                
+                                // 返回上一页
+                                backButton.setOnClickListener {
+                                    navController.popBackStack()
+                                }
+                                
+                                // 导航到指定目标并清除返回栈
+                                navController.navigate(
+                                    R.id.detailFragment,
+                                    null,
+                                    navOptions {
+                                        popUpTo(R.id.homeFragment) {
+                                            inclusive = true
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                        
+                        // 使用Kotlin DSL方式导航
+                        button.setOnClickListener {
+                            findNavController().navigate(
+                                HomeFragmentDirections.actionHomeToDetail()
+                            )
+                        }
+                    """.trimIndent(),
+                    explanation = "在Fragment中使用findNavController()获取NavController，然后调用navigate()方法进行导航。"
+                ),
+                CodeExample(
+                    title = "示例3：传递参数",
+                    code = """
+                        // 1. 在导航图中定义参数
+                        <fragment
+                            android:id="@+id/detailFragment"
+                            android:name="com.example.DetailFragment"
+                            android:label="Detail">
+                            <argument
+                                android:name="itemId"
+                                app:argType="string" />
+                            <argument
+                                android:name="itemCount"
+                                app:argType="integer"
+                                android:defaultValue="0" />
+                        </fragment>
+                        
+                        // 2. 使用Safe Args传递参数（推荐）
+                        // 在build.gradle中添加插件
+                        plugins {
+                            id "androidx.navigation.safeargs.kotlin"
+                        }
+                        
+                        // 导航时传递参数
+                        val action = HomeFragmentDirections
+                            .actionHomeToDetail(itemId = "123", itemCount = 10)
+                        findNavController().navigate(action)
+                        
+                        // 3. 在目标Fragment中接收参数
+                        class DetailFragment : Fragment() {
+                            private val args: DetailFragmentArgs by navArgs()
+                            
+                            override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+                                super.onViewCreated(view, savedInstanceState)
+                                
+                                val itemId = args.itemId
+                                val itemCount = args.itemCount
+                                
+                                // 使用参数
+                                textView.text = "Item: ${'$'}itemId, Count: ${'$'}itemCount"
+                            }
+                        }
+                        
+                        // 4. 不使用Safe Args的方式（不推荐）
+                        val bundle = Bundle().apply {
+                            putString("itemId", "123")
+                            putInt("itemCount", 10)
+                        }
+                        findNavController().navigate(R.id.detailFragment, bundle)
+                    """.trimIndent(),
+                    explanation = "使用Safe Args可以类型安全地传递参数，避免运行时错误。在导航图中定义参数，使用生成的Directions类传递参数，在目标Fragment中使用navArgs()接收参数。"
+                )
+            ),
+            useCases = listOf(
+                "Fragment导航：简化Fragment之间的导航和参数传递",
+                "底部导航栏：与BottomNavigationView集成，实现底部导航",
+                "抽屉导航：与NavigationView集成，实现侧边栏导航",
+                "类型安全：使用Safe Args确保参数类型正确",
+                "返回栈管理：自动管理返回栈，简化返回逻辑"
+            ),
+            notes = listOf(
+                "Navigation Component需要AndroidX库，确保使用最新版本",
+                "使用Safe Args插件可以生成类型安全的导航代码",
+                "NavController的生命周期与NavHost绑定",
+                "导航操作必须在导航图中定义，不能动态创建",
+                "注意返回栈的管理，避免栈过深导致内存问题"
+            ),
+            practiceTips = "建议使用Safe Args进行参数传递，它提供了类型安全和编译时检查。将导航逻辑集中在导航图中，便于维护。使用NavOptions控制导航行为，如动画、返回栈等。对于复杂的导航场景，考虑使用嵌套导航图。"
+        ),
+        
+        KnowledgeDetail(
+            id = "navigation_compose",
+            title = "Navigation Compose",
+            overview = "Navigation Compose是Jetpack Compose的导航解决方案，使用声明式的方式定义导航。它提供了类型安全的路由、参数传递和深层链接支持，是Compose应用的标准导航方式。",
+            keyPoints = listOf(
+                "NavController：使用rememberNavController()创建，管理导航状态",
+                "NavHost：定义所有可用的路由和对应的Composable函数",
+                "composable：定义路由和对应的屏幕组件",
+                "类型安全路由：使用sealed class或enum定义路由，避免字符串错误",
+                "参数传递：通过路由参数或NavBackStackEntry传递数据"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：基础Navigation Compose配置",
+                    code = """
+                        // 1. 添加依赖（build.gradle）
+                        dependencies {
+                            implementation "androidx.navigation:navigation-compose:2.7.6"
+                        }
+                        
+                        // 2. 创建NavController
+                        @Composable
+                        fun AppNavigation() {
+                            val navController = rememberNavController()
+                            
+                            NavHost(
+                                navController = navController,
+                                startDestination = "home" // 起始路由
+                            ) {
+                                // 定义路由
+                                composable("home") {
+                                    HomeScreen(
+                                        onNavigateToDetail = {
+                                            navController.navigate("detail")
+                                        }
+                                    )
+                                }
+                                
+                                composable("detail") {
+                                    DetailScreen(
+                                        onNavigateBack = {
+                                            navController.popBackStack()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // 3. 在Activity中使用
+                        class MainActivity : ComponentActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContent {
+                                    AppNavigation()
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Navigation Compose的基础配置：创建NavController、定义NavHost、使用composable定义路由。"
+                ),
+                CodeExample(
+                    title = "示例2：类型安全路由",
+                    code = """
+                        // 使用sealed class定义路由（推荐）
+                        sealed class Screen(val route: String) {
+                            object Home : Screen("home")
+                            object Detail : Screen("detail")
+                            data class UserDetail(val userId: String) : Screen("user_detail/${'$'}{userId}")
+                        }
+                        
+                        // 在NavHost中使用
+                        NavHost(
+                            navController = navController,
+                            startDestination = Screen.Home.route
+                        ) {
+                            composable(Screen.Home.route) {
+                                HomeScreen(
+                                    onNavigateToDetail = {
+                                        navController.navigate(Screen.Detail.route)
+                                    }
+                                )
+                            }
+                            
+                            composable(Screen.Detail.route) {
+                                DetailScreen(
+                                    onNavigateBack = {
+                                        navController.popBackStack()
+                                    }
+                                )
+                            }
+                            
+                            // 带参数的路由
+                            composable(
+                                route = "user_detail/{userId}",
+                                arguments = listOf(
+                                    navArgument("userId") {
+                                        type = NavType.StringType
+                                    }
+                                )
+                            ) { backStackEntry ->
+                                val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                                UserDetailScreen(
+                                    userId = userId,
+                                    onNavigateBack = {
+                                        navController.popBackStack()
+                                    }
+                                )
+                            }
+                        }
+                        
+                        // 导航到带参数的路由
+                        navController.navigate("user_detail/123")
+                    """.trimIndent(),
+                    explanation = "使用sealed class定义路由可以提供类型安全，避免字符串错误。对于带参数的路由，使用navArgument定义参数类型。"
+                ),
+                CodeExample(
+                    title = "示例3：传递复杂参数",
+                    code = """
+                        // 方式1：通过路由参数传递（简单数据）
+                        composable(
+                            route = "detail/{itemId}/{itemName}",
+                            arguments = listOf(
+                                navArgument("itemId") { type = NavType.StringType },
+                                navArgument("itemName") { 
+                                    type = NavType.StringType
+                                    nullable = true
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
+                            val itemName = backStackEntry.arguments?.getString("itemName")
+                            
+                            DetailScreen(itemId = itemId, itemName = itemName)
+                        }
+                        
+                        // 导航
+                        navController.navigate("detail/123/ItemName")
+                        
+                        // 方式2：通过NavBackStackEntry传递（复杂对象）
+                        // 使用ViewModel或状态管理传递复杂数据
+                        @Composable
+                        fun HomeScreen(
+                            viewModel: HomeViewModel = hiltViewModel()
+                        ) {
+                            val selectedItem by viewModel.selectedItem.collectAsState()
+                            
+                            Button(onClick = {
+                                viewModel.selectItem(Item("123", "Test"))
+                                navController.navigate("detail")
+                            }) {
+                                Text("Navigate to Detail")
+                            }
+                        }
+                        
+                        @Composable
+                        fun DetailScreen(
+                            viewModel: DetailViewModel = hiltViewModel()
+                        ) {
+                            // 从共享的ViewModel或状态中获取数据
+                            val item = viewModel.getItem()
+                        }
+                        
+                        // 方式3：使用自定义NavType（复杂对象序列化）
+                        val itemNavType = object : NavType<Item>(isNullableAllowed = false) {
+                            override fun get(bundle: Bundle, key: String): Item? {
+                                return bundle.getParcelable(key)
+                            }
+                            
+                            override fun parseValue(value: String): Item {
+                                // 解析JSON字符串
+                                return Gson().fromJson(value, Item::class.java)
+                            }
+                            
+                            override fun put(bundle: Bundle, key: String, value: Item) {
+                                bundle.putParcelable(key, value)
+                            }
+                            
+                            override fun getName(): String = "Item"
+                        }
+                    """.trimIndent(),
+                    explanation = "对于简单数据，通过路由参数传递。对于复杂对象，使用ViewModel或状态管理传递，或者使用自定义NavType进行序列化。"
+                ),
+                CodeExample(
+                    title = "示例4：导航选项和动画",
+                    code = """
+                        // 使用NavOptions控制导航行为
+                        navController.navigate(
+                            route = "detail",
+                            navOptions = NavOptions.Builder()
+                                .setPopUpTo("home", inclusive = false) // 清除返回栈到home
+                                .setLaunchSingleTop(true) // 如果已在栈顶，不创建新实例
+                                .build()
+                        )
+                        
+                        // 使用AnimatedNavHost添加转场动画
+                        AnimatedNavHost(
+                            navController = navController,
+                            startDestination = "home"
+                        ) {
+                            composable(
+                                route = "home",
+                                enterTransition = {
+                                    slideInHorizontally(
+                                        initialOffsetX = { -it },
+                                        animationSpec = tween(300)
+                                    )
+                                },
+                                exitTransition = {
+                                    slideOutHorizontally(
+                                        targetOffsetX = { -it },
+                                        animationSpec = tween(300)
+                                    )
+                                }
+                            ) {
+                                HomeScreen()
+                            }
+                            
+                            composable(
+                                route = "detail",
+                                enterTransition = {
+                                    slideInHorizontally(
+                                        initialOffsetX = { it },
+                                        animationSpec = tween(300)
+                                    )
+                                },
+                                exitTransition = {
+                                    slideOutHorizontally(
+                                        targetOffsetX = { it },
+                                        animationSpec = tween(300)
+                                    )
+                                }
+                            ) {
+                                DetailScreen()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "使用NavOptions控制导航行为，如返回栈管理、单例模式等。使用AnimatedNavHost可以添加转场动画，提升用户体验。"
+                )
+            ),
+            useCases = listOf(
+                "Compose应用导航：Jetpack Compose应用的标准导航方式",
+                "类型安全：使用sealed class定义路由，避免字符串错误",
+                "参数传递：通过路由参数或状态管理传递数据",
+                "深层链接：支持深层链接，从外部跳转到应用内特定页面",
+                "动画转场：使用AnimatedNavHost添加流畅的转场动画"
+            ),
+            notes = listOf(
+                "NavController应该在Composable的顶层创建，使用rememberNavController()",
+                "路由字符串应该使用常量或sealed class，避免硬编码",
+                "对于复杂对象，优先使用ViewModel或状态管理传递，而不是路由参数",
+                "注意导航栈的深度，避免内存问题",
+                "使用AnimatedNavHost需要添加navigation-compose依赖"
+            ),
+            practiceTips = "建议使用sealed class定义路由，提供类型安全。对于简单数据，通过路由参数传递；对于复杂对象，使用ViewModel或状态管理。使用AnimatedNavHost添加转场动画，提升用户体验。注意导航栈的管理，避免栈过深。"
+        ),
+        
+        KnowledgeDetail(
+            id = "navigation_advanced",
+            title = "导航高级特性（参数传递、深层链接）",
+            overview = "Navigation Component的高级特性包括类型安全的参数传递、深层链接、嵌套导航图、条件导航等。掌握这些特性可以构建更复杂和用户友好的导航体验。",
+            keyPoints = listOf(
+                "深层链接（Deep Links）：支持从外部（如网页、通知）跳转到应用内特定页面",
+                "嵌套导航图：将复杂的导航图分解为多个子导航图，提高可维护性",
+                "条件导航：根据条件动态决定导航目标",
+                "自定义NavType：支持传递复杂对象类型",
+                "导航拦截：在导航前进行拦截和处理"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：深层链接（Deep Links）",
+                    code = """
+                        // 1. 在导航图中定义深层链接
+                        <fragment
+                            android:id="@+id/detailFragment"
+                            android:name="com.example.DetailFragment"
+                            android:label="Detail">
+                            <deepLink
+                                app:uri="https://example.com/detail/{itemId}" />
+                            <deepLink
+                                app:uri="example://detail/{itemId}" />
+                        </fragment>
+                        
+                        // 2. 在AndroidManifest.xml中配置
+                        <activity
+                            android:name=".MainActivity"
+                            ...>
+                            <nav-graph android:value="@navigation/nav_graph" />
+                        </activity>
+                        
+                        // 3. 在代码中处理深层链接
+                        val navController = findNavController()
+                        navController.handleDeepLink(intent)
+                        
+                        // 4. 使用PendingIntent创建深层链接
+                        val deepLink = NavDeepLinkBuilder(context)
+                            .setGraph(R.navigation.nav_graph)
+                            .setDestination(R.id.detailFragment)
+                            .setArguments(bundleOf("itemId" to "123"))
+                            .createPendingIntent()
+                        
+                        // 5. 在通知中使用深层链接
+                        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+                            .setContentTitle("New Item")
+                            .setContentIntent(deepLink)
+                            .build()
+                        
+                        // 6. Compose中的深层链接
+                        NavHost(
+                            navController = navController,
+                            startDestination = "home"
+                        ) {
+                            composable(
+                                route = "detail/{itemId}",
+                                deepLinks = listOf(
+                                    navDeepLink {
+                                        uriPattern = "https://example.com/detail/{itemId}"
+                                    },
+                                    navDeepLink {
+                                        uriPattern = "example://detail/{itemId}"
+                                    }
+                                )
+                            ) { backStackEntry ->
+                                val itemId = backStackEntry.arguments?.getString("itemId")
+                                DetailScreen(itemId = itemId)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "深层链接允许从外部（网页、通知等）跳转到应用内特定页面。在导航图中定义deepLink，在AndroidManifest中配置，在代码中处理。"
+                ),
+                CodeExample(
+                    title = "示例2：嵌套导航图",
+                    code = """
+                        // 主导航图（nav_graph.xml）
+                        <navigation
+                            android:id="@+id/main_nav_graph"
+                            app:startDestination="@id/home">
+                            
+                            <fragment
+                                android:id="@+id/home"
+                                android:name="com.example.HomeFragment" />
+                            
+                            <!-- 嵌套导航图 -->
+                            <include app:graph="@navigation/auth_nav_graph" />
+                            <include app:graph="@navigation/main_nav_graph" />
+                        </navigation>
+                        
+                        // 认证导航图（auth_nav_graph.xml）
+                        <navigation
+                            android:id="@+id/auth_nav_graph"
+                            app:startDestination="@id/login">
+                            
+                            <fragment
+                                android:id="@+id/login"
+                                android:name="com.example.LoginFragment">
+                                <action
+                                    android:id="@+id/action_login_to_register"
+                                    app:destination="@id/register" />
+                            </fragment>
+                            
+                            <fragment
+                                android:id="@+id/register"
+                                android:name="com.example.RegisterFragment" />
+                        </navigation>
+                        
+                        // 在代码中导航到嵌套导航图
+                        navController.navigate(R.id.auth_nav_graph)
+                        
+                        // Compose中的嵌套导航图
+                        NavHost(
+                            navController = navController,
+                            startDestination = "home"
+                        ) {
+                            composable("home") { HomeScreen() }
+                            
+                            // 嵌套导航图
+                            navigation(
+                                startDestination = "login",
+                                route = "auth"
+                            ) {
+                                composable("login") { LoginScreen() }
+                                composable("register") { RegisterScreen() }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "嵌套导航图可以将复杂的导航图分解为多个子导航图，提高可维护性。使用include标签包含子导航图，或在Compose中使用navigation函数。"
+                ),
+                CodeExample(
+                    title = "示例3：条件导航和导航拦截",
+                    code = """
+                        // 条件导航：根据条件决定导航目标
+                        fun navigateToDetail(itemId: String, isPremium: Boolean) {
+                            val destination = if (isPremium) {
+                                R.id.premiumDetailFragment
+                            } else {
+                                R.id.detailFragment
+                            }
+                            
+                            navController.navigate(
+                                destination,
+                                bundleOf("itemId" to itemId)
+                            )
+                        }
+                        
+                        // 导航拦截：在导航前进行检查
+                        navController.addOnDestinationChangedListener { controller, destination, arguments ->
+                            when (destination.id) {
+                                R.id.premiumDetailFragment -> {
+                                    // 检查用户是否已登录
+                                    if (!userRepository.isLoggedIn()) {
+                                        // 拦截导航，跳转到登录页
+                                        controller.navigate(R.id.loginFragment)
+                                        return@addOnDestinationChangedListener
+                                    }
+                                    
+                                    // 检查用户是否是高级用户
+                                    if (!userRepository.isPremium()) {
+                                        // 拦截导航，显示升级提示
+                                        showUpgradeDialog()
+                                        controller.popBackStack()
+                                        return@addOnDestinationChangedListener
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Compose中的条件导航
+                        @Composable
+                        fun AppNavigation(
+                            isLoggedIn: Boolean,
+                            isPremium: Boolean
+                        ) {
+                            val navController = rememberNavController()
+                            
+                            NavHost(
+                                navController = navController,
+                                startDestination = if (isLoggedIn) "home" else "login"
+                            ) {
+                                composable("login") {
+                                    LoginScreen(
+                                        onLoginSuccess = {
+                                            navController.navigate("home") {
+                                                popUpTo("login") { inclusive = true }
+                                        }
+                                    )
+                                }
+                                
+                                composable("home") {
+                                    HomeScreen(
+                                        onNavigateToDetail = { itemId ->
+                                            val route = if (isPremium) {
+                                                "premium_detail/${'$'}itemId"
+                                            } else {
+                                                "detail/${'$'}itemId"
+                                            }
+                                            navController.navigate(route)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "条件导航根据条件动态决定导航目标。导航拦截可以在导航前进行检查，如权限验证、登录状态等。"
+                ),
+                CodeExample(
+                    title = "示例4：自定义NavType和复杂参数",
+                    code = """
+                        // 自定义NavType用于传递复杂对象
+                        class ItemNavType : NavType<Item>(isNullableAllowed = false) {
+                            override fun get(bundle: Bundle, key: String): Item? {
+                                return bundle.getParcelable(key)
+                            }
+                            
+                            override fun parseValue(value: String): Item {
+                                // 从JSON字符串解析
+                                return Gson().fromJson(value, Item::class.java)
+                            }
+                            
+                            override fun put(bundle: Bundle, key: String, value: Item) {
+                                bundle.putParcelable(key, value)
+                            }
+                            
+                            override fun getName(): String = "Item"
+                        }
+                        
+                        // 在导航图中使用自定义NavType
+                        <fragment
+                            android:id="@+id/detailFragment"
+                            android:name="com.example.DetailFragment">
+                            <argument
+                                android:name="item"
+                                app:argType="com.example.ItemNavType" />
+                        </fragment>
+                        
+                        // Compose中使用自定义NavType
+                        composable(
+                            route = "detail/{itemJson}",
+                            arguments = listOf(
+                                navArgument("itemJson") {
+                                    type = ItemNavType()
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val item = backStackEntry.arguments?.getParcelable<Item>("item")
+                            DetailScreen(item = item)
+                        }
+                        
+                        // 导航时传递对象
+                        val item = Item("123", "Test")
+                        val itemJson = Gson().toJson(item)
+                        navController.navigate("detail/${'$'}itemJson")
+                    """.trimIndent(),
+                    explanation = "自定义NavType可以传递复杂对象。实现NavType接口，重写get、parseValue、put等方法，然后在导航图中使用。"
+                )
+            ),
+            useCases = listOf(
+                "深层链接：从网页、通知等外部来源跳转到应用内特定页面",
+                "嵌套导航：将复杂的导航图分解为多个子导航图，提高可维护性",
+                "条件导航：根据用户状态、权限等条件动态决定导航目标",
+                "导航拦截：在导航前进行权限验证、登录检查等",
+                "复杂参数：传递复杂对象类型，如自定义数据类"
+            ),
+            notes = listOf(
+                "深层链接需要在AndroidManifest.xml中配置",
+                "嵌套导航图可以提高代码的可维护性，但不要过度嵌套",
+                "导航拦截应该在导航前进行，避免用户看到不应该访问的页面",
+                "自定义NavType需要实现序列化和反序列化",
+                "注意深层链接的安全性，验证参数的有效性"
+            ),
+            practiceTips = "建议使用深层链接提升用户体验，允许从外部跳转到应用内。使用嵌套导航图组织复杂的导航结构。实现导航拦截确保安全性。对于复杂对象，使用自定义NavType或通过ViewModel传递。注意深层链接的参数验证，防止安全漏洞。"
         )
     )
 }
