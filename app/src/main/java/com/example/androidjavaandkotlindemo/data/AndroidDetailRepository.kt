@@ -11624,6 +11624,918 @@ object AndroidDetailRepository {
                 "注意深层链接的安全性，验证参数的有效性"
             ),
             practiceTips = "建议使用深层链接提升用户体验，允许从外部跳转到应用内。使用嵌套导航图组织复杂的导航结构。实现导航拦截确保安全性。对于复杂对象，使用自定义NavType或通过ViewModel传递。注意深层链接的参数验证，防止安全漏洞。"
+        ),
+        
+        // ========== 测试 ==========
+        
+        KnowledgeDetail(
+            id = "unit_test",
+            title = "单元测试（Unit Testing）",
+            overview = "单元测试是对代码中最小可测试单元（通常是函数或方法）进行的测试。在Android开发中，单元测试用于验证业务逻辑、工具类和ViewModel等非UI组件的正确性。单元测试运行在JVM上，不需要Android设备，执行速度快。",
+            keyPoints = listOf(
+                "测试框架：JUnit是Java/Kotlin的标准测试框架，Android项目使用JUnit 4或JUnit 5",
+                "测试结构：使用@Test注解标记测试方法，使用断言验证结果",
+                "Mock对象：使用Mockito等框架创建模拟对象，隔离被测试代码的依赖",
+                "测试覆盖率：通过单元测试覆盖尽可能多的代码路径，提高代码质量",
+                "测试命名：使用清晰的测试方法名，描述测试的场景和预期结果",
+                "测试隔离：每个测试应该独立运行，不依赖其他测试的状态"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：基础单元测试",
+                    code = """
+                        // 被测试的类
+                        class Calculator {
+                            fun add(a: Int, b: Int): Int {
+                                return a + b
+                            }
+                            
+                            fun divide(a: Int, b: Int): Double {
+                                if (b == 0) {
+                                    throw IllegalArgumentException("除数不能为0")
+                                }
+                                return a.toDouble() / b
+                            }
+                        }
+                        
+                        // 测试类
+                        import org.junit.Test
+                        import org.junit.Assert.*
+                        
+                        class CalculatorTest {
+                            private val calculator = Calculator()
+                            
+                            @Test
+                            fun testAdd_PositiveNumbers_ReturnsSum() {
+                                // Given
+                                val a = 5
+                                val b = 3
+                                
+                                // When
+                                val result = calculator.add(a, b)
+                                
+                                // Then
+                                assertEquals(8, result)
+                            }
+                            
+                            @Test
+                            fun testAdd_NegativeNumbers_ReturnsSum() {
+                                val result = calculator.add(-5, -3)
+                                assertEquals(-8, result)
+                            }
+                            
+                            @Test
+                            fun testDivide_ValidNumbers_ReturnsQuotient() {
+                                val result = calculator.divide(10, 2)
+                                assertEquals(5.0, result, 0.001)
+                            }
+                            
+                            @Test(expected = IllegalArgumentException::class)
+                            fun testDivide_ByZero_ThrowsException() {
+                                calculator.divide(10, 0)
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "基础单元测试使用JUnit框架，通过@Test标记测试方法，使用断言（如assertEquals）验证结果。测试方法名应该清晰描述测试场景。"
+                ),
+                CodeExample(
+                    title = "示例2：使用Mockito进行Mock测试",
+                    code = """
+                        // 被测试的类
+                        class UserService(
+                            private val userRepository: UserRepository,
+                            private val emailService: EmailService
+                        ) {
+                            fun registerUser(name: String, email: String): User {
+                                val user = userRepository.saveUser(name, email)
+                                emailService.sendWelcomeEmail(email)
+                                return user
+                            }
+                        }
+                        
+                        // 测试类使用Mockito
+                        import org.junit.Test
+                        import org.junit.Assert.*
+                        import org.mockito.Mockito.*
+                        import org.mockito.Mock
+                        import org.mockito.MockitoAnnotations
+                        
+                        class UserServiceTest {
+                            @Mock
+                            private lateinit var userRepository: UserRepository
+                            
+                            @Mock
+                            private lateinit var emailService: EmailService
+                            
+                            private lateinit var userService: UserService
+                            
+                            @Before
+                            fun setup() {
+                                MockitoAnnotations.openMocks(this)
+                                userService = UserService(userRepository, emailService)
+                            }
+                            
+                            @Test
+                            fun testRegisterUser_Success_CallsRepositoryAndEmailService() {
+                                // Given
+                                val name = "张三"
+                                val email = "zhangsan@example.com"
+                                val expectedUser = User(1, name, email)
+                                
+                                // 配置Mock对象的行为
+                                `when`(userRepository.saveUser(name, email)).thenReturn(expectedUser)
+                                
+                                // When
+                                val result = userService.registerUser(name, email)
+                                
+                                // Then
+                                assertEquals(expectedUser, result)
+                                // 验证方法被调用
+                                verify(userRepository).saveUser(name, email)
+                                verify(emailService).sendWelcomeEmail(email)
+                            }
+                            
+                            @Test
+                            fun testRegisterUser_RepositoryThrowsException_PropagatesException() {
+                                // Given
+                                val name = "张三"
+                                val email = "zhangsan@example.com"
+                                `when`(userRepository.saveUser(name, email))
+                                    .thenThrow(RuntimeException("数据库错误"))
+                                
+                                // When & Then
+                                assertThrows(RuntimeException::class.java) {
+                                    userService.registerUser(name, email)
+                                }
+                                
+                                // 验证emailService没有被调用
+                                verify(emailService, never()).sendWelcomeEmail(any())
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "使用Mockito可以创建Mock对象，隔离被测试代码的依赖。通过when().thenReturn()配置Mock行为，使用verify()验证方法调用。"
+                ),
+                CodeExample(
+                    title = "示例3：ViewModel单元测试",
+                    code = """
+                        // ViewModel
+                        class UserViewModel(
+                            private val userRepository: UserRepository
+                        ) : ViewModel() {
+                            private val _users = MutableStateFlow<List<User>>(emptyList())
+                            val users: StateFlow<List<User>> = _users
+                            
+                            private val _loading = MutableStateFlow(false)
+                            val loading: StateFlow<Boolean> = _loading
+                            
+                            fun loadUsers() {
+                                viewModelScope.launch {
+                                    _loading.value = true
+                                    try {
+                                        _users.value = userRepository.getUsers()
+                                    } catch (e: Exception) {
+                                        // 处理错误
+                                    } finally {
+                                        _loading.value = false
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // ViewModel测试
+                        import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+                        import kotlinx.coroutines.ExperimentalCoroutinesApi
+                        import kotlinx.coroutines.test.*
+                        import org.junit.Rule
+                        import org.junit.Test
+                        import org.mockito.Mock
+                        import org.mockito.MockitoAnnotations
+                        import org.mockito.kotlin.*
+                        
+                        @ExperimentalCoroutinesApi
+                        class UserViewModelTest {
+                            @get:Rule
+                            val instantTaskExecutorRule = InstantTaskExecutorRule()
+                            
+                            @get:Rule
+                            val mainDispatcherRule = MainDispatcherRule()
+                            
+                            @Mock
+                            private lateinit var userRepository: UserRepository
+                            
+                            private lateinit var viewModel: UserViewModel
+                            
+                            @Before
+                            fun setup() {
+                                MockitoAnnotations.openMocks(this)
+                                viewModel = UserViewModel(userRepository)
+                            }
+                            
+                            @Test
+                            fun testLoadUsers_Success_UpdatesUsersState() = runTest {
+                                // Given
+                                val expectedUsers = listOf(
+                                    User(1, "张三", "zhangsan@example.com"),
+                                    User(2, "李四", "lisi@example.com")
+                                )
+                                whenever(userRepository.getUsers()).thenReturn(expectedUsers)
+                                
+                                // When
+                                viewModel.loadUsers()
+                                
+                                // Then
+                                val users = viewModel.users.value
+                                assertEquals(expectedUsers, users)
+                                assertEquals(false, viewModel.loading.value)
+                            }
+                            
+                            @Test
+                            fun testLoadUsers_LoadingState_ChangesCorrectly() = runTest {
+                                // Given
+                                whenever(userRepository.getUsers()).thenReturn(emptyList())
+                                
+                                // When
+                                viewModel.loadUsers()
+                                
+                                // Then
+                                // 注意：由于协程的异步特性，需要等待状态更新
+                                assertEquals(false, viewModel.loading.value)
+                            }
+                        }
+                        
+                        // 协程测试规则
+                        @ExperimentalCoroutinesApi
+                        class MainDispatcherRule : TestWatcher() {
+                            private val testDispatcher = StandardTestDispatcher()
+                            
+                            override fun starting(description: Description) {
+                                Dispatchers.setMain(testDispatcher)
+                            }
+                            
+                            override fun finished(description: Description) {
+                                Dispatchers.resetMain()
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "ViewModel测试需要处理协程和LiveData/StateFlow。使用TestDispatcher控制协程执行，使用InstantTaskExecutorRule处理LiveData。"
+                )
+            ),
+            useCases = listOf(
+                "业务逻辑测试：验证工具类、业务逻辑类的正确性",
+                "ViewModel测试：测试ViewModel的状态管理和业务逻辑",
+                "数据转换测试：测试数据转换、格式化等纯函数",
+                "算法测试：验证复杂算法的正确性",
+                "边界条件测试：测试边界情况和异常情况"
+            ),
+            notes = listOf(
+                "单元测试应该快速执行，避免依赖外部资源（网络、数据库等）",
+                "使用Mock对象隔离依赖，确保测试的独立性",
+                "测试方法名应该清晰描述测试场景，如testMethodName_Scenario_ExpectedResult",
+                "保持测试代码简洁，遵循AAA模式（Arrange-Act-Assert）",
+                "测试覆盖率不是唯一目标，重要的是测试质量",
+                "避免测试实现细节，应该测试行为而非实现"
+            ),
+            practiceTips = "建议在编写代码的同时编写单元测试，遵循TDD（测试驱动开发）可以提高代码质量。使用Mock框架隔离依赖，保持测试独立。为每个公共方法编写测试，特别关注边界条件和异常情况。使用清晰的测试方法名，遵循命名规范。定期运行测试，确保代码修改不会破坏现有功能。"
+        ),
+        
+        KnowledgeDetail(
+            id = "integration_test",
+            title = "集成测试（Integration Testing）",
+            overview = "集成测试是测试多个组件协同工作的测试方式。在Android开发中，集成测试通常运行在Android设备或模拟器上，可以测试Activity、Fragment、数据库、网络请求等Android组件的集成。集成测试比单元测试更接近真实环境，但执行速度较慢。",
+            keyPoints = listOf(
+                "测试环境：集成测试运行在Android设备或模拟器上，需要AndroidTest依赖",
+                "测试框架：使用AndroidJUnitRunner和Espresso进行UI测试，使用Room的in-memory数据库测试数据库",
+                "测试范围：测试Activity、Fragment、Service、ContentProvider等Android组件的集成",
+                "数据库测试：使用Room的in-memory数据库进行快速数据库测试",
+                "网络测试：使用MockWebServer模拟网络请求，测试网络层集成",
+                "测试数据：使用测试数据构建器创建测试数据，保持测试代码简洁"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：Activity集成测试",
+                    code = """
+                        // Activity
+                        class MainActivity : AppCompatActivity() {
+                            private lateinit var viewModel: UserViewModel
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                viewModel = ViewModelProvider(this)[UserViewModel::class.java]
+                                
+                                viewModel.users.observe(this) { users ->
+                                    // 更新UI
+                                    updateUserList(users)
+                                }
+                                
+                                findViewById<Button>(R.id.loadButton).setOnClickListener {
+                                    viewModel.loadUsers()
+                                }
+                            }
+                            
+                            private fun updateUserList(users: List<User>) {
+                                // 更新列表
+                            }
+                        }
+                        
+                        // 集成测试
+                        import androidx.test.ext.junit.rules.ActivityScenarioRule
+                        import androidx.test.ext.junit.runners.AndroidJUnit4
+                        import androidx.test.espresso.Espresso.*
+                        import androidx.test.espresso.assertion.ViewAssertions.*
+                        import androidx.test.espresso.matcher.ViewMatchers.*
+                        import androidx.test.espresso.action.ViewActions.*
+                        import org.junit.Rule
+                        import org.junit.Test
+                        import org.junit.runner.RunWith
+                        
+                        @RunWith(AndroidJUnit4::class)
+                        class MainActivityTest {
+                            @get:Rule
+                            val activityRule = ActivityScenarioRule(MainActivity::class.java)
+                            
+                            @Test
+                            fun testLoadUsers_DisplaysUserList() {
+                                // 点击加载按钮
+                                onView(withId(R.id.loadButton))
+                                    .perform(click())
+                                
+                                // 验证用户列表显示
+                                onView(withId(R.id.userList))
+                                    .check(matches(isDisplayed()))
+                                
+                                // 验证列表中有数据
+                                onView(withText("张三"))
+                                    .check(matches(isDisplayed()))
+                            }
+                            
+                            @Test
+                            fun testUserList_EmptyState_ShowsEmptyMessage() {
+                                // 验证空状态显示
+                                onView(withId(R.id.emptyMessage))
+                                    .check(matches(isDisplayed()))
+                                onView(withText("暂无数据"))
+                                    .check(matches(isDisplayed()))
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Activity集成测试使用ActivityScenarioRule启动Activity，使用Espresso进行UI交互和验证。测试运行在Android设备上，可以测试真实的Activity行为。"
+                ),
+                CodeExample(
+                    title = "示例2：Room数据库集成测试",
+                    code = """
+                        // 数据库
+                        @Database(entities = [User::class], version = 1)
+                        abstract class AppDatabase : RoomDatabase() {
+                            abstract fun userDao(): UserDao
+                        }
+                        
+                        // DAO
+                        @Dao
+                        interface UserDao {
+                            @Query("SELECT * FROM users")
+                            fun getAllUsers(): Flow<List<User>>
+                            
+                            @Insert
+                            suspend fun insertUser(user: User)
+                            
+                            @Delete
+                            suspend fun deleteUser(user: User)
+                        }
+                        
+                        // 数据库集成测试
+                        import androidx.room.Room
+                        import androidx.room.testing.MigrationTestHelper
+                        import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
+                        import androidx.test.platform.app.InstrumentationRegistry
+                        import kotlinx.coroutines.flow.first
+                        import kotlinx.coroutines.runBlocking
+                        import org.junit.After
+                        import org.junit.Before
+                        import org.junit.Test
+                        import org.junit.runner.RunWith
+                        import androidx.test.ext.junit.runners.AndroidJUnit4
+                        
+                        @RunWith(AndroidJUnit4::class)
+                        class UserDaoTest {
+                            private lateinit var database: AppDatabase
+                            
+                            @Before
+                            fun setup() {
+                                // 使用in-memory数据库进行测试
+                                database = Room.inMemoryDatabaseBuilder(
+                                    InstrumentationRegistry.getInstrumentation().context,
+                                    AppDatabase::class.java
+                                ).allowMainThreadQueries()
+                                    .build()
+                            }
+                            
+                            @After
+                            fun tearDown() {
+                                database.close()
+                            }
+                            
+                            @Test
+                            fun testInsertUser_UserExistsInDatabase() = runBlocking {
+                                // Given
+                                val user = User(1, "张三", "zhangsan@example.com")
+                                
+                                // When
+                                database.userDao().insertUser(user)
+                                
+                                // Then
+                                val users = database.userDao().getAllUsers().first()
+                                assertEquals(1, users.size)
+                                assertEquals(user, users[0])
+                            }
+                            
+                            @Test
+                            fun testDeleteUser_UserRemovedFromDatabase() = runBlocking {
+                                // Given
+                                val user = User(1, "张三", "zhangsan@example.com")
+                                database.userDao().insertUser(user)
+                                
+                                // When
+                                database.userDao().deleteUser(user)
+                                
+                                // Then
+                                val users = database.userDao().getAllUsers().first()
+                                assertTrue(users.isEmpty())
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "Room数据库集成测试使用in-memory数据库，测试速度快且不需要清理。使用runBlocking处理Flow的异步操作。"
+                ),
+                CodeExample(
+                    title = "示例3：网络层集成测试（使用MockWebServer）",
+                    code = """
+                        // Repository
+                        class UserRepository(
+                            private val apiService: ApiService
+                        ) {
+                            suspend fun getUsers(): List<User> {
+                                return apiService.getUsers()
+                            }
+                        }
+                        
+                        // API Service
+                        interface ApiService {
+                            @GET("users")
+                            suspend fun getUsers(): List<User>
+                        }
+                        
+                        // 网络集成测试
+                        import okhttp3.mockwebserver.MockResponse
+                        import okhttp3.mockwebserver.MockWebServer
+                        import org.junit.After
+                        import org.junit.Before
+                        import org.junit.Test
+                        import retrofit2.Retrofit
+                        import retrofit2.converter.gson.GsonConverterFactory
+                        import kotlinx.coroutines.runBlocking
+                        import org.junit.Assert.*
+                        
+                        class UserRepositoryIntegrationTest {
+                            private lateinit var mockWebServer: MockWebServer
+                            private lateinit var repository: UserRepository
+                            
+                            @Before
+                            fun setup() {
+                                mockWebServer = MockWebServer()
+                                mockWebServer.start()
+                                
+                                val retrofit = Retrofit.Builder()
+                                    .baseUrl(mockWebServer.url("/"))
+                                    .addConverterFactory(GsonConverterFactory.create())
+                                    .build()
+                                
+                                val apiService = retrofit.create(ApiService::class.java)
+                                repository = UserRepository(apiService)
+                            }
+                            
+                            @After
+                            fun tearDown() {
+                                mockWebServer.shutdown()
+                            }
+                            
+                            @Test
+                            fun testGetUsers_Success_ReturnsUserList() = runBlocking {
+                                // Given
+                                val responseBody = "[{\"id\": 1, \"name\": \"张三\", \"email\": \"zhangsan@example.com\"}, {\"id\": 2, \"name\": \"李四\", \"email\": \"lisi@example.com\"}]"
+                                
+                                mockWebServer.enqueue(
+                                    MockResponse()
+                                        .setResponseCode(200)
+                                        .setBody(responseBody)
+                                )
+                                
+                                // When
+                                val users = repository.getUsers()
+                                
+                                // Then
+                                assertEquals(2, users.size)
+                                assertEquals("张三", users[0].name)
+                                assertEquals("李四", users[1].name)
+                            }
+                            
+                            @Test
+                            fun testGetUsers_ServerError_ThrowsException() = runBlocking {
+                                // Given
+                                mockWebServer.enqueue(
+                                    MockResponse()
+                                        .setResponseCode(500)
+                                )
+                                
+                                // When & Then
+                                try {
+                                    repository.getUsers()
+                                    fail("应该抛出异常")
+                                } catch (e: Exception) {
+                                    // 预期异常
+                                }
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "使用MockWebServer可以模拟网络请求，测试网络层的集成。可以模拟成功响应、错误响应等不同场景，无需真实的网络环境。"
+                )
+            ),
+            useCases = listOf(
+                "Activity/Fragment测试：测试UI组件与ViewModel的集成",
+                "数据库测试：测试Room数据库的CRUD操作和数据迁移",
+                "网络层测试：测试Retrofit、OkHttp等网络库的集成",
+                "ContentProvider测试：测试ContentProvider的数据共享",
+                "Service测试：测试后台服务的集成和生命周期"
+            ),
+            notes = listOf(
+                "集成测试运行在Android设备上，执行速度比单元测试慢",
+                "使用in-memory数据库可以加快数据库测试速度",
+                "使用MockWebServer可以模拟网络请求，避免依赖真实网络",
+                "集成测试应该测试组件间的交互，而不是重复单元测试",
+                "保持测试数据独立，每个测试应该清理自己的数据",
+                "使用测试数据构建器可以简化测试数据的创建"
+            ),
+            practiceTips = "建议使用in-memory数据库进行数据库测试，速度快且无需清理。使用MockWebServer模拟网络请求，测试网络层集成。为每个Android组件编写集成测试，验证组件间的协作。使用Espresso进行UI测试，验证用户交互。保持测试数据独立，避免测试间的相互影响。"
+        ),
+        
+        KnowledgeDetail(
+            id = "ui_test",
+            title = "UI测试（UI Testing / Espresso）",
+            overview = "UI测试是测试应用用户界面的测试方式，验证用户交互和UI显示的正确性。在Android开发中，主要使用Espresso框架进行UI测试。Espresso提供了简洁的API来查找视图、执行操作和验证结果，可以测试Activity、Fragment等UI组件的用户交互。",
+            keyPoints = listOf(
+                "Espresso框架：Google官方推荐的UI测试框架，提供简洁的API",
+                "视图查找：使用onView()和onData()查找视图，支持多种匹配器",
+                "用户操作：使用perform()执行点击、输入、滑动等用户操作",
+                "结果验证：使用check()验证视图状态，如显示、文本内容、选中状态等",
+                "异步处理：使用IdlingResource处理异步操作，确保测试等待异步任务完成",
+                "测试数据：使用测试数据隔离，避免测试间的相互影响"
+            ),
+            codeExamples = listOf(
+                CodeExample(
+                    title = "示例1：基础UI测试",
+                    code = """
+                        // Activity布局
+                        // activity_main.xml
+                        // <LinearLayout>
+                        //     <EditText android:id="@+id/usernameInput" />
+                        //     <EditText android:id="@+id/passwordInput" />
+                        //     <Button android:id="@+id/loginButton" />
+                        //     <TextView android:id="@+id/resultText" />
+                        // </LinearLayout>
+                        
+                        // Activity
+                        class LoginActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                findViewById<Button>(R.id.loginButton).setOnClickListener {
+                                    val username = findViewById<EditText>(R.id.usernameInput).text.toString()
+                                    val password = findViewById<EditText>(R.id.passwordInput).text.toString()
+                                    
+                                    if (username == "admin" && password == "123456") {
+                                        findViewById<TextView>(R.id.resultText).text = "登录成功"
+                                    } else {
+                                        findViewById<TextView>(R.id.resultText).text = "用户名或密码错误"
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // UI测试
+                        import androidx.test.ext.junit.rules.ActivityScenarioRule
+                        import androidx.test.ext.junit.runners.AndroidJUnit4
+                        import androidx.test.espresso.Espresso.*
+                        import androidx.test.espresso.assertion.ViewAssertions.*
+                        import androidx.test.espresso.matcher.ViewMatchers.*
+                        import androidx.test.espresso.action.ViewActions.*
+                        import org.junit.Rule
+                        import org.junit.Test
+                        import org.junit.runner.RunWith
+                        
+                        @RunWith(AndroidJUnit4::class)
+                        class LoginActivityTest {
+                            @get:Rule
+                            val activityRule = ActivityScenarioRule(LoginActivity::class.java)
+                            
+                            @Test
+                            fun testLogin_Success_ShowsSuccessMessage() {
+                                // 输入用户名
+                                onView(withId(R.id.usernameInput))
+                                    .perform(typeText("admin"), closeSoftKeyboard())
+                                
+                                // 输入密码
+                                onView(withId(R.id.passwordInput))
+                                    .perform(typeText("123456"), closeSoftKeyboard())
+                                
+                                // 点击登录按钮
+                                onView(withId(R.id.loginButton))
+                                    .perform(click())
+                                
+                                // 验证显示成功消息
+                                onView(withId(R.id.resultText))
+                                    .check(matches(withText("登录成功")))
+                            }
+                            
+                            @Test
+                            fun testLogin_InvalidCredentials_ShowsErrorMessage() {
+                                // 输入错误的用户名和密码
+                                onView(withId(R.id.usernameInput))
+                                    .perform(typeText("wrong"), closeSoftKeyboard())
+                                onView(withId(R.id.passwordInput))
+                                    .perform(typeText("wrong"), closeSoftKeyboard())
+                                
+                                // 点击登录
+                                onView(withId(R.id.loginButton))
+                                    .perform(click())
+                                
+                                // 验证显示错误消息
+                                onView(withId(R.id.resultText))
+                                    .check(matches(withText("用户名或密码错误")))
+                            }
+                            
+                            @Test
+                            fun testLogin_EmptyFields_ButtonDisabled() {
+                                // 验证按钮初始状态
+                                onView(withId(R.id.loginButton))
+                                    .check(matches(not(isEnabled())))
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "基础UI测试使用Espresso的onView()查找视图，perform()执行操作，check()验证结果。测试模拟用户的真实操作流程。"
+                ),
+                CodeExample(
+                    title = "示例2：列表测试（RecyclerView）",
+                    code = """
+                        // Activity with RecyclerView
+                        class UserListActivity : AppCompatActivity() {
+                            private lateinit var recyclerView: RecyclerView
+                            private lateinit var adapter: UserAdapter
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_user_list)
+                                
+                                recyclerView = findViewById(R.id.recyclerView)
+                                adapter = UserAdapter()
+                                recyclerView.adapter = adapter
+                                recyclerView.layoutManager = LinearLayoutManager(this)
+                                
+                                // 加载数据
+                                loadUsers()
+                            }
+                            
+                            private fun loadUsers() {
+                                val users = listOf(
+                                    User(1, "张三", "zhangsan@example.com"),
+                                    User(2, "李四", "lisi@example.com"),
+                                    User(3, "王五", "wangwu@example.com")
+                                )
+                                adapter.submitList(users)
+                            }
+                        }
+                        
+                        // RecyclerView UI测试
+                        import androidx.test.espresso.contrib.RecyclerViewActions
+                        import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
+                        
+                        @RunWith(AndroidJUnit4::class)
+                        class UserListActivityTest {
+                            @get:Rule
+                            val activityRule = ActivityScenarioRule(UserListActivity::class.java)
+                            
+                            @Test
+                            fun testUserList_DisplaysAllUsers() {
+                                // 验证列表显示
+                                onView(withId(R.id.recyclerView))
+                                    .check(matches(isDisplayed()))
+                                
+                                // 验证列表项数量
+                                onView(withId(R.id.recyclerView))
+                                    .check(matches(hasItemCount(3)))
+                                
+                                // 验证特定项显示
+                                onView(withId(R.id.recyclerView))
+                                    .check(matches(hasDescendant(withText("张三"))))
+                                onView(withId(R.id.recyclerView))
+                                    .check(matches(hasDescendant(withText("李四"))))
+                            }
+                            
+                            @Test
+                            fun testUserList_ClickItem_NavigatesToDetail() {
+                                // 点击第一项
+                                onView(withId(R.id.recyclerView))
+                                    .perform(
+                                        RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(
+                                            0,
+                                            click()
+                                        )
+                                    )
+                                
+                                // 验证导航到详情页（假设使用Intent）
+                                // 这里需要根据实际导航方式验证
+                            }
+                            
+                            @Test
+                            fun testUserList_Scroll_LoadsMoreItems() {
+                                // 滚动到底部
+                                onView(withId(R.id.recyclerView))
+                                    .perform(
+                                        RecyclerViewActions.scrollToPosition<RecyclerView.ViewHolder>(2)
+                                    )
+                                
+                                // 验证最后一项显示
+                                onView(withId(R.id.recyclerView))
+                                    .check(matches(hasDescendant(withText("王五"))))
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "RecyclerView测试使用RecyclerViewActions进行列表操作，如点击项、滚动等。使用hasDescendant验证列表项内容。"
+                ),
+                CodeExample(
+                    title = "示例3：异步操作测试（IdlingResource）",
+                    code = """
+                        // Activity with async operation
+                        class UserActivity : AppCompatActivity() {
+                            private lateinit var progressBar: ProgressBar
+                            private lateinit var userList: RecyclerView
+                            
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_user)
+                                
+                                progressBar = findViewById(R.id.progressBar)
+                                userList = findViewById(R.id.userList)
+                                
+                                loadUsers()
+                            }
+                            
+                            private fun loadUsers() {
+                                progressBar.visibility = View.VISIBLE
+                                
+                                // 模拟网络请求
+                                lifecycleScope.launch {
+                                    delay(2000) // 模拟网络延迟
+                                    val users = repository.getUsers()
+                                    // 更新UI
+                                    adapter.submitList(users)
+                                    progressBar.visibility = View.GONE
+                                }
+                            }
+                        }
+                        
+                        // 使用IdlingResource处理异步操作
+                        import androidx.test.espresso.IdlingRegistry
+                        import androidx.test.espresso.IdlingResource
+                        import androidx.test.espresso.idling.CountingIdlingResource
+                        
+                        class UserActivityTest {
+                            private lateinit var idlingResource: CountingIdlingResource
+                            
+                            @Before
+                            fun setup() {
+                                idlingResource = CountingIdlingResource("UserLoading")
+                                IdlingRegistry.getInstance().register(idlingResource)
+                            }
+                            
+                            @After
+                            fun tearDown() {
+                                IdlingRegistry.getInstance().unregister(idlingResource)
+                            }
+                            
+                            @Test
+                            fun testLoadUsers_AsyncOperation_WaitsForCompletion() {
+                                // 注意：需要在Activity中注册IdlingResource
+                                // 在开始加载时调用 idlingResource.increment()
+                                // 在加载完成时调用 idlingResource.decrement()
+                                
+                                // 验证加载指示器显示
+                                onView(withId(R.id.progressBar))
+                                    .check(matches(isDisplayed()))
+                                
+                                // Espresso会自动等待IdlingResource变为空闲
+                                // 验证列表显示
+                                onView(withId(R.id.userList))
+                                    .check(matches(isDisplayed()))
+                                
+                                // 验证加载指示器隐藏
+                                onView(withId(R.id.progressBar))
+                                    .check(matches(not(isDisplayed())))
+                            }
+                        }
+                        
+                        // 在Activity中集成IdlingResource
+                        class UserActivity : AppCompatActivity() {
+                            private val idlingResource = CountingIdlingResource("UserLoading")
+                            
+                            private fun loadUsers() {
+                                progressBar.visibility = View.VISIBLE
+                                idlingResource.increment() // 开始异步操作
+                                
+                                lifecycleScope.launch {
+                                    delay(2000)
+                                    val users = repository.getUsers()
+                                    adapter.submitList(users)
+                                    progressBar.visibility = View.GONE
+                                    idlingResource.decrement() // 完成异步操作
+                                }
+                            }
+                            
+                            fun getIdlingResource(): IdlingResource = idlingResource
+                        }
+                    """.trimIndent(),
+                    explanation = "使用IdlingResource处理异步操作，确保Espresso等待异步任务完成后再继续测试。在异步操作开始时increment()，完成时decrement()。"
+                ),
+                CodeExample(
+                    title = "示例4：Intent测试",
+                    code = """
+                        // Activity that starts another Activity
+                        class MainActivity : AppCompatActivity() {
+                            override fun onCreate(savedInstanceState: Bundle?) {
+                                super.onCreate(savedInstanceState)
+                                setContentView(R.layout.activity_main)
+                                
+                                findViewById<Button>(R.id.detailButton).setOnClickListener {
+                                    val intent = Intent(this, DetailActivity::class.java).apply {
+                                        putExtra("userId", "123")
+                                        putExtra("userName", "张三")
+                                    }
+                                    startActivity(intent)
+                                }
+                            }
+                        }
+                        
+                        // Intent测试
+                        import androidx.test.espresso.intent.Intents
+                        import androidx.test.espresso.intent.matcher.IntentMatchers.*
+                        import androidx.test.espresso.intent.rule.IntentsTestRule
+                        
+                        @RunWith(AndroidJUnit4::class)
+                        class MainActivityIntentTest {
+                            @get:Rule
+                            val intentsRule = IntentsTestRule(MainActivity::class.java)
+                            
+                            @Test
+                            fun testDetailButton_StartsDetailActivity_WithCorrectIntent() {
+                                // 点击详情按钮
+                                onView(withId(R.id.detailButton))
+                                    .perform(click())
+                                
+                                // 验证Intent
+                                intended(hasComponent(DetailActivity::class.java.name))
+                                intended(hasExtra("userId", "123"))
+                                intended(hasExtra("userName", "张三"))
+                            }
+                            
+                            @Test
+                            fun testDetailButton_StartsDetailActivity_WithAction() {
+                                onView(withId(R.id.detailButton))
+                                    .perform(click())
+                                
+                                // 验证Intent Action
+                                intended(hasAction(Intent.ACTION_VIEW))
+                            }
+                        }
+                    """.trimIndent(),
+                    explanation = "使用Intents框架可以验证Activity启动的Intent，包括目标组件、Extra数据、Action等。使用intended()验证Intent是否符合预期。"
+                )
+            ),
+            useCases = listOf(
+                "用户流程测试：测试完整的用户操作流程，如登录、注册、浏览等",
+                "UI交互测试：测试按钮点击、输入、滑动等用户交互",
+                "列表测试：测试RecyclerView、ListView等列表组件的显示和交互",
+                "导航测试：测试Activity、Fragment间的导航和参数传递",
+                "表单验证测试：测试表单输入验证和错误提示"
+            ),
+            notes = listOf(
+                "UI测试运行在Android设备上，执行速度较慢，应该只测试关键的用户流程",
+                "使用IdlingResource处理异步操作，确保测试等待异步任务完成",
+                "保持测试独立，每个测试应该清理自己的状态",
+                "使用测试数据隔离，避免测试间的相互影响",
+                "UI测试应该测试用户可见的行为，而不是实现细节",
+                "避免过度测试UI细节，关注关键的用户交互"
+            ),
+            practiceTips = "建议为关键的用户流程编写UI测试，如登录、注册、主要功能流程等。使用IdlingResource处理异步操作，确保测试稳定性。保持测试独立，使用测试数据隔离。使用Espresso的简洁API，避免复杂的视图查找。定期运行UI测试，确保UI修改不会破坏现有功能。注意测试执行时间，优化慢速测试。"
         )
     )
 }
